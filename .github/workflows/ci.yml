@@ -68,7 +68,11 @@ jobs:
       - run: npm run test:coverage -w @americanbible/api-bible-sdk-react
       - run: npm run build -w @americanbible/api-bible-sdk-react
 
-  audit:
+  # Named `audit-npm`, not `audit`, so the status-check context stays distinct
+  # from python.yml's audit job. Two jobs reporting the same context name let a
+  # later-finishing pass mask an earlier failure, and a required check named
+  # `audit` could not tell you which ecosystem it covered.
+  audit-npm:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
