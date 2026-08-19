@@ -39,7 +39,9 @@ jobs:
       - run: mypy
       - run: pytest --cov=api_bible
 
-  audit:
+  # Named `audit-pip`, not `audit`, so the status-check context stays distinct
+  # from ci.yml's audit job. See the note there.
+  audit-pip:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
