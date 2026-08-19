@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    // React package (browser), so unlike the TS SDK we need the DOM libs
+    // (AbortController / window / DOMException) and the automatic JSX runtime.
+    // `types` is intentionally NOT pinned to ["node"] here: leaving it default
+    // keeps @types/react's global JSX namespace in scope for react-jsx.
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src", "tests"]
+}

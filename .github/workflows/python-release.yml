@@ -1,0 +1,53 @@
+name: Python Release
+
+# Publishes api-bible-sdk to PyPI when a tag matching `py-v*` is pushed
+# (e.g. `py-v1.0.1`). Uses PyPI Trusted Publishing (OIDC) — no long-lived API
+# token is stored in the repo. The release is gated on the full test suite, and
+# the tag must match the version in src/api_bible/_version.py.
+
+on:
+  push:
+    tags:
+      - 'py-v*'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: packages/python
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write # OIDC token for PyPI Trusted Publishing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]" build -c requirements-dev.txt
+      - name: Verify tag matches package version
+        run: |
+          tag="${GITHUB_REF_NAME#py-v}"
+          version="$(python -c 'from api_bible._version import __version__; print(__version__)')"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag py-v$tag does not match package version $version"
+            exit 1
+          fi
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy
+      - run: pytest --cov=api_bible
+      # Fail the release on any known vulnerability in the locked dependency set
+      # — a CVE may have been disclosed after the gating merge but before this tag.
+      - run: python -m pip install pip-audit
+      - run: pip-audit -r requirements-dev.txt
+      - run: python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/python/dist

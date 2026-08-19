@@ -1,0 +1,4622 @@
+{
+  "_comment": "Recorded api.bible responses, keyed by pathname+search, then sanitized (see sanitize_body in replay.py). Scripture text is the Berean Standard Bible (public domain, CC0). Audio-bible entries are third-party licensed metadata only - presigned URLs are rewritten to invalid.example.com and FUMS tokens are dropped. Regenerate with `python tests/contract/record_fixtures.py`.",
+  "requests": {
+    "/v1/audio-bibles/105a06b6146d11e7-01": {
+      "body": {
+        "data": {
+          "abbreviation": "WEB13",
+          "abbreviationLocal": "WEB13",
+          "copyright": "\u2117 2013 Hosanna",
+          "countries": [
+            {
+              "id": "US",
+              "name": "United States",
+              "nameLocal": "United States"
+            }
+          ],
+          "dblId": "105a06b6146d11e7",
+          "description": null,
+          "descriptionLocal": null,
+          "id": "105a06b6146d11e7-01",
+          "info": null,
+          "language": {
+            "id": "eng",
+            "name": "English",
+            "nameLocal": "English",
+            "script": "Latin",
+            "scriptDirection": "LTR"
+          },
+          "name": "English - World English Bible 2013 (Drama NT)",
+          "nameLocal": "English - World English Bible 2013 (Drama NT)",
+          "relatedDbl": "9879dbb7cfe39e4d",
+          "type": "audio",
+          "updatedAt": "2024-07-01T22:16:16.000Z"
+        }
+      },
+      "status": 200
+    },
+    "/v1/audio-bibles/105a06b6146d11e7-01/books": {
+      "body": {
+        "data": [
+          {
+            "abbreviation": "1 Corinthians",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "1CO",
+            "name": "1 Corinthians",
+            "nameLong": "Paul\u2019s First Letter to the Corinthians"
+          },
+          {
+            "abbreviation": "1 John",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "1JN",
+            "name": "1 John",
+            "nameLong": "John\u2019s First Letter"
+          },
+          {
+            "abbreviation": "1 Peter",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "1PE",
+            "name": "1 Peter",
+            "nameLong": "Peter\u2019s First Letter"
+          },
+          {
+            "abbreviation": "1 Thessalonians",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "1TH",
+            "name": "1 Thessalonians",
+            "nameLong": "Paul\u2019s First Letter to the Thessalonians"
+          },
+          {
+            "abbreviation": "1 Timothy",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "1TI",
+            "name": "1 Timothy",
+            "nameLong": "Paul\u2019s First Letter to Timothy"
+          },
+          {
+            "abbreviation": "2 Corinthians",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "2CO",
+            "name": "2 Corinthians",
+            "nameLong": "Paul\u2019s Second Letter to the Corinthians"
+          },
+          {
+            "abbreviation": "2 John",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "2JN",
+            "name": "2 John",
+            "nameLong": "John\u2019s Second Letter"
+          },
+          {
+            "abbreviation": "2 Peter",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "2PE",
+            "name": "2 Peter",
+            "nameLong": "Peter\u2019s Second Letter"
+          },
+          {
+            "abbreviation": "2 Thessalonians",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "2TH",
+            "name": "2 Thessalonians",
+            "nameLong": "Paul\u2019s Second Letter to the Thessalonians"
+          },
+          {
+            "abbreviation": "2 Timothy",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "2TI",
+            "name": "2 Timothy",
+            "nameLong": "Paul\u2019s Second Letter to Timothy"
+          },
+          {
+            "abbreviation": "3 John",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "3JN",
+            "name": "3 John",
+            "nameLong": "John\u2019s Third Letter"
+          },
+          {
+            "abbreviation": "Acts",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "ACT",
+            "name": "Acts",
+            "nameLong": "The Acts of the Apostles"
+          },
+          {
+            "abbreviation": "Colossians",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "COL",
+            "name": "Colossians",
+            "nameLong": "Paul\u2019s Letter to the Colossians"
+          },
+          {
+            "abbreviation": "Ephesians",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "EPH",
+            "name": "Ephesians",
+            "nameLong": "Paul\u2019s Letter to the Ephesians"
+          },
+          {
+            "abbreviation": "Galatians",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "GAL",
+            "name": "Galatians",
+            "nameLong": "Paul\u2019s Letter to the Galatians"
+          },
+          {
+            "abbreviation": "Hebrews",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "HEB",
+            "name": "Hebrews",
+            "nameLong": "The Letter to the Hebrews"
+          },
+          {
+            "abbreviation": "James",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "JAS",
+            "name": "James",
+            "nameLong": "The Letter from James"
+          },
+          {
+            "abbreviation": "John",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "JHN",
+            "name": "John",
+            "nameLong": "The Good News According to John"
+          },
+          {
+            "abbreviation": "Jude",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "JUD",
+            "name": "Jude",
+            "nameLong": "The Letter from Jude"
+          },
+          {
+            "abbreviation": "Luke",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "LUK",
+            "name": "Luke",
+            "nameLong": "The Good News According to Luke"
+          },
+          {
+            "abbreviation": "Matthew",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "MAT",
+            "name": "Matthew",
+            "nameLong": "The Good News According to Matthew"
+          },
+          {
+            "abbreviation": "Mark",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "MRK",
+            "name": "Mark",
+            "nameLong": "The Good News According to Mark"
+          },
+          {
+            "abbreviation": "Philemon",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "PHM",
+            "name": "Philemon",
+            "nameLong": "Paul\u2019s Letter to Philemon"
+          },
+          {
+            "abbreviation": "Philippians",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "PHP",
+            "name": "Philippians",
+            "nameLong": "Paul\u2019s Letter to the Philippians"
+          },
+          {
+            "abbreviation": "Revelation",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "REV",
+            "name": "Revelation",
+            "nameLong": "The Revelation to John"
+          },
+          {
+            "abbreviation": "Romans",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "ROM",
+            "name": "Romans",
+            "nameLong": "Paul\u2019s Letter to the Romans"
+          },
+          {
+            "abbreviation": "Titus",
+            "bibleId": "105a06b6146d11e7-01",
+            "id": "TIT",
+            "name": "Titus",
+            "nameLong": "Paul\u2019s Letter to Titus"
+          }
+        ]
+      },
+      "status": 200
+    },
+    "/v1/audio-bibles/105a06b6146d11e7-01/books/1CO/chapters": {
+      "body": {
+        "data": [
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.1",
+            "number": "1",
+            "reference": "1 Corinthians 1"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.2",
+            "number": "2",
+            "reference": "1 Corinthians 2"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.3",
+            "number": "3",
+            "reference": "1 Corinthians 3"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.4",
+            "number": "4",
+            "reference": "1 Corinthians 4"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.5",
+            "number": "5",
+            "reference": "1 Corinthians 5"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.6",
+            "number": "6",
+            "reference": "1 Corinthians 6"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.7",
+            "number": "7",
+            "reference": "1 Corinthians 7"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.8",
+            "number": "8",
+            "reference": "1 Corinthians 8"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.9",
+            "number": "9",
+            "reference": "1 Corinthians 9"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.10",
+            "number": "10",
+            "reference": "1 Corinthians 10"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.11",
+            "number": "11",
+            "reference": "1 Corinthians 11"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.12",
+            "number": "12",
+            "reference": "1 Corinthians 12"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.13",
+            "number": "13",
+            "reference": "1 Corinthians 13"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.14",
+            "number": "14",
+            "reference": "1 Corinthians 14"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.15",
+            "number": "15",
+            "reference": "1 Corinthians 15"
+          },
+          {
+            "bibleId": "105a06b6146d11e7-01",
+            "bookId": "1CO",
+            "id": "1CO.16",
+            "number": "16",
+            "reference": "1 Corinthians 16"
+          }
+        ]
+      },
+      "status": 200
+    },
+    "/v1/audio-bibles/105a06b6146d11e7-01/chapters/1CO.1": {
+      "body": {
+        "data": {
+          "bibleId": "105a06b6146d11e7-01",
+          "bookId": "1CO",
+          "copyright": "\u2117 2013 Hosanna",
+          "expiresAt": "1786387649",
+          "id": "1CO.1",
+          "next": {
+            "bookId": "1CO",
+            "id": "1CO.2",
+            "number": "2"
+          },
+          "number": "1",
+          "reference": "1 Corinthians 1",
+          "resourceUrl": "https://invalid.example.com/105a06b6146d11e7-01/release/audio/1CO/1CO_001.mp3"
+        },
+        "meta": {}
+      },
+      "status": 200
+    },
+    "/v1/audio-bibles?language=eng": {
+      "body": {
+        "data": [
+          {
+            "abbreviation": "WEB13",
+            "abbreviationLocal": "WEB13",
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States",
+                "nameLocal": "United States"
+              }
+            ],
+            "dblId": "105a06b6146d11e7",
+            "description": null,
+            "descriptionLocal": null,
+            "id": "105a06b6146d11e7-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "English - World English Bible 2013 (Drama NT)",
+            "nameLocal": "English - World English Bible 2013 (Drama NT)",
+            "relatedDbl": "9879dbb7cfe39e4d",
+            "type": "audio",
+            "updatedAt": "2024-07-01T22:16:16.000Z"
+          }
+        ]
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01": {
+      "body": {
+        "data": {
+          "abbreviation": "BSB",
+          "abbreviationLocal": "BSB",
+          "audioBibles": [],
+          "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God's Word has been dedicated to the public domain",
+          "countries": [
+            {
+              "id": "US",
+              "name": "United States of America",
+              "nameLocal": "United States of America"
+            },
+            {
+              "id": "GB",
+              "name": "United Kingdom of Great Britain and Northern Ireland",
+              "nameLocal": "United Kingdom of Great Britain and Northern Ireland"
+            },
+            {
+              "id": "AU",
+              "name": "Australia",
+              "nameLocal": "Australia"
+            },
+            {
+              "id": "CA",
+              "name": "Canada",
+              "nameLocal": "Canada"
+            },
+            {
+              "id": "AG",
+              "name": "Antigua and Barbuda",
+              "nameLocal": "Antigua and Barbuda"
+            },
+            {
+              "id": "BS",
+              "name": "Bahamas",
+              "nameLocal": "Bahamas"
+            },
+            {
+              "id": "BB",
+              "name": "Barbados",
+              "nameLocal": "Barbados"
+            },
+            {
+              "id": "BZ",
+              "name": "Belize",
+              "nameLocal": "Belize"
+            },
+            {
+              "id": "DM",
+              "name": "Dominica",
+              "nameLocal": "Dominica"
+            },
+            {
+              "id": "DO",
+              "name": "Dominican Republic",
+              "nameLocal": "Dominican Republic"
+            },
+            {
+              "id": "AS",
+              "name": "American Samoa",
+              "nameLocal": "American Samoa"
+            },
+            {
+              "id": "GU",
+              "name": "Guam",
+              "nameLocal": "Guam"
+            },
+            {
+              "id": "HT",
+              "name": "Haiti",
+              "nameLocal": "Haiti"
+            },
+            {
+              "id": "GY",
+              "name": "Guyana",
+              "nameLocal": "Guyana"
+            },
+            {
+              "id": "IL",
+              "name": "Israel",
+              "nameLocal": "Israel"
+            },
+            {
+              "id": "IE",
+              "name": "Ireland",
+              "nameLocal": "Ireland"
+            },
+            {
+              "id": "JM",
+              "name": "Jamaica",
+              "nameLocal": "Jamaica"
+            },
+            {
+              "id": "MT",
+              "name": "Malta",
+              "nameLocal": "Malta"
+            },
+            {
+              "id": "NZ",
+              "name": "New Zealand",
+              "nameLocal": "New Zealand"
+            },
+            {
+              "id": "PH",
+              "name": "Philippines",
+              "nameLocal": "Philippines"
+            },
+            {
+              "id": "KN",
+              "name": "Saint Kitts and Nevis",
+              "nameLocal": "Saint Kitts and Nevis"
+            },
+            {
+              "id": "LC",
+              "name": "Saint Lucia",
+              "nameLocal": "Saint Lucia"
+            },
+            {
+              "id": "VC",
+              "name": "Saint Vincent and the Grenadines",
+              "nameLocal": "Saint Vincent and the Grenadines"
+            },
+            {
+              "id": "TT",
+              "name": "Trinidad and Tobago",
+              "nameLocal": "Trinidad and Tobago"
+            },
+            {
+              "id": "NG",
+              "name": "Nigeria",
+              "nameLocal": "Nigeria"
+            },
+            {
+              "id": "ZA",
+              "name": "South Africa",
+              "nameLocal": "South Africa"
+            }
+          ],
+          "dblId": "bba9f40183526463",
+          "description": "Berean Standard Bible",
+          "descriptionLocal": "English: Berean Standard Bible",
+          "id": "bba9f40183526463-01",
+          "info": "<p>https://berean.bible/</p>",
+          "language": {
+            "id": "eng",
+            "name": "English",
+            "nameLocal": "English",
+            "script": "Latin",
+            "scriptDirection": "LTR"
+          },
+          "name": "Berean Standard Bible",
+          "nameLocal": "English: Berean Standard Bible",
+          "relatedDbl": null,
+          "type": "text",
+          "updatedAt": "2025-10-01T02:35:46.000Z"
+        }
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/books": {
+      "body": {
+        "data": [
+          {
+            "abbreviation": "GEN",
+            "bibleId": "bba9f40183526463-01",
+            "id": "GEN",
+            "name": "Genesis",
+            "nameLong": "Genesis"
+          },
+          {
+            "abbreviation": "EXO",
+            "bibleId": "bba9f40183526463-01",
+            "id": "EXO",
+            "name": "Exodus",
+            "nameLong": "Exodus"
+          },
+          {
+            "abbreviation": "LEV",
+            "bibleId": "bba9f40183526463-01",
+            "id": "LEV",
+            "name": "Leviticus",
+            "nameLong": "Leviticus"
+          },
+          {
+            "abbreviation": "NUM",
+            "bibleId": "bba9f40183526463-01",
+            "id": "NUM",
+            "name": "Numbers",
+            "nameLong": "Numbers"
+          },
+          {
+            "abbreviation": "DEU",
+            "bibleId": "bba9f40183526463-01",
+            "id": "DEU",
+            "name": "Deuteronomy",
+            "nameLong": "Deuteronomy"
+          },
+          {
+            "abbreviation": "JOS",
+            "bibleId": "bba9f40183526463-01",
+            "id": "JOS",
+            "name": "Joshua",
+            "nameLong": "Joshua"
+          },
+          {
+            "abbreviation": "JDG",
+            "bibleId": "bba9f40183526463-01",
+            "id": "JDG",
+            "name": "Judges",
+            "nameLong": "Judges"
+          },
+          {
+            "abbreviation": "RUT",
+            "bibleId": "bba9f40183526463-01",
+            "id": "RUT",
+            "name": "Ruth",
+            "nameLong": "Ruth"
+          },
+          {
+            "abbreviation": "1SA",
+            "bibleId": "bba9f40183526463-01",
+            "id": "1SA",
+            "name": "1 Samuel",
+            "nameLong": "1 Samuel"
+          },
+          {
+            "abbreviation": "2SA",
+            "bibleId": "bba9f40183526463-01",
+            "id": "2SA",
+            "name": "2 Samuel",
+            "nameLong": "2 Samuel"
+          },
+          {
+            "abbreviation": "1KI",
+            "bibleId": "bba9f40183526463-01",
+            "id": "1KI",
+            "name": "1 Kings",
+            "nameLong": "1 Kings"
+          },
+          {
+            "abbreviation": "2KI",
+            "bibleId": "bba9f40183526463-01",
+            "id": "2KI",
+            "name": "2 Kings",
+            "nameLong": "2 Kings"
+          },
+          {
+            "abbreviation": "1CH",
+            "bibleId": "bba9f40183526463-01",
+            "id": "1CH",
+            "name": "1 Chronicles",
+            "nameLong": "1 Chronicles"
+          },
+          {
+            "abbreviation": "2CH",
+            "bibleId": "bba9f40183526463-01",
+            "id": "2CH",
+            "name": "2 Chronicles",
+            "nameLong": "2 Chronicles"
+          },
+          {
+            "abbreviation": "EZR",
+            "bibleId": "bba9f40183526463-01",
+            "id": "EZR",
+            "name": "Ezra",
+            "nameLong": "Ezra"
+          },
+          {
+            "abbreviation": "NEH",
+            "bibleId": "bba9f40183526463-01",
+            "id": "NEH",
+            "name": "Nehemiah",
+            "nameLong": "Nehemiah"
+          },
+          {
+            "abbreviation": "EST",
+            "bibleId": "bba9f40183526463-01",
+            "id": "EST",
+            "name": "Esther",
+            "nameLong": "Esther"
+          },
+          {
+            "abbreviation": "JOB",
+            "bibleId": "bba9f40183526463-01",
+            "id": "JOB",
+            "name": "Job",
+            "nameLong": "Job"
+          },
+          {
+            "abbreviation": "PSA",
+            "bibleId": "bba9f40183526463-01",
+            "id": "PSA",
+            "name": "Psalms",
+            "nameLong": "Psalms"
+          },
+          {
+            "abbreviation": "PRO",
+            "bibleId": "bba9f40183526463-01",
+            "id": "PRO",
+            "name": "Proverbs",
+            "nameLong": "Proverbs"
+          },
+          {
+            "abbreviation": "ECC",
+            "bibleId": "bba9f40183526463-01",
+            "id": "ECC",
+            "name": "Ecclesiastes",
+            "nameLong": "Ecclesiastes"
+          },
+          {
+            "abbreviation": "SNG",
+            "bibleId": "bba9f40183526463-01",
+            "id": "SNG",
+            "name": "Song",
+            "nameLong": "Song"
+          },
+          {
+            "abbreviation": "ISA",
+            "bibleId": "bba9f40183526463-01",
+            "id": "ISA",
+            "name": "Isaiah",
+            "nameLong": "Isaiah"
+          },
+          {
+            "abbreviation": "JER",
+            "bibleId": "bba9f40183526463-01",
+            "id": "JER",
+            "name": "Jeremiah",
+            "nameLong": "Jeremiah"
+          },
+          {
+            "abbreviation": "LAM",
+            "bibleId": "bba9f40183526463-01",
+            "id": "LAM",
+            "name": "Lamentations",
+            "nameLong": "Lamentations"
+          },
+          {
+            "abbreviation": "EZK",
+            "bibleId": "bba9f40183526463-01",
+            "id": "EZK",
+            "name": "Ezekiel",
+            "nameLong": "Ezekiel"
+          },
+          {
+            "abbreviation": "DAN",
+            "bibleId": "bba9f40183526463-01",
+            "id": "DAN",
+            "name": "Daniel",
+            "nameLong": "Daniel"
+          },
+          {
+            "abbreviation": "HOS",
+            "bibleId": "bba9f40183526463-01",
+            "id": "HOS",
+            "name": "Hosea",
+            "nameLong": "Hosea"
+          },
+          {
+            "abbreviation": "JOL",
+            "bibleId": "bba9f40183526463-01",
+            "id": "JOL",
+            "name": "Joel",
+            "nameLong": "Joel"
+          },
+          {
+            "abbreviation": "AMO",
+            "bibleId": "bba9f40183526463-01",
+            "id": "AMO",
+            "name": "Amos",
+            "nameLong": "Amos"
+          },
+          {
+            "abbreviation": "OBA",
+            "bibleId": "bba9f40183526463-01",
+            "id": "OBA",
+            "name": "Obadiah",
+            "nameLong": "Obadiah"
+          },
+          {
+            "abbreviation": "JON",
+            "bibleId": "bba9f40183526463-01",
+            "id": "JON",
+            "name": "Jonah",
+            "nameLong": "Jonah"
+          },
+          {
+            "abbreviation": "MIC",
+            "bibleId": "bba9f40183526463-01",
+            "id": "MIC",
+            "name": "Micah",
+            "nameLong": "Micah"
+          },
+          {
+            "abbreviation": "NAM",
+            "bibleId": "bba9f40183526463-01",
+            "id": "NAM",
+            "name": "Nahum",
+            "nameLong": "Nahum"
+          },
+          {
+            "abbreviation": "HAB",
+            "bibleId": "bba9f40183526463-01",
+            "id": "HAB",
+            "name": "Habakkuk",
+            "nameLong": "Habakkuk"
+          },
+          {
+            "abbreviation": "ZEP",
+            "bibleId": "bba9f40183526463-01",
+            "id": "ZEP",
+            "name": "Zephaniah",
+            "nameLong": "Zephaniah"
+          },
+          {
+            "abbreviation": "HAG",
+            "bibleId": "bba9f40183526463-01",
+            "id": "HAG",
+            "name": "Haggai",
+            "nameLong": "Haggai"
+          },
+          {
+            "abbreviation": "ZEC",
+            "bibleId": "bba9f40183526463-01",
+            "id": "ZEC",
+            "name": "Zechariah",
+            "nameLong": "Zechariah"
+          },
+          {
+            "abbreviation": "MAL",
+            "bibleId": "bba9f40183526463-01",
+            "id": "MAL",
+            "name": "Malachi",
+            "nameLong": "Malachi"
+          },
+          {
+            "abbreviation": "MAT",
+            "bibleId": "bba9f40183526463-01",
+            "id": "MAT",
+            "name": "Matthew",
+            "nameLong": "Matthew"
+          },
+          {
+            "abbreviation": "MRK",
+            "bibleId": "bba9f40183526463-01",
+            "id": "MRK",
+            "name": "Mark",
+            "nameLong": "Mark"
+          },
+          {
+            "abbreviation": "LUK",
+            "bibleId": "bba9f40183526463-01",
+            "id": "LUK",
+            "name": "Luke",
+            "nameLong": "Luke"
+          },
+          {
+            "abbreviation": "JHN",
+            "bibleId": "bba9f40183526463-01",
+            "id": "JHN",
+            "name": "John",
+            "nameLong": "John"
+          },
+          {
+            "abbreviation": "ACT",
+            "bibleId": "bba9f40183526463-01",
+            "id": "ACT",
+            "name": "Acts",
+            "nameLong": "Acts"
+          },
+          {
+            "abbreviation": "ROM",
+            "bibleId": "bba9f40183526463-01",
+            "id": "ROM",
+            "name": "Romans",
+            "nameLong": "Romans"
+          },
+          {
+            "abbreviation": "1CO",
+            "bibleId": "bba9f40183526463-01",
+            "id": "1CO",
+            "name": "1 Corinthians",
+            "nameLong": "1 Corinthians"
+          },
+          {
+            "abbreviation": "2CO",
+            "bibleId": "bba9f40183526463-01",
+            "id": "2CO",
+            "name": "2 Corinthians",
+            "nameLong": "2 Corinthians"
+          },
+          {
+            "abbreviation": "GAL",
+            "bibleId": "bba9f40183526463-01",
+            "id": "GAL",
+            "name": "Galatians",
+            "nameLong": "Galatians"
+          },
+          {
+            "abbreviation": "EPH",
+            "bibleId": "bba9f40183526463-01",
+            "id": "EPH",
+            "name": "Ephesians",
+            "nameLong": "Ephesians"
+          },
+          {
+            "abbreviation": "PHP",
+            "bibleId": "bba9f40183526463-01",
+            "id": "PHP",
+            "name": "Philippians",
+            "nameLong": "Philippians"
+          },
+          {
+            "abbreviation": "COL",
+            "bibleId": "bba9f40183526463-01",
+            "id": "COL",
+            "name": "Colossians",
+            "nameLong": "Colossians"
+          },
+          {
+            "abbreviation": "1TH",
+            "bibleId": "bba9f40183526463-01",
+            "id": "1TH",
+            "name": "1 Thessalonians",
+            "nameLong": "1 Thessalonians"
+          },
+          {
+            "abbreviation": "2TH",
+            "bibleId": "bba9f40183526463-01",
+            "id": "2TH",
+            "name": "2 Thessalonians",
+            "nameLong": "2 Thessalonians"
+          },
+          {
+            "abbreviation": "1TI",
+            "bibleId": "bba9f40183526463-01",
+            "id": "1TI",
+            "name": "1 Timothy",
+            "nameLong": "1 Timothy"
+          },
+          {
+            "abbreviation": "2TI",
+            "bibleId": "bba9f40183526463-01",
+            "id": "2TI",
+            "name": "2 Timothy",
+            "nameLong": "2 Timothy"
+          },
+          {
+            "abbreviation": "TIT",
+            "bibleId": "bba9f40183526463-01",
+            "id": "TIT",
+            "name": "Titus",
+            "nameLong": "Titus"
+          },
+          {
+            "abbreviation": "PHM",
+            "bibleId": "bba9f40183526463-01",
+            "id": "PHM",
+            "name": "Philemon",
+            "nameLong": "Philemon"
+          },
+          {
+            "abbreviation": "HEB",
+            "bibleId": "bba9f40183526463-01",
+            "id": "HEB",
+            "name": "Hebrews",
+            "nameLong": "Hebrews"
+          },
+          {
+            "abbreviation": "JAS",
+            "bibleId": "bba9f40183526463-01",
+            "id": "JAS",
+            "name": "James",
+            "nameLong": "James"
+          },
+          {
+            "abbreviation": "1PE",
+            "bibleId": "bba9f40183526463-01",
+            "id": "1PE",
+            "name": "1 Peter",
+            "nameLong": "1 Peter"
+          },
+          {
+            "abbreviation": "2PE",
+            "bibleId": "bba9f40183526463-01",
+            "id": "2PE",
+            "name": "2 Peter",
+            "nameLong": "2 Peter"
+          },
+          {
+            "abbreviation": "1JN",
+            "bibleId": "bba9f40183526463-01",
+            "id": "1JN",
+            "name": "1 John",
+            "nameLong": "1 John"
+          },
+          {
+            "abbreviation": "2JN",
+            "bibleId": "bba9f40183526463-01",
+            "id": "2JN",
+            "name": "2 John",
+            "nameLong": "2 John"
+          },
+          {
+            "abbreviation": "3JN",
+            "bibleId": "bba9f40183526463-01",
+            "id": "3JN",
+            "name": "3 John",
+            "nameLong": "3 John"
+          },
+          {
+            "abbreviation": "JUD",
+            "bibleId": "bba9f40183526463-01",
+            "id": "JUD",
+            "name": "Jude",
+            "nameLong": "Jude"
+          },
+          {
+            "abbreviation": "REV",
+            "bibleId": "bba9f40183526463-01",
+            "id": "REV",
+            "name": "Revelation",
+            "nameLong": "Revelation"
+          }
+        ]
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/books/GEN": {
+      "body": {
+        "data": {
+          "abbreviation": "GEN",
+          "bibleId": "bba9f40183526463-01",
+          "id": "GEN",
+          "name": "Genesis",
+          "nameLong": "Genesis"
+        }
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/books/GEN/chapters": {
+      "body": {
+        "data": [
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.intro",
+            "number": "intro",
+            "reference": "Genesis"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.1",
+            "number": "1",
+            "reference": "Genesis 1"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.2",
+            "number": "2",
+            "reference": "Genesis 2"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.3",
+            "number": "3",
+            "reference": "Genesis 3"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.4",
+            "number": "4",
+            "reference": "Genesis 4"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.5",
+            "number": "5",
+            "reference": "Genesis 5"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.6",
+            "number": "6",
+            "reference": "Genesis 6"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.7",
+            "number": "7",
+            "reference": "Genesis 7"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.8",
+            "number": "8",
+            "reference": "Genesis 8"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.9",
+            "number": "9",
+            "reference": "Genesis 9"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.10",
+            "number": "10",
+            "reference": "Genesis 10"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.11",
+            "number": "11",
+            "reference": "Genesis 11"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.12",
+            "number": "12",
+            "reference": "Genesis 12"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.13",
+            "number": "13",
+            "reference": "Genesis 13"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.14",
+            "number": "14",
+            "reference": "Genesis 14"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.15",
+            "number": "15",
+            "reference": "Genesis 15"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.16",
+            "number": "16",
+            "reference": "Genesis 16"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.17",
+            "number": "17",
+            "reference": "Genesis 17"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.18",
+            "number": "18",
+            "reference": "Genesis 18"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.19",
+            "number": "19",
+            "reference": "Genesis 19"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.20",
+            "number": "20",
+            "reference": "Genesis 20"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.21",
+            "number": "21",
+            "reference": "Genesis 21"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.22",
+            "number": "22",
+            "reference": "Genesis 22"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.23",
+            "number": "23",
+            "reference": "Genesis 23"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.24",
+            "number": "24",
+            "reference": "Genesis 24"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.25",
+            "number": "25",
+            "reference": "Genesis 25"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.26",
+            "number": "26",
+            "reference": "Genesis 26"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.27",
+            "number": "27",
+            "reference": "Genesis 27"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.28",
+            "number": "28",
+            "reference": "Genesis 28"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.29",
+            "number": "29",
+            "reference": "Genesis 29"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.30",
+            "number": "30",
+            "reference": "Genesis 30"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.31",
+            "number": "31",
+            "reference": "Genesis 31"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.32",
+            "number": "32",
+            "reference": "Genesis 32"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.33",
+            "number": "33",
+            "reference": "Genesis 33"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.34",
+            "number": "34",
+            "reference": "Genesis 34"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.35",
+            "number": "35",
+            "reference": "Genesis 35"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.36",
+            "number": "36",
+            "reference": "Genesis 36"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.37",
+            "number": "37",
+            "reference": "Genesis 37"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.38",
+            "number": "38",
+            "reference": "Genesis 38"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.39",
+            "number": "39",
+            "reference": "Genesis 39"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.40",
+            "number": "40",
+            "reference": "Genesis 40"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.41",
+            "number": "41",
+            "reference": "Genesis 41"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.42",
+            "number": "42",
+            "reference": "Genesis 42"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.43",
+            "number": "43",
+            "reference": "Genesis 43"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.44",
+            "number": "44",
+            "reference": "Genesis 44"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.45",
+            "number": "45",
+            "reference": "Genesis 45"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.46",
+            "number": "46",
+            "reference": "Genesis 46"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.47",
+            "number": "47",
+            "reference": "Genesis 47"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.48",
+            "number": "48",
+            "reference": "Genesis 48"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.49",
+            "number": "49",
+            "reference": "Genesis 49"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "id": "GEN.50",
+            "number": "50",
+            "reference": "Genesis 50"
+          }
+        ]
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/books/GEN/sections": {
+      "body": {
+        "data": [
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.1.1",
+            "firstVerseOrgId": "GEN.1.1",
+            "id": "GEN.S1",
+            "lastVerseId": "GEN.1.31",
+            "lastVerseOrgId": "GEN.1.31",
+            "title": "The Creation"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.2.1",
+            "firstVerseOrgId": "GEN.2.1",
+            "id": "GEN.S2",
+            "lastVerseId": "GEN.2.3",
+            "lastVerseOrgId": "GEN.2.3",
+            "title": "The Seventh Day"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.2.4",
+            "firstVerseOrgId": "GEN.2.4",
+            "id": "GEN.S3",
+            "lastVerseId": "GEN.2.25",
+            "lastVerseOrgId": "GEN.2.25",
+            "title": "Man and Woman in the Garden"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.3.1",
+            "firstVerseOrgId": "GEN.3.1",
+            "id": "GEN.S4",
+            "lastVerseId": "GEN.3.7",
+            "lastVerseOrgId": "GEN.3.7",
+            "title": "The Serpent\u2019s Deception"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.3.8",
+            "firstVerseOrgId": "GEN.3.8",
+            "id": "GEN.S5",
+            "lastVerseId": "GEN.3.13",
+            "lastVerseOrgId": "GEN.3.13",
+            "title": "God Arraigns Adam and Eve"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.3.14",
+            "firstVerseOrgId": "GEN.3.14",
+            "id": "GEN.S6",
+            "lastVerseId": "GEN.3.15",
+            "lastVerseOrgId": "GEN.3.15",
+            "title": "The Fate of the Serpent"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.3.16",
+            "firstVerseOrgId": "GEN.3.16",
+            "id": "GEN.S7",
+            "lastVerseId": "GEN.3.20",
+            "lastVerseOrgId": "GEN.3.20",
+            "title": "The Punishment of Mankind"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.3.21",
+            "firstVerseOrgId": "GEN.3.21",
+            "id": "GEN.S8",
+            "lastVerseId": "GEN.3.24",
+            "lastVerseOrgId": "GEN.3.24",
+            "title": "The Expulsion from Paradise"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.4.1",
+            "firstVerseOrgId": "GEN.4.1",
+            "id": "GEN.S9",
+            "lastVerseId": "GEN.4.16",
+            "lastVerseOrgId": "GEN.4.16",
+            "title": "Cain and Abel"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.4.17",
+            "firstVerseOrgId": "GEN.4.17",
+            "id": "GEN.S10",
+            "lastVerseId": "GEN.4.24",
+            "lastVerseOrgId": "GEN.4.24",
+            "title": "The Descendants of Cain"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.4.25",
+            "firstVerseOrgId": "GEN.4.25",
+            "id": "GEN.S11",
+            "lastVerseId": "GEN.4.26",
+            "lastVerseOrgId": "GEN.4.26",
+            "title": "Seth and Enosh"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.5.1",
+            "firstVerseOrgId": "GEN.5.1",
+            "id": "GEN.S12",
+            "lastVerseId": "GEN.5.17",
+            "lastVerseOrgId": "GEN.5.17",
+            "title": "The Descendants of Adam"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.5.18",
+            "firstVerseOrgId": "GEN.5.18",
+            "id": "GEN.S13",
+            "lastVerseId": "GEN.5.24",
+            "lastVerseOrgId": "GEN.5.24",
+            "title": "God Takes Up Enoch"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.5.25",
+            "firstVerseOrgId": "GEN.5.25",
+            "id": "GEN.S14",
+            "lastVerseId": "GEN.5.32",
+            "lastVerseOrgId": "GEN.5.32",
+            "title": "From Methuselah to Noah"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.6.1",
+            "firstVerseOrgId": "GEN.6.1",
+            "id": "GEN.S15",
+            "lastVerseId": "GEN.6.7",
+            "lastVerseOrgId": "GEN.6.7",
+            "title": "Corruption on the Earth"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.6.8",
+            "firstVerseOrgId": "GEN.6.8",
+            "id": "GEN.S16",
+            "lastVerseId": "GEN.6.12",
+            "lastVerseOrgId": "GEN.6.12",
+            "title": "Noah\u2019s Favor with God"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.6.13",
+            "firstVerseOrgId": "GEN.6.13",
+            "id": "GEN.S17",
+            "lastVerseId": "GEN.6.22",
+            "lastVerseOrgId": "GEN.6.22",
+            "title": "Preparing the Ark"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.7.1",
+            "firstVerseOrgId": "GEN.7.1",
+            "id": "GEN.S18",
+            "lastVerseId": "GEN.7.24",
+            "lastVerseOrgId": "GEN.7.24",
+            "title": "The Great Flood"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.8.1",
+            "firstVerseOrgId": "GEN.8.1",
+            "id": "GEN.S19",
+            "lastVerseId": "GEN.8.5",
+            "lastVerseOrgId": "GEN.8.5",
+            "title": "The Ark Rests on Ararat"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.8.6",
+            "firstVerseOrgId": "GEN.8.6",
+            "id": "GEN.S20",
+            "lastVerseId": "GEN.8.12",
+            "lastVerseOrgId": "GEN.8.12",
+            "title": "Noah Sends a Raven and a Dove"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.8.13",
+            "firstVerseOrgId": "GEN.8.13",
+            "id": "GEN.S21",
+            "lastVerseId": "GEN.8.19",
+            "lastVerseOrgId": "GEN.8.19",
+            "title": "Exiting the Ark"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.8.20",
+            "firstVerseOrgId": "GEN.8.20",
+            "id": "GEN.S22",
+            "lastVerseId": "GEN.8.22",
+            "lastVerseOrgId": "GEN.8.22",
+            "title": "Noah Builds an Altar"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.9.1",
+            "firstVerseOrgId": "GEN.9.1",
+            "id": "GEN.S23",
+            "lastVerseId": "GEN.9.17",
+            "lastVerseOrgId": "GEN.9.17",
+            "title": "The Covenant of the Rainbow"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.9.18",
+            "firstVerseOrgId": "GEN.9.18",
+            "id": "GEN.S24",
+            "lastVerseId": "GEN.9.25",
+            "lastVerseOrgId": "GEN.9.25",
+            "title": "Noah\u2019s Shame and Canaan\u2019s Curse"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.9.26",
+            "firstVerseOrgId": "GEN.9.26",
+            "id": "GEN.S25",
+            "lastVerseId": "GEN.9.29",
+            "lastVerseOrgId": "GEN.9.29",
+            "title": "Shem\u2019s Blessing and Noah\u2019s Death"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.10.1",
+            "firstVerseOrgId": "GEN.10.1",
+            "id": "GEN.S26",
+            "lastVerseId": "GEN.10.32",
+            "lastVerseOrgId": "GEN.10.32",
+            "title": "The Table of Nations"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.11.1",
+            "firstVerseOrgId": "GEN.11.1",
+            "id": "GEN.S27",
+            "lastVerseId": "GEN.11.9",
+            "lastVerseOrgId": "GEN.11.9",
+            "title": "The Tower of Babel"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.11.10",
+            "firstVerseOrgId": "GEN.11.10",
+            "id": "GEN.S28",
+            "lastVerseId": "GEN.11.26",
+            "lastVerseOrgId": "GEN.11.26",
+            "title": "Genealogy from Shem to Abram"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.11.27",
+            "firstVerseOrgId": "GEN.11.27",
+            "id": "GEN.S29",
+            "lastVerseId": "GEN.11.32",
+            "lastVerseOrgId": "GEN.11.32",
+            "title": "Terah\u2019s Descendants"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.12.1",
+            "firstVerseOrgId": "GEN.12.1",
+            "id": "GEN.S30",
+            "lastVerseId": "GEN.12.9",
+            "lastVerseOrgId": "GEN.12.9",
+            "title": "The Call of Abram"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.12.10",
+            "firstVerseOrgId": "GEN.12.10",
+            "id": "GEN.S31",
+            "lastVerseId": "GEN.12.20",
+            "lastVerseOrgId": "GEN.12.20",
+            "title": "Abram and Sarai in Egypt"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.13.1",
+            "firstVerseOrgId": "GEN.13.1",
+            "id": "GEN.S32",
+            "lastVerseId": "GEN.13.9",
+            "lastVerseOrgId": "GEN.13.9",
+            "title": "Abram and Lot Part Ways"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.13.10",
+            "firstVerseOrgId": "GEN.13.10",
+            "id": "GEN.S33",
+            "lastVerseId": "GEN.13.13",
+            "lastVerseOrgId": "GEN.13.13",
+            "title": "Lot Proceeds toward Sodom"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.13.14",
+            "firstVerseOrgId": "GEN.13.14",
+            "id": "GEN.S34",
+            "lastVerseId": "GEN.13.18",
+            "lastVerseOrgId": "GEN.13.18",
+            "title": "God Renews the Promise to Abram"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.14.1",
+            "firstVerseOrgId": "GEN.14.1",
+            "id": "GEN.S35",
+            "lastVerseId": "GEN.14.9",
+            "lastVerseOrgId": "GEN.14.9",
+            "title": "The War of the Kings"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.14.10",
+            "firstVerseOrgId": "GEN.14.10",
+            "id": "GEN.S36",
+            "lastVerseId": "GEN.14.16",
+            "lastVerseOrgId": "GEN.14.16",
+            "title": "Abram Rescues Lot"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.14.17",
+            "firstVerseOrgId": "GEN.14.17",
+            "id": "GEN.S37",
+            "lastVerseId": "GEN.14.24",
+            "lastVerseOrgId": "GEN.14.24",
+            "title": "Melchizedek Blesses Abram"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.15.1",
+            "firstVerseOrgId": "GEN.15.1",
+            "id": "GEN.S38",
+            "lastVerseId": "GEN.15.7",
+            "lastVerseOrgId": "GEN.15.7",
+            "title": "God\u2019s Covenant with Abram"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.15.8",
+            "firstVerseOrgId": "GEN.15.8",
+            "id": "GEN.S39",
+            "lastVerseId": "GEN.15.21",
+            "lastVerseOrgId": "GEN.15.21",
+            "title": "God Confirms His Promise"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.16.1",
+            "firstVerseOrgId": "GEN.16.1",
+            "id": "GEN.S40",
+            "lastVerseId": "GEN.16.16",
+            "lastVerseOrgId": "GEN.16.16",
+            "title": "Hagar and Ishmael"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.17.1",
+            "firstVerseOrgId": "GEN.17.1",
+            "id": "GEN.S41",
+            "lastVerseId": "GEN.17.8",
+            "lastVerseOrgId": "GEN.17.8",
+            "title": "Abraham to Father Many Nations"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.17.9",
+            "firstVerseOrgId": "GEN.17.9",
+            "id": "GEN.S42",
+            "lastVerseId": "GEN.17.27",
+            "lastVerseOrgId": "GEN.17.27",
+            "title": "The Covenant of Circumcision"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.18.1",
+            "firstVerseOrgId": "GEN.18.1",
+            "id": "GEN.S43",
+            "lastVerseId": "GEN.18.8",
+            "lastVerseOrgId": "GEN.18.8",
+            "title": "The Three Visitors"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.18.9",
+            "firstVerseOrgId": "GEN.18.9",
+            "id": "GEN.S44",
+            "lastVerseId": "GEN.18.15",
+            "lastVerseOrgId": "GEN.18.15",
+            "title": "Sarah Laughs at the Promise"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.18.16",
+            "firstVerseOrgId": "GEN.18.16",
+            "id": "GEN.S45",
+            "lastVerseId": "GEN.18.33",
+            "lastVerseOrgId": "GEN.18.33",
+            "title": "Abraham Intercedes for Sodom"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.19.1",
+            "firstVerseOrgId": "GEN.19.1",
+            "id": "GEN.S46",
+            "lastVerseId": "GEN.19.11",
+            "lastVerseOrgId": "GEN.19.11",
+            "title": "Lot Welcomes the Angels"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.19.12",
+            "firstVerseOrgId": "GEN.19.12",
+            "id": "GEN.S47",
+            "lastVerseId": "GEN.19.23",
+            "lastVerseOrgId": "GEN.19.23",
+            "title": "Lot Flees to Zoar"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.19.24",
+            "firstVerseOrgId": "GEN.19.24",
+            "id": "GEN.S48",
+            "lastVerseId": "GEN.19.29",
+            "lastVerseOrgId": "GEN.19.29",
+            "title": "The Destruction of Sodom and Gomorrah"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.19.30",
+            "firstVerseOrgId": "GEN.19.30",
+            "id": "GEN.S49",
+            "lastVerseId": "GEN.19.38",
+            "lastVerseOrgId": "GEN.19.38",
+            "title": "Lot and His Daughters"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.20.1",
+            "firstVerseOrgId": "GEN.20.1",
+            "id": "GEN.S50",
+            "lastVerseId": "GEN.20.18",
+            "lastVerseOrgId": "GEN.20.18",
+            "title": "Abraham, Sarah, and Abimelech"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.21.1",
+            "firstVerseOrgId": "GEN.21.1",
+            "id": "GEN.S51",
+            "lastVerseId": "GEN.21.8",
+            "lastVerseOrgId": "GEN.21.8",
+            "title": "The Birth of Isaac"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.21.9",
+            "firstVerseOrgId": "GEN.21.9",
+            "id": "GEN.S52",
+            "lastVerseId": "GEN.21.21",
+            "lastVerseOrgId": "GEN.21.21",
+            "title": "Sarah Turns against Hagar"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.21.22",
+            "firstVerseOrgId": "GEN.21.22",
+            "id": "GEN.S53",
+            "lastVerseId": "GEN.21.34",
+            "lastVerseOrgId": "GEN.21.34",
+            "title": "The Covenant at Beersheba"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.22.1",
+            "firstVerseOrgId": "GEN.22.1",
+            "id": "GEN.S54",
+            "lastVerseId": "GEN.22.10",
+            "lastVerseOrgId": "GEN.22.10",
+            "title": "The Offering of Isaac"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.22.11",
+            "firstVerseOrgId": "GEN.22.11",
+            "id": "GEN.S55",
+            "lastVerseId": "GEN.22.19",
+            "lastVerseOrgId": "GEN.22.19",
+            "title": "The LORD Provides the Sacrifice"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.22.20",
+            "firstVerseOrgId": "GEN.22.20",
+            "id": "GEN.S56",
+            "lastVerseId": "GEN.22.24",
+            "lastVerseOrgId": "GEN.22.24",
+            "title": "The Sons of Nahor"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.23.1",
+            "firstVerseOrgId": "GEN.23.1",
+            "id": "GEN.S57",
+            "lastVerseId": "GEN.23.20",
+            "lastVerseOrgId": "GEN.23.20",
+            "title": "The Death and Burial of Sarah"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.24.1",
+            "firstVerseOrgId": "GEN.24.1",
+            "id": "GEN.S58",
+            "lastVerseId": "GEN.24.14",
+            "lastVerseOrgId": "GEN.24.14",
+            "title": "A Wife for Isaac"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.24.15",
+            "firstVerseOrgId": "GEN.24.15",
+            "id": "GEN.S59",
+            "lastVerseId": "GEN.24.61",
+            "lastVerseOrgId": "GEN.24.61",
+            "title": "Rebekah Is Chosen"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.24.62",
+            "firstVerseOrgId": "GEN.24.62",
+            "id": "GEN.S60",
+            "lastVerseId": "GEN.24.67",
+            "lastVerseOrgId": "GEN.24.67",
+            "title": "Isaac Marries Rebekah"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.25.1",
+            "firstVerseOrgId": "GEN.25.1",
+            "id": "GEN.S61",
+            "lastVerseId": "GEN.25.6",
+            "lastVerseOrgId": "GEN.25.6",
+            "title": "Abraham and Keturah"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.25.7",
+            "firstVerseOrgId": "GEN.25.7",
+            "id": "GEN.S62",
+            "lastVerseId": "GEN.25.11",
+            "lastVerseOrgId": "GEN.25.11",
+            "title": "The Death of Abraham"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.25.12",
+            "firstVerseOrgId": "GEN.25.12",
+            "id": "GEN.S63",
+            "lastVerseId": "GEN.25.18",
+            "lastVerseOrgId": "GEN.25.18",
+            "title": "The Descendants of Ishmael"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.25.19",
+            "firstVerseOrgId": "GEN.25.19",
+            "id": "GEN.S64",
+            "lastVerseId": "GEN.25.28",
+            "lastVerseOrgId": "GEN.25.28",
+            "title": "Jacob and Esau"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.25.29",
+            "firstVerseOrgId": "GEN.25.29",
+            "id": "GEN.S65",
+            "lastVerseId": "GEN.25.34",
+            "lastVerseOrgId": "GEN.25.34",
+            "title": "Esau Sells His Birthright"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.26.1",
+            "firstVerseOrgId": "GEN.26.1",
+            "id": "GEN.S66",
+            "lastVerseId": "GEN.26.5",
+            "lastVerseOrgId": "GEN.26.5",
+            "title": "God\u2019s Promise to Isaac"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.26.6",
+            "firstVerseOrgId": "GEN.26.6",
+            "id": "GEN.S67",
+            "lastVerseId": "GEN.26.11",
+            "lastVerseOrgId": "GEN.26.11",
+            "title": "Isaac Deceives Abimelech"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.26.12",
+            "firstVerseOrgId": "GEN.26.12",
+            "id": "GEN.S68",
+            "lastVerseId": "GEN.26.25",
+            "lastVerseOrgId": "GEN.26.25",
+            "title": "Isaac\u2019s Prosperity"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.26.26",
+            "firstVerseOrgId": "GEN.26.26",
+            "id": "GEN.S69",
+            "lastVerseId": "GEN.26.33",
+            "lastVerseOrgId": "GEN.26.33",
+            "title": "Isaac\u2019s Covenant with Abimelech"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.26.34",
+            "firstVerseOrgId": "GEN.26.34",
+            "id": "GEN.S70",
+            "lastVerseId": "GEN.26.35",
+            "lastVerseOrgId": "GEN.26.35",
+            "title": "Esau\u2019s Wives"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.27.1",
+            "firstVerseOrgId": "GEN.27.1",
+            "id": "GEN.S71",
+            "lastVerseId": "GEN.27.29",
+            "lastVerseOrgId": "GEN.27.29",
+            "title": "Isaac Blesses Jacob"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.27.30",
+            "firstVerseOrgId": "GEN.27.30",
+            "id": "GEN.S72",
+            "lastVerseId": "GEN.27.46",
+            "lastVerseOrgId": "GEN.27.46",
+            "title": "Esau\u2019s Lost Hope"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.28.1",
+            "firstVerseOrgId": "GEN.28.1",
+            "id": "GEN.S73",
+            "lastVerseId": "GEN.28.5",
+            "lastVerseOrgId": "GEN.28.5",
+            "title": "Jacob\u2019s Departure"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.28.6",
+            "firstVerseOrgId": "GEN.28.6",
+            "id": "GEN.S74",
+            "lastVerseId": "GEN.28.9",
+            "lastVerseOrgId": "GEN.28.9",
+            "title": "Esau Marries Mahalath"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.28.10",
+            "firstVerseOrgId": "GEN.28.10",
+            "id": "GEN.S75",
+            "lastVerseId": "GEN.28.17",
+            "lastVerseOrgId": "GEN.28.17",
+            "title": "Jacob\u2019s Ladder"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.28.18",
+            "firstVerseOrgId": "GEN.28.18",
+            "id": "GEN.S76",
+            "lastVerseId": "GEN.28.22",
+            "lastVerseOrgId": "GEN.28.22",
+            "title": "The Stone of Bethel"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.29.1",
+            "firstVerseOrgId": "GEN.29.1",
+            "id": "GEN.S77",
+            "lastVerseId": "GEN.29.13",
+            "lastVerseOrgId": "GEN.29.13",
+            "title": "Jacob Meets Rachel"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.29.14",
+            "firstVerseOrgId": "GEN.29.14",
+            "id": "GEN.S78",
+            "lastVerseId": "GEN.29.30",
+            "lastVerseOrgId": "GEN.29.30",
+            "title": "Jacob Marries Leah and Rachel"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.29.31",
+            "firstVerseOrgId": "GEN.29.31",
+            "id": "GEN.S79",
+            "lastVerseId": "GEN.29.35",
+            "lastVerseOrgId": "GEN.29.35",
+            "title": "Reuben, Simeon, Levi, and Judah"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.30.1",
+            "firstVerseOrgId": "GEN.30.1",
+            "id": "GEN.S80",
+            "lastVerseId": "GEN.30.8",
+            "lastVerseOrgId": "GEN.30.8",
+            "title": "Dan and Naphtali"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.30.9",
+            "firstVerseOrgId": "GEN.30.9",
+            "id": "GEN.S81",
+            "lastVerseId": "GEN.30.16",
+            "lastVerseOrgId": "GEN.30.16",
+            "title": "Gad and Asher"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.30.17",
+            "firstVerseOrgId": "GEN.30.17",
+            "id": "GEN.S82",
+            "lastVerseId": "GEN.30.21",
+            "lastVerseOrgId": "GEN.30.21",
+            "title": "Issachar, Zebulun, and Dinah"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.30.22",
+            "firstVerseOrgId": "GEN.30.22",
+            "id": "GEN.S83",
+            "lastVerseId": "GEN.30.24",
+            "lastVerseOrgId": "GEN.30.24",
+            "title": "Joseph"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.30.25",
+            "firstVerseOrgId": "GEN.30.25",
+            "id": "GEN.S84",
+            "lastVerseId": "GEN.30.43",
+            "lastVerseOrgId": "GEN.30.43",
+            "title": "Jacob Prospers"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.31.1",
+            "firstVerseOrgId": "GEN.31.1",
+            "id": "GEN.S85",
+            "lastVerseId": "GEN.31.21",
+            "lastVerseOrgId": "GEN.31.21",
+            "title": "Jacob Flees from Laban"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.31.22",
+            "firstVerseOrgId": "GEN.31.22",
+            "id": "GEN.S86",
+            "lastVerseId": "GEN.31.42",
+            "lastVerseOrgId": "GEN.31.42",
+            "title": "Laban Pursues Jacob"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.31.43",
+            "firstVerseOrgId": "GEN.31.43",
+            "id": "GEN.S87",
+            "lastVerseId": "GEN.31.55",
+            "lastVerseOrgId": "GEN.32.1",
+            "title": "Jacob\u2019s Covenant with Laban"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.32.1",
+            "firstVerseOrgId": "GEN.32.2",
+            "id": "GEN.S88",
+            "lastVerseId": "GEN.32.21",
+            "lastVerseOrgId": "GEN.32.22",
+            "title": "Jacob Prepares to Meet Esau"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.32.22",
+            "firstVerseOrgId": "GEN.32.23",
+            "id": "GEN.S89",
+            "lastVerseId": "GEN.32.32",
+            "lastVerseOrgId": "GEN.32.33",
+            "title": "Jacob Wrestles with God"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.33.1",
+            "firstVerseOrgId": "GEN.33.1",
+            "id": "GEN.S90",
+            "lastVerseId": "GEN.33.17",
+            "lastVerseOrgId": "GEN.33.17",
+            "title": "Jacob Meets Esau"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.33.18",
+            "firstVerseOrgId": "GEN.33.18",
+            "id": "GEN.S91",
+            "lastVerseId": "GEN.33.20",
+            "lastVerseOrgId": "GEN.33.20",
+            "title": "Jacob Settles in Shechem"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.34.1",
+            "firstVerseOrgId": "GEN.34.1",
+            "id": "GEN.S92",
+            "lastVerseId": "GEN.34.12",
+            "lastVerseOrgId": "GEN.34.12",
+            "title": "The Defiling of Dinah"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.34.13",
+            "firstVerseOrgId": "GEN.34.13",
+            "id": "GEN.S93",
+            "lastVerseId": "GEN.34.31",
+            "lastVerseOrgId": "GEN.34.31",
+            "title": "The Revenge of Dinah\u2019s Brothers"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.35.1",
+            "firstVerseOrgId": "GEN.35.1",
+            "id": "GEN.S94",
+            "lastVerseId": "GEN.35.15",
+            "lastVerseOrgId": "GEN.35.15",
+            "title": "Jacob Returns to Bethel"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.35.16",
+            "firstVerseOrgId": "GEN.35.16",
+            "id": "GEN.S95",
+            "lastVerseId": "GEN.35.20",
+            "lastVerseOrgId": "GEN.35.20",
+            "title": "Benjamin Born, Rachel Dies"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.35.21",
+            "firstVerseOrgId": "GEN.35.21",
+            "id": "GEN.S96",
+            "lastVerseId": "GEN.35.26",
+            "lastVerseOrgId": "GEN.35.26",
+            "title": "The Sons of Jacob"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.35.27",
+            "firstVerseOrgId": "GEN.35.27",
+            "id": "GEN.S97",
+            "lastVerseId": "GEN.35.29",
+            "lastVerseOrgId": "GEN.35.29",
+            "title": "The Death of Isaac"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.36.1",
+            "firstVerseOrgId": "GEN.36.1",
+            "id": "GEN.S98",
+            "lastVerseId": "GEN.36.19",
+            "lastVerseOrgId": "GEN.36.19",
+            "title": "The Descendants of Esau"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.36.20",
+            "firstVerseOrgId": "GEN.36.20",
+            "id": "GEN.S99",
+            "lastVerseId": "GEN.36.30",
+            "lastVerseOrgId": "GEN.36.30",
+            "title": "The Descendants of Seir"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.36.31",
+            "firstVerseOrgId": "GEN.36.31",
+            "id": "GEN.S100",
+            "lastVerseId": "GEN.36.43",
+            "lastVerseOrgId": "GEN.36.43",
+            "title": "The Kings of Edom"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.37.1",
+            "firstVerseOrgId": "GEN.37.1",
+            "id": "GEN.S101",
+            "lastVerseId": "GEN.37.11",
+            "lastVerseOrgId": "GEN.37.11",
+            "title": "Joseph\u2019s Dreams"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.37.12",
+            "firstVerseOrgId": "GEN.37.12",
+            "id": "GEN.S102",
+            "lastVerseId": "GEN.37.30",
+            "lastVerseOrgId": "GEN.37.30",
+            "title": "Joseph Sold into Egypt"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.37.31",
+            "firstVerseOrgId": "GEN.37.31",
+            "id": "GEN.S103",
+            "lastVerseId": "GEN.37.36",
+            "lastVerseOrgId": "GEN.37.36",
+            "title": "Jacob Mourns Joseph"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.38.1",
+            "firstVerseOrgId": "GEN.38.1",
+            "id": "GEN.S104",
+            "lastVerseId": "GEN.38.26",
+            "lastVerseOrgId": "GEN.38.26",
+            "title": "Judah and Tamar"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.38.27",
+            "firstVerseOrgId": "GEN.38.27",
+            "id": "GEN.S105",
+            "lastVerseId": "GEN.38.30",
+            "lastVerseOrgId": "GEN.38.30",
+            "title": "The Birth of Perez and Zerah"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.39.1",
+            "firstVerseOrgId": "GEN.39.1",
+            "id": "GEN.S106",
+            "lastVerseId": "GEN.39.12",
+            "lastVerseOrgId": "GEN.39.12",
+            "title": "Joseph and Potiphar\u2019s Wife"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.39.13",
+            "firstVerseOrgId": "GEN.39.13",
+            "id": "GEN.S107",
+            "lastVerseId": "GEN.39.23",
+            "lastVerseOrgId": "GEN.39.23",
+            "title": "Joseph Falsely Imprisoned"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.40.1",
+            "firstVerseOrgId": "GEN.40.1",
+            "id": "GEN.S108",
+            "lastVerseId": "GEN.40.23",
+            "lastVerseOrgId": "GEN.40.23",
+            "title": "The Cupbearer and the Baker"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.41.1",
+            "firstVerseOrgId": "GEN.41.1",
+            "id": "GEN.S109",
+            "lastVerseId": "GEN.41.13",
+            "lastVerseOrgId": "GEN.41.13",
+            "title": "The Dreams of Pharaoh"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.41.14",
+            "firstVerseOrgId": "GEN.41.14",
+            "id": "GEN.S110",
+            "lastVerseId": "GEN.41.36",
+            "lastVerseOrgId": "GEN.41.36",
+            "title": "Joseph Interprets Pharaoh\u2019s Dreams"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.41.37",
+            "firstVerseOrgId": "GEN.41.37",
+            "id": "GEN.S111",
+            "lastVerseId": "GEN.41.45",
+            "lastVerseOrgId": "GEN.41.45",
+            "title": "Joseph Given Charge of Egypt"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.41.46",
+            "firstVerseOrgId": "GEN.41.46",
+            "id": "GEN.S112",
+            "lastVerseId": "GEN.41.52",
+            "lastVerseOrgId": "GEN.41.52",
+            "title": "The Seven Years of Plenty"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.41.53",
+            "firstVerseOrgId": "GEN.41.53",
+            "id": "GEN.S113",
+            "lastVerseId": "GEN.41.57",
+            "lastVerseOrgId": "GEN.41.57",
+            "title": "The Famine Begins"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.42.1",
+            "firstVerseOrgId": "GEN.42.1",
+            "id": "GEN.S114",
+            "lastVerseId": "GEN.42.24",
+            "lastVerseOrgId": "GEN.42.24",
+            "title": "Joseph\u2019s Brothers Sent to Egypt"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.42.25",
+            "firstVerseOrgId": "GEN.42.25",
+            "id": "GEN.S115",
+            "lastVerseId": "GEN.42.38",
+            "lastVerseOrgId": "GEN.42.38",
+            "title": "Joseph\u2019s Brothers Return to Canaan"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.43.1",
+            "firstVerseOrgId": "GEN.43.1",
+            "id": "GEN.S116",
+            "lastVerseId": "GEN.43.15",
+            "lastVerseOrgId": "GEN.43.15",
+            "title": "The Return to Egypt with Benjamin"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.43.16",
+            "firstVerseOrgId": "GEN.43.16",
+            "id": "GEN.S117",
+            "lastVerseId": "GEN.43.34",
+            "lastVerseOrgId": "GEN.43.34",
+            "title": "Joseph\u2019s Hospitality to His Brothers"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.44.1",
+            "firstVerseOrgId": "GEN.44.1",
+            "id": "GEN.S118",
+            "lastVerseId": "GEN.44.17",
+            "lastVerseOrgId": "GEN.44.17",
+            "title": "Benjamin and the Silver Cup"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.44.18",
+            "firstVerseOrgId": "GEN.44.18",
+            "id": "GEN.S119",
+            "lastVerseId": "GEN.44.34",
+            "lastVerseOrgId": "GEN.44.34",
+            "title": "Judah Pleads for Benjamin"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.45.1",
+            "firstVerseOrgId": "GEN.45.1",
+            "id": "GEN.S120",
+            "lastVerseId": "GEN.45.8",
+            "lastVerseOrgId": "GEN.45.8",
+            "title": "Joseph Reveals His Identity"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.45.9",
+            "firstVerseOrgId": "GEN.45.9",
+            "id": "GEN.S121",
+            "lastVerseId": "GEN.45.15",
+            "lastVerseOrgId": "GEN.45.15",
+            "title": "Joseph Sends for His Father"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.45.16",
+            "firstVerseOrgId": "GEN.45.16",
+            "id": "GEN.S122",
+            "lastVerseId": "GEN.45.24",
+            "lastVerseOrgId": "GEN.45.24",
+            "title": "Pharaoh Invites Jacob to Egypt"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.45.25",
+            "firstVerseOrgId": "GEN.45.25",
+            "id": "GEN.S123",
+            "lastVerseId": "GEN.45.28",
+            "lastVerseOrgId": "GEN.45.28",
+            "title": "The Revival of Jacob"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.46.1",
+            "firstVerseOrgId": "GEN.46.1",
+            "id": "GEN.S124",
+            "lastVerseId": "GEN.46.6",
+            "lastVerseOrgId": "GEN.46.6",
+            "title": "Jacob\u2019s Journey to Egypt"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.46.7",
+            "firstVerseOrgId": "GEN.46.7",
+            "id": "GEN.S125",
+            "lastVerseId": "GEN.46.27",
+            "lastVerseOrgId": "GEN.46.27",
+            "title": "Those Who Went to Egypt"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.46.28",
+            "firstVerseOrgId": "GEN.46.28",
+            "id": "GEN.S126",
+            "lastVerseId": "GEN.46.34",
+            "lastVerseOrgId": "GEN.46.34",
+            "title": "Jacob Arrives in Egypt"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.47.1",
+            "firstVerseOrgId": "GEN.47.1",
+            "id": "GEN.S127",
+            "lastVerseId": "GEN.47.12",
+            "lastVerseOrgId": "GEN.47.12",
+            "title": "Jacob Settles in Goshen"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.47.13",
+            "firstVerseOrgId": "GEN.47.13",
+            "id": "GEN.S128",
+            "lastVerseId": "GEN.47.26",
+            "lastVerseOrgId": "GEN.47.26",
+            "title": "The Famine Continues"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.47.27",
+            "firstVerseOrgId": "GEN.47.27",
+            "id": "GEN.S129",
+            "lastVerseId": "GEN.47.31",
+            "lastVerseOrgId": "GEN.47.31",
+            "title": "The Israelites Prosper in Goshen"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.48.1",
+            "firstVerseOrgId": "GEN.48.1",
+            "id": "GEN.S130",
+            "lastVerseId": "GEN.48.22",
+            "lastVerseOrgId": "GEN.48.22",
+            "title": "Jacob Blesses Ephraim and Manasseh"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.49.1",
+            "firstVerseOrgId": "GEN.49.1",
+            "id": "GEN.S131",
+            "lastVerseId": "GEN.49.28",
+            "lastVerseOrgId": "GEN.49.28",
+            "title": "Jacob Blesses His Sons"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.49.29",
+            "firstVerseOrgId": "GEN.49.29",
+            "id": "GEN.S132",
+            "lastVerseId": "GEN.49.33",
+            "lastVerseOrgId": "GEN.49.33",
+            "title": "The Death of Jacob"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.50.1",
+            "firstVerseOrgId": "GEN.50.1",
+            "id": "GEN.S133",
+            "lastVerseId": "GEN.50.14",
+            "lastVerseOrgId": "GEN.50.14",
+            "title": "Mourning and Burial for Jacob"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.50.15",
+            "firstVerseOrgId": "GEN.50.15",
+            "id": "GEN.S134",
+            "lastVerseId": "GEN.50.21",
+            "lastVerseOrgId": "GEN.50.21",
+            "title": "Joseph Comforts His Brothers"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.50.22",
+            "firstVerseOrgId": "GEN.50.22",
+            "id": "GEN.S135",
+            "lastVerseId": "GEN.50.26",
+            "lastVerseOrgId": "GEN.50.26",
+            "title": "The Death of Joseph"
+          }
+        ]
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/chapters/GEN.1/sections": {
+      "body": {
+        "data": [
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "firstVerseId": "GEN.1.1",
+            "firstVerseOrgId": "GEN.1.1",
+            "id": "GEN.S1",
+            "lastVerseId": "GEN.1.31",
+            "lastVerseOrgId": "GEN.1.31",
+            "title": "The Creation"
+          }
+        ]
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/chapters/GEN.1/verses": {
+      "body": {
+        "data": [
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.1",
+            "orgId": "GEN.1.1",
+            "reference": "Genesis 1:1"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.2",
+            "orgId": "GEN.1.2",
+            "reference": "Genesis 1:2"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.3",
+            "orgId": "GEN.1.3",
+            "reference": "Genesis 1:3"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.4",
+            "orgId": "GEN.1.4",
+            "reference": "Genesis 1:4"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.5",
+            "orgId": "GEN.1.5",
+            "reference": "Genesis 1:5"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.6",
+            "orgId": "GEN.1.6",
+            "reference": "Genesis 1:6"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.7",
+            "orgId": "GEN.1.7",
+            "reference": "Genesis 1:7"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.8",
+            "orgId": "GEN.1.8",
+            "reference": "Genesis 1:8"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.9",
+            "orgId": "GEN.1.9",
+            "reference": "Genesis 1:9"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.10",
+            "orgId": "GEN.1.10",
+            "reference": "Genesis 1:10"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.11",
+            "orgId": "GEN.1.11",
+            "reference": "Genesis 1:11"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.12",
+            "orgId": "GEN.1.12",
+            "reference": "Genesis 1:12"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.13",
+            "orgId": "GEN.1.13",
+            "reference": "Genesis 1:13"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.14",
+            "orgId": "GEN.1.14",
+            "reference": "Genesis 1:14"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.15",
+            "orgId": "GEN.1.15",
+            "reference": "Genesis 1:15"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.16",
+            "orgId": "GEN.1.16",
+            "reference": "Genesis 1:16"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.17",
+            "orgId": "GEN.1.17",
+            "reference": "Genesis 1:17"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.18",
+            "orgId": "GEN.1.18",
+            "reference": "Genesis 1:18"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.19",
+            "orgId": "GEN.1.19",
+            "reference": "Genesis 1:19"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.20",
+            "orgId": "GEN.1.20",
+            "reference": "Genesis 1:20"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.21",
+            "orgId": "GEN.1.21",
+            "reference": "Genesis 1:21"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.22",
+            "orgId": "GEN.1.22",
+            "reference": "Genesis 1:22"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.23",
+            "orgId": "GEN.1.23",
+            "reference": "Genesis 1:23"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.24",
+            "orgId": "GEN.1.24",
+            "reference": "Genesis 1:24"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.25",
+            "orgId": "GEN.1.25",
+            "reference": "Genesis 1:25"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.26",
+            "orgId": "GEN.1.26",
+            "reference": "Genesis 1:26"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.27",
+            "orgId": "GEN.1.27",
+            "reference": "Genesis 1:27"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.28",
+            "orgId": "GEN.1.28",
+            "reference": "Genesis 1:28"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.29",
+            "orgId": "GEN.1.29",
+            "reference": "Genesis 1:29"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.30",
+            "orgId": "GEN.1.30",
+            "reference": "Genesis 1:30"
+          },
+          {
+            "bibleId": "bba9f40183526463-01",
+            "bookId": "GEN",
+            "chapterId": "GEN.1",
+            "id": "GEN.1.31",
+            "orgId": "GEN.1.31",
+            "reference": "Genesis 1:31"
+          }
+        ]
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/chapters/GEN.1?content-type=text": {
+      "body": {
+        "data": {
+          "bibleId": "bba9f40183526463-01",
+          "bookId": "GEN",
+          "content": "The Creation\n    (John 1:1\u20135; Hebrews 11:1\u20133)\n [1] In the beginning God created the heavens and the earth.\n    \n [2] Now the earth was formless and void, and darkness was over the surface of the deep. And the Spirit of God was hovering over the surface of the waters.\n    The First Day\n    \n     [3] And God said, \u201cLet there be light,\u201d  and there was light.  [4] And God saw that the light was good, and He separated the light from the darkness.  [5] God called the light \u201cday,\u201d and the darkness He called \u201cnight.\u201d\n    \n    And there was evening, and there was morning\u2014the first day.\n    The Second Day\n    \n     [6] And God said, \u201cLet there be an expanse  between the waters, to separate the waters from the waters.\u201d  [7] So God made the expanse and separated the waters beneath it from the waters above. And it was so.  [8] God called the expanse \u201csky.\u201d\n    \n    And there was evening, and there was morning\u2014the second day.\n    The Third Day\n    \n     [9] And God said, \u201cLet the waters under the sky be gathered into one place, so that the dry land may appear.\u201d And it was so.  [10] God called the dry land \u201cearth,\u201d and the gathering of waters He called \u201cseas.\u201d And God saw that it was good.\n    \n     [11] Then God said, \u201cLet the earth bring forth vegetation: seed-bearing plants and fruit trees, each bearing fruit with seed according to its kind.\u201d And it was so.  [12] The earth produced vegetation: seed-bearing plants according to their kinds and trees bearing fruit with seed according to their kinds. And God saw that it was good.\n    \n     [13] And there was evening, and there was morning\u2014the third day.\n    The Fourth Day\n    \n     [14] And God said, \u201cLet there be lights in the expanse of the sky to distinguish between the day and the night, and let them be signs to mark the seasons and days and years.  [15] And let them serve as lights in the expanse of the sky to shine upon the earth.\u201d And it was so.\n    \n     [16] God made two great lights: the greater light to rule the day and the lesser light to rule the night. And He made the stars as well.\n    \n     [17] God set these lights in the expanse of the sky to shine upon the earth,  [18] to preside over the day and the night, and to separate the light from the darkness. And God saw that it was good.\n    \n     [19] And there was evening, and there was morning\u2014the fourth day.\n    The Fifth Day\n    \n     [20] And God said, \u201cLet the waters teem with living creatures, and let birds fly above the earth in the open expanse of the sky.\u201d  [21] So God created the great sea creatures and every living thing that moves, with which the waters teemed according to their kinds, and every bird of flight after its kind. And God saw that it was good.\n    \n     [22] Then God blessed them and said, \u201cBe fruitful and multiply and fill the waters of the seas, and let birds multiply on the earth.\u201d\n    \n     [23] And there was evening, and there was morning\u2014the fifth day.\n    The Sixth Day\n    \n     [24] And God said, \u201cLet the earth bring forth living creatures according to their kinds: livestock, land crawlers, and beasts of the earth according to their kinds.\u201d And it was so.  [25] God made the beasts of the earth according to their kinds, the livestock according to their kinds, and everything that crawls upon the earth according to its kind. And God saw that it was good.\n    \n     [26] Then God said, \u201cLet Us make man in Our image, after Our likeness, to rule over the fish of the sea and the birds of the air, over the livestock, and over all the earth itself  and every creature that crawls upon it.\u201d\n    \n   [27] So God created man in His own image;\n    in the image of God He created him;\n    male and female He created them.\n    \n     [28] God blessed them and said to them, \u201cBe fruitful and multiply, and fill the earth and subdue it; rule over the fish of the sea and the birds of the air and every creature that crawls upon the earth.\u201d\n    \n     [29] Then God said, \u201cBehold, I have given you every seed-bearing plant on the face of all the earth, and every tree whose fruit contains seed. They will be yours for food.  [30] And to every beast of the earth and every bird of the air and every creature that crawls upon the earth\u2014everything that has the breath of life in it\u2014I have given every green plant for food.\u201d And it was so.\n    \n     [31] And God looked upon all that He had made, and indeed, it was very good.\n    \n    And there was evening, and there was morning\u2014the sixth day.\n",
+          "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God's Word has been dedicated to the public domain",
+          "id": "GEN.1",
+          "next": {
+            "bookId": "GEN",
+            "id": "GEN.2",
+            "number": "2"
+          },
+          "number": "1",
+          "previous": {
+            "bookId": "GEN",
+            "id": "GEN.intro",
+            "number": "intro"
+          },
+          "reference": "Genesis 1",
+          "verseCount": 31
+        },
+        "meta": {}
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/passages/GEN.1.1-GEN.1.3?content-type=text": {
+      "body": {
+        "data": {
+          "bibleId": "bba9f40183526463-01",
+          "bookId": "GEN",
+          "chapterIds": [
+            "GEN.1"
+          ],
+          "content": "The Creation\n    (John 1:1\u20135; Hebrews 11:1\u20133)\n [1] In the beginning God created the heavens and the earth.\n    \n [2] Now the earth was formless and void, and darkness was over the surface of the deep. And the Spirit of God was hovering over the surface of the waters.\n    The First Day\n    \n     [3] And God said, \u201cLet there be light,\u201d  and there was light. \n",
+          "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God's Word has been dedicated to the public domain",
+          "id": "GEN.1.1-GEN.1.3",
+          "orgId": "GEN.1.1-GEN.1.3",
+          "reference": "Genesis 1:1-3",
+          "verseCount": 3
+        },
+        "meta": {}
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/search?limit=3&query=love": {
+      "body": {
+        "data": {
+          "limit": 3,
+          "offset": 0,
+          "query": "love",
+          "total": 712,
+          "verseCount": 3,
+          "verses": [
+            {
+              "bibleId": "bba9f40183526463-01",
+              "bookId": "JHN",
+              "chapterId": "JHN.12",
+              "id": "JHN.12.25",
+              "orgId": "JHN.12.25",
+              "reference": "John 12:25",
+              "text": "Whoever loves his life will lose it, but whoever hates his life in this world will keep it for eternal life."
+            },
+            {
+              "bibleId": "bba9f40183526463-01",
+              "bookId": "LUK",
+              "chapterId": "LUK.6",
+              "id": "LUK.6.32",
+              "orgId": "LUK.6.32",
+              "reference": "Luke 6:32",
+              "text": "If you love those who love you, what credit is that to you? Even sinners love those who love them."
+            },
+            {
+              "bibleId": "bba9f40183526463-01",
+              "bookId": "1JN",
+              "chapterId": "1JN.4",
+              "id": "1JN.4.19",
+              "orgId": "1JN.4.19",
+              "reference": "1 John 4:19",
+              "text": "We love  because He first loved us."
+            }
+          ]
+        },
+        "meta": {}
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/sections/GEN.S1": {
+      "body": {
+        "data": {
+          "bibleId": "bba9f40183526463-01",
+          "bookId": "GEN",
+          "chapterId": "GEN.1",
+          "content": "<p class=\"s1\">The Creation</p><p class=\"r\">(<span id=\"JHN.1.1-JHN.1.5\">John 1:1\u20135</span>; <span id=\"HEB.11.1-HEB.11.3\">Hebrews 11:1\u20133</span>)</p><p class=\"m\"><span data-number=\"1\" data-sid=\"GEN 1:1\" class=\"v\">1</span>In the beginning God created the heavens and the earth.</p><p class=\"b\"></p><p class=\"m\"><span data-number=\"2\" data-sid=\"GEN 1:2\" class=\"v\">2</span>Now the earth was formless and void, and darkness was over the surface of the deep. And the Spirit of God was hovering over the surface of the waters.</p><p class=\"s2\">The First Day</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"3\" data-sid=\"GEN 1:3\" class=\"v\">3</span>And God said, \u201cLet there be light,\u201d  and there was light. <span data-number=\"4\" data-sid=\"GEN 1:4\" class=\"v\">4</span>And God saw that the light was good, and He separated the light from the darkness. <span data-number=\"5\" data-sid=\"GEN 1:5\" class=\"v\">5</span>God called the light \u201cday,\u201d and the darkness He called \u201cnight.\u201d</p><p data-vid=\"GEN 1:5\" class=\"b\"></p><p data-vid=\"GEN 1:5\" class=\"pmo\">And there was evening, and there was morning\u2014the first day.</p><p class=\"s2\">The Second Day</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"6\" data-sid=\"GEN 1:6\" class=\"v\">6</span>And God said, \u201cLet there be an expanse  between the waters, to separate the waters from the waters.\u201d <span data-number=\"7\" data-sid=\"GEN 1:7\" class=\"v\">7</span>So God made the expanse and separated the waters beneath it from the waters above. And it was so. <span data-number=\"8\" data-sid=\"GEN 1:8\" class=\"v\">8</span>God called the expanse \u201csky.\u201d</p><p data-vid=\"GEN 1:8\" class=\"b\"></p><p data-vid=\"GEN 1:8\" class=\"pmo\">And there was evening, and there was morning\u2014the second day.</p><p class=\"s2\">The Third Day</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"9\" data-sid=\"GEN 1:9\" class=\"v\">9</span>And God said, \u201cLet the waters under the sky be gathered into one place, so that the dry land may appear.\u201d And it was so. <span data-number=\"10\" data-sid=\"GEN 1:10\" class=\"v\">10</span>God called the dry land \u201cearth,\u201d and the gathering of waters He called \u201cseas.\u201d And God saw that it was good.</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"11\" data-sid=\"GEN 1:11\" class=\"v\">11</span>Then God said, \u201cLet the earth bring forth vegetation: seed-bearing plants and fruit trees, each bearing fruit with seed according to its kind.\u201d And it was so. <span data-number=\"12\" data-sid=\"GEN 1:12\" class=\"v\">12</span>The earth produced vegetation: seed-bearing plants according to their kinds and trees bearing fruit with seed according to their kinds. And God saw that it was good.</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"13\" data-sid=\"GEN 1:13\" class=\"v\">13</span>And there was evening, and there was morning\u2014the third day.</p><p class=\"s2\">The Fourth Day</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"14\" data-sid=\"GEN 1:14\" class=\"v\">14</span>And God said, \u201cLet there be lights in the expanse of the sky to distinguish between the day and the night, and let them be signs to mark the seasons and days and years. <span data-number=\"15\" data-sid=\"GEN 1:15\" class=\"v\">15</span>And let them serve as lights in the expanse of the sky to shine upon the earth.\u201d And it was so.</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"16\" data-sid=\"GEN 1:16\" class=\"v\">16</span>God made two great lights: the greater light to rule the day and the lesser light to rule the night. And He made the stars as well.</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"17\" data-sid=\"GEN 1:17\" class=\"v\">17</span>God set these lights in the expanse of the sky to shine upon the earth, <span data-number=\"18\" data-sid=\"GEN 1:18\" class=\"v\">18</span>to preside over the day and the night, and to separate the light from the darkness. And God saw that it was good.</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"19\" data-sid=\"GEN 1:19\" class=\"v\">19</span>And there was evening, and there was morning\u2014the fourth day.</p><p class=\"s2\">The Fifth Day</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"20\" data-sid=\"GEN 1:20\" class=\"v\">20</span>And God said, \u201cLet the waters teem with living creatures, and let birds fly above the earth in the open expanse of the sky.\u201d <span data-number=\"21\" data-sid=\"GEN 1:21\" class=\"v\">21</span>So God created the great sea creatures and every living thing that moves, with which the waters teemed according to their kinds, and every bird of flight after its kind. And God saw that it was good.</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"22\" data-sid=\"GEN 1:22\" class=\"v\">22</span>Then God blessed them and said, \u201cBe fruitful and multiply and fill the waters of the seas, and let birds multiply on the earth.\u201d</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"23\" data-sid=\"GEN 1:23\" class=\"v\">23</span>And there was evening, and there was morning\u2014the fifth day.</p><p class=\"s2\">The Sixth Day</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"24\" data-sid=\"GEN 1:24\" class=\"v\">24</span>And God said, \u201cLet the earth bring forth living creatures according to their kinds: livestock, land crawlers, and beasts of the earth according to their kinds.\u201d And it was so. <span data-number=\"25\" data-sid=\"GEN 1:25\" class=\"v\">25</span>God made the beasts of the earth according to their kinds, the livestock according to their kinds, and everything that crawls upon the earth according to its kind. And God saw that it was good.</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"26\" data-sid=\"GEN 1:26\" class=\"v\">26</span>Then God said, \u201cLet Us make man in Our image, after Our likeness, to rule over the fish of the sea and the birds of the air, over the livestock, and over all the earth itself  and every creature that crawls upon it.\u201d</p><p class=\"b\"></p><p class=\"q1\"><span data-number=\"27\" data-sid=\"GEN 1:27\" class=\"v\">27</span>So God created man in His own image;</p><p data-vid=\"GEN 1:27\" class=\"q2\">in the image of God He created him;</p><p data-vid=\"GEN 1:27\" class=\"q2\">male and female He created them.</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"28\" data-sid=\"GEN 1:28\" class=\"v\">28</span>God blessed them and said to them, \u201cBe fruitful and multiply, and fill the earth and subdue it; rule over the fish of the sea and the birds of the air and every creature that crawls upon the earth.\u201d</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"29\" data-sid=\"GEN 1:29\" class=\"v\">29</span>Then God said, \u201cBehold, I have given you every seed-bearing plant on the face of all the earth, and every tree whose fruit contains seed. They will be yours for food. <span data-number=\"30\" data-sid=\"GEN 1:30\" class=\"v\">30</span>And to every beast of the earth and every bird of the air and every creature that crawls upon the earth\u2014everything that has the breath of life in it\u2014I have given every green plant for food.\u201d And it was so.</p><p class=\"b\"></p><p class=\"pmo\"><span data-number=\"31\" data-sid=\"GEN 1:31\" class=\"v\">31</span>And God looked upon all that He had made, and indeed, it was very good.</p><p data-vid=\"GEN 1:31\" class=\"b\"></p><p data-vid=\"GEN 1:31\" class=\"pmo\">And there was evening, and there was morning\u2014the sixth day.</p>",
+          "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God's Word has been dedicated to the public domain",
+          "firstVerseId": "GEN.1.1",
+          "firstVerseOrgId": "GEN.1.1",
+          "id": "GEN.S1",
+          "lastVerseId": "GEN.1.31",
+          "lastVerseOrgId": "GEN.1.31",
+          "next": {
+            "id": "GEN.S2",
+            "title": "The Seventh Day"
+          },
+          "title": "The Creation",
+          "verseCount": 31
+        },
+        "meta": {}
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/verses/GEN.1.1?content-type=text": {
+      "body": {
+        "data": {
+          "bibleId": "bba9f40183526463-01",
+          "bookId": "GEN",
+          "chapterId": "GEN.1",
+          "content": "The Creation\n    (John 1:1\u20135; Hebrews 11:1\u20133)\n [1] In the beginning God created the heavens and the earth.\n",
+          "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God's Word has been dedicated to the public domain",
+          "id": "GEN.1.1",
+          "next": {
+            "id": "GEN.1.2",
+            "number": "2"
+          },
+          "orgId": "GEN.1.1",
+          "previous": {
+            "id": "GEN.intro.0",
+            "number": "0"
+          },
+          "reference": "Genesis 1:1",
+          "verseCount": 1
+        },
+        "meta": {}
+      },
+      "status": 200
+    },
+    "/v1/bibles?language=eng": {
+      "body": {
+        "data": [
+          {
+            "abbreviation": "ASVBT",
+            "abbreviationLocal": "ASVBT",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "685d1470fe4d5c3b",
+            "description": null,
+            "descriptionLocal": null,
+            "id": "685d1470fe4d5c3b-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "American Standard Version (Byzantine Text with Apocrypha)",
+            "nameLocal": "American Standard Version Byzantine Text with Apocrypha",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-11-14T02:19:25.000Z"
+          },
+          {
+            "abbreviation": "BSB",
+            "abbreviationLocal": "BSB",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              },
+              {
+                "id": "GB",
+                "name": "United Kingdom of Great Britain and Northern Ireland",
+                "nameLocal": "United Kingdom of Great Britain and Northern Ireland"
+              },
+              {
+                "id": "AU",
+                "name": "Australia",
+                "nameLocal": "Australia"
+              },
+              {
+                "id": "CA",
+                "name": "Canada",
+                "nameLocal": "Canada"
+              },
+              {
+                "id": "AG",
+                "name": "Antigua and Barbuda",
+                "nameLocal": "Antigua and Barbuda"
+              },
+              {
+                "id": "BS",
+                "name": "Bahamas",
+                "nameLocal": "Bahamas"
+              },
+              {
+                "id": "BB",
+                "name": "Barbados",
+                "nameLocal": "Barbados"
+              },
+              {
+                "id": "BZ",
+                "name": "Belize",
+                "nameLocal": "Belize"
+              },
+              {
+                "id": "DM",
+                "name": "Dominica",
+                "nameLocal": "Dominica"
+              },
+              {
+                "id": "DO",
+                "name": "Dominican Republic",
+                "nameLocal": "Dominican Republic"
+              },
+              {
+                "id": "AS",
+                "name": "American Samoa",
+                "nameLocal": "American Samoa"
+              },
+              {
+                "id": "GU",
+                "name": "Guam",
+                "nameLocal": "Guam"
+              },
+              {
+                "id": "HT",
+                "name": "Haiti",
+                "nameLocal": "Haiti"
+              },
+              {
+                "id": "GY",
+                "name": "Guyana",
+                "nameLocal": "Guyana"
+              },
+              {
+                "id": "IL",
+                "name": "Israel",
+                "nameLocal": "Israel"
+              },
+              {
+                "id": "IE",
+                "name": "Ireland",
+                "nameLocal": "Ireland"
+              },
+              {
+                "id": "JM",
+                "name": "Jamaica",
+                "nameLocal": "Jamaica"
+              },
+              {
+                "id": "MT",
+                "name": "Malta",
+                "nameLocal": "Malta"
+              },
+              {
+                "id": "NZ",
+                "name": "New Zealand",
+                "nameLocal": "New Zealand"
+              },
+              {
+                "id": "PH",
+                "name": "Philippines",
+                "nameLocal": "Philippines"
+              },
+              {
+                "id": "KN",
+                "name": "Saint Kitts and Nevis",
+                "nameLocal": "Saint Kitts and Nevis"
+              },
+              {
+                "id": "LC",
+                "name": "Saint Lucia",
+                "nameLocal": "Saint Lucia"
+              },
+              {
+                "id": "VC",
+                "name": "Saint Vincent and the Grenadines",
+                "nameLocal": "Saint Vincent and the Grenadines"
+              },
+              {
+                "id": "TT",
+                "name": "Trinidad and Tobago",
+                "nameLocal": "Trinidad and Tobago"
+              },
+              {
+                "id": "NG",
+                "name": "Nigeria",
+                "nameLocal": "Nigeria"
+              },
+              {
+                "id": "ZA",
+                "name": "South Africa",
+                "nameLocal": "South Africa"
+              }
+            ],
+            "dblId": "bba9f40183526463",
+            "description": "Berean Standard Bible",
+            "descriptionLocal": "English: Berean Standard Bible",
+            "id": "bba9f40183526463-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Berean Standard Bible",
+            "nameLocal": "English: Berean Standard Bible",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-10-01T02:35:46.000Z"
+          },
+          {
+            "abbreviation": "engLXXup",
+            "abbreviationLocal": "LXXup",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "ZZ",
+                "name": "Unspecific",
+                "nameLocal": "Unspecific"
+              }
+            ],
+            "dblId": "6bab4d6c61b31b80",
+            "description": "common",
+            "descriptionLocal": "common",
+            "id": "6bab4d6c61b31b80-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Brenton English Septuagint (Updated Spelling and Formatting)",
+            "nameLocal": "Brenton English Septuagint (Updated Spelling and Formatting)",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-09-28T23:33:05.000Z"
+          },
+          {
+            "abbreviation": "engbrent",
+            "abbreviationLocal": "Brenton",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "GB",
+                "name": "United Kingdom",
+                "nameLocal": "United Kingdom"
+              },
+              {
+                "id": "US",
+                "name": "United States",
+                "nameLocal": "United States"
+              }
+            ],
+            "dblId": "65bfdebd704a8324",
+            "description": "Septuagint",
+            "descriptionLocal": "Septuagint",
+            "id": "65bfdebd704a8324-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Brenton English translation of the Septuagint",
+            "nameLocal": "Brenton English translation of the Septuagint",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-09-28T19:38:01.000Z"
+          },
+          {
+            "abbreviation": "engKJVCPB",
+            "abbreviationLocal": "KJVCPB",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "55212e3cf5d04d49",
+            "description": "Common",
+            "descriptionLocal": "Common",
+            "id": "55212e3cf5d04d49-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Cambridge Paragraph Bible of the KJV",
+            "nameLocal": "Cambridge Paragraph Bible of the KJV",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-05-17T02:25:54.000Z"
+          },
+          {
+            "abbreviation": "CSB",
+            "abbreviationLocal": "CSB",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              },
+              {
+                "id": "VI",
+                "name": "Virgin Islands, U.S.",
+                "nameLocal": "Virgin Islands, U.S."
+              },
+              {
+                "id": "UM",
+                "name": "United States Minor Outlying Islands",
+                "nameLocal": "United States Minor Outlying Islands"
+              },
+              {
+                "id": "GB",
+                "name": "United Kingdom of Great Britain and Northern Ireland",
+                "nameLocal": "United Kingdom of Great Britain and Northern Ireland"
+              }
+            ],
+            "dblId": "a556c5305ee15c3f",
+            "description": "Protestant",
+            "descriptionLocal": "Protestant",
+            "id": "a556c5305ee15c3f-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Christian Standard Bible",
+            "nameLocal": "Christian Standard Bible",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-11-25T02:20:42.000Z"
+          },
+          {
+            "abbreviation": "engDRA",
+            "abbreviationLocal": "DRA",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States",
+                "nameLocal": "United States"
+              }
+            ],
+            "dblId": "179568874c45066f",
+            "description": "The Holy Bible in English, Douay-Rheims American Edition of 1899, translated from the Latin Vulgate",
+            "descriptionLocal": "Catholic",
+            "id": "179568874c45066f-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Douay-Rheims American 1899",
+            "nameLocal": "Douay-Rheims American 1899",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-09-26T12:40:52.000Z"
+          },
+          {
+            "abbreviation": "FBV",
+            "abbreviationLocal": "FBV",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "65eec8e0b60e656b",
+            "description": "Protestant FBV full 3.0 beta",
+            "descriptionLocal": "Protestant FBV full 3.0 beta",
+            "id": "65eec8e0b60e656b-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Free Bible Version",
+            "nameLocal": "Free Bible Version",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-10-15T19:44:48.000Z"
+          },
+          {
+            "abbreviation": "enggnv",
+            "abbreviationLocal": "GNV",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "GB",
+                "name": "United Kingdom",
+                "nameLocal": "United Kingdom"
+              }
+            ],
+            "dblId": "c315fa9f71d4af3a",
+            "description": "common",
+            "descriptionLocal": "common",
+            "id": "c315fa9f71d4af3a-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Geneva Bible",
+            "nameLocal": "Geneva Bible",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-10-01T06:20:50.000Z"
+          },
+          {
+            "abbreviation": "engojps",
+            "abbreviationLocal": "OJPS",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States",
+                "nameLocal": "United States"
+              }
+            ],
+            "dblId": "bf8f1c7f3f9045a5",
+            "description": "Jewish",
+            "descriptionLocal": "Jewish",
+            "id": "bf8f1c7f3f9045a5-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "JPS TaNaKH 1917",
+            "nameLocal": "JPS TaNaKH 1917",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-10-01T04:15:25.000Z"
+          },
+          {
+            "abbreviation": "engKJV",
+            "abbreviationLocal": "KJV",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "GB",
+                "name": "United Kingdom of Great Britain and Northern Ireland",
+                "nameLocal": "United Kingdom of Great Britain and Northern Ireland"
+              }
+            ],
+            "dblId": "de4e12af7f28f599",
+            "description": "Ecumenical",
+            "descriptionLocal": "Ecumenical",
+            "id": "de4e12af7f28f599-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "King James (Authorised) Version",
+            "nameLocal": "King James Version",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2024-06-29T04:03:56.000Z"
+          },
+          {
+            "abbreviation": "engKJV",
+            "abbreviationLocal": "KJV",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "GB",
+                "name": "United Kingdom of Great Britain and Northern Ireland",
+                "nameLocal": "United Kingdom of Great Britain and Northern Ireland"
+              }
+            ],
+            "dblId": "de4e12af7f28f599",
+            "description": "Protestant",
+            "descriptionLocal": "Protestant",
+            "id": "de4e12af7f28f599-02",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "King James (Authorised) Version",
+            "nameLocal": "King James Version",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-10-01T18:54:59.000Z"
+          },
+          {
+            "abbreviation": "KJVAIC",
+            "abbreviationLocal": "KJVAIC",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "a6aee10bb058511c",
+            "description": "Catholic Interconfessional Bible",
+            "descriptionLocal": "Catholic Interconfessional Bible",
+            "id": "a6aee10bb058511c-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "King James Version with Apocrypha, American Edition",
+            "nameLocal": "King James Version with Apocrypha, American Edition",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-08-07T02:18:52.000Z"
+          },
+          {
+            "abbreviation": "KJVA",
+            "abbreviationLocal": "KJVA",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "a6aee10bb058511c",
+            "description": "Western Protestant Bible",
+            "descriptionLocal": "Western Protestant Bible",
+            "id": "a6aee10bb058511c-02",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "King James Version, American Edition",
+            "nameLocal": "King James Version, American Edition",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-08-07T02:20:28.000Z"
+          },
+          {
+            "abbreviation": "LSV",
+            "abbreviationLocal": "LSV",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              },
+              {
+                "id": "GB",
+                "name": "United Kingdom of Great Britain and Northern Ireland",
+                "nameLocal": "United Kingdom of Great Britain and Northern Ireland"
+              },
+              {
+                "id": "CA",
+                "name": "Canada",
+                "nameLocal": "Canada"
+              },
+              {
+                "id": "AU",
+                "name": "Australia",
+                "nameLocal": "Australia"
+              },
+              {
+                "id": "ZA",
+                "name": "South Africa",
+                "nameLocal": "South Africa"
+              },
+              {
+                "id": "NZ",
+                "name": "New Zealand",
+                "nameLocal": "New Zealand"
+              }
+            ],
+            "dblId": "01b29f4b342acc35",
+            "description": "Protestant",
+            "descriptionLocal": "Protestant",
+            "id": "01b29f4b342acc35-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Literal Standard Version",
+            "nameLocal": "Literal Standard Version",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-09-26T17:50:44.000Z"
+          },
+          {
+            "abbreviation": "NASB1995",
+            "abbreviationLocal": "NASB 1995",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States",
+                "nameLocal": "United States"
+              }
+            ],
+            "dblId": "b8ee27bcd1cae43a",
+            "description": null,
+            "descriptionLocal": null,
+            "id": "b8ee27bcd1cae43a-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "New American Standard Bible 1995",
+            "nameLocal": "New American Standard Bible - NASB 1995",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-10-01T00:51:28.000Z"
+          },
+          {
+            "abbreviation": "NIV11",
+            "abbreviationLocal": "NIV",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "78a9f6124f344018",
+            "description": "Holy Bible",
+            "descriptionLocal": "Holy Bible",
+            "id": "78a9f6124f344018-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "New International Version 2011",
+            "nameLocal": "New International Version",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-10-17T17:59:01.000Z"
+          },
+          {
+            "abbreviation": "NKJV",
+            "abbreviationLocal": "NKJV",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "63097d2a0a2f7db3",
+            "description": "English: New King James Version Old and New Testament",
+            "descriptionLocal": "English: New King James Version Old and New Testament",
+            "id": "63097d2a0a2f7db3-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "New King James Version",
+            "nameLocal": "New King James Version",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-10-28T16:18:52.000Z"
+          },
+          {
+            "abbreviation": "engRV",
+            "abbreviationLocal": "RV",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "GB",
+                "name": "United Kingdom of Great Britain and Northern Ireland",
+                "nameLocal": "United Kingdom of Great Britain and Northern Ireland"
+              }
+            ],
+            "dblId": "40072c4a5aba4022",
+            "description": "Interconfessional",
+            "descriptionLocal": "Interconfessional",
+            "id": "40072c4a5aba4022-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Revised Version 1885",
+            "nameLocal": "Revised Version 1885",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-06-12T02:20:46.000Z"
+          },
+          {
+            "abbreviation": "engOKE",
+            "abbreviationLocal": "OKE",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "ZZ",
+                "name": "Unspecific",
+                "nameLocal": "Unspecific"
+              }
+            ],
+            "dblId": "ec290b5045ff54a5",
+            "description": "common",
+            "descriptionLocal": "common",
+            "id": "ec290b5045ff54a5-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Targum Onkelos Etheridge",
+            "nameLocal": "Targum Onkelos Etheridge",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2024-06-29T05:31:23.000Z"
+          },
+          {
+            "abbreviation": "engF35",
+            "abbreviationLocal": "F35",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "ZZ",
+                "name": "Unspecific",
+                "nameLocal": "Unspecific"
+              }
+            ],
+            "dblId": "2f0fd81d7b85b923",
+            "description": "Common",
+            "descriptionLocal": "Common",
+            "id": "2f0fd81d7b85b923-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "The English New Testament According to Family 35",
+            "nameLocal": "The English New Testament According to Family 35",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-09-27T07:44:35.000Z"
+          },
+          {
+            "abbreviation": "ASV",
+            "abbreviationLocal": "ASV",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "06125adad2d5898a",
+            "description": "Bible",
+            "descriptionLocal": "Bible",
+            "id": "06125adad2d5898a-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "The Holy Bible, American Standard Version",
+            "nameLocal": "The Holy Bible, American Standard Version",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-09-26T00:24:05.000Z"
+          },
+          {
+            "abbreviation": "TOJB2011",
+            "abbreviationLocal": "TOJB2011",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              },
+              {
+                "id": "IL",
+                "name": "Israel",
+                "nameLocal": "Israel"
+              }
+            ],
+            "dblId": "c89622d31b60c444",
+            "description": "OT follows Tanakh order, NT follows usual Protestant order",
+            "descriptionLocal": "OT follows Tanakh order, NT follows usual Protestant order",
+            "id": "c89622d31b60c444-02",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "The Orthodox Jewish Bible",
+            "nameLocal": "The Orthodox Jewish Bible",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-10-15T21:32:02.000Z"
+          },
+          {
+            "abbreviation": "TCENT",
+            "abbreviationLocal": "TCENT",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "32339cf2f720ff8e",
+            "description": "common",
+            "descriptionLocal": "common",
+            "id": "32339cf2f720ff8e-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "The Text-Critical English New Testament",
+            "nameLocal": "The Text-Critical English New Testament",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2025-10-31T02:16:00.000Z"
+          },
+          {
+            "abbreviation": "T4T",
+            "abbreviationLocal": "T4T",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "66c22495370cdfc0",
+            "description": "common",
+            "descriptionLocal": "common",
+            "id": "66c22495370cdfc0-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Translation for Translators",
+            "nameLocal": "Translation for Translators",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-03-13T02:21:33.000Z"
+          },
+          {
+            "abbreviation": "WEB",
+            "abbreviationLocal": "WEB",
+            "audioBibles": [
+              {
+                "dblId": "105a06b6146d11e7",
+                "id": "105a06b6146d11e7-01",
+                "name": "English - World English Bible 2013 (Drama NT)",
+                "nameLocal": "English - World English Bible 2013 (Drama NT)"
+              }
+            ],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "9879dbb7cfe39e4d",
+            "description": "Ecumenical",
+            "descriptionLocal": "Ecumenical",
+            "id": "9879dbb7cfe39e4d-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible",
+            "nameLocal": "World English Bible",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2024-06-28T21:52:13.000Z"
+          },
+          {
+            "abbreviation": "WEB",
+            "abbreviationLocal": "WEB",
+            "audioBibles": [
+              {
+                "dblId": "105a06b6146d11e7",
+                "id": "105a06b6146d11e7-01",
+                "name": "English - World English Bible 2013 (Drama NT)",
+                "nameLocal": "English - World English Bible 2013 (Drama NT)"
+              }
+            ],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "9879dbb7cfe39e4d",
+            "description": "Catholic",
+            "descriptionLocal": "Catholic",
+            "id": "9879dbb7cfe39e4d-02",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible",
+            "nameLocal": "World English Bible",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2024-06-28T21:52:43.000Z"
+          },
+          {
+            "abbreviation": "WEB",
+            "abbreviationLocal": "WEB",
+            "audioBibles": [
+              {
+                "dblId": "105a06b6146d11e7",
+                "id": "105a06b6146d11e7-01",
+                "name": "English - World English Bible 2013 (Drama NT)",
+                "nameLocal": "English - World English Bible 2013 (Drama NT)"
+              }
+            ],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "9879dbb7cfe39e4d",
+            "description": "Orthodox",
+            "descriptionLocal": "Orthodox",
+            "id": "9879dbb7cfe39e4d-03",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible",
+            "nameLocal": "World English Bible",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2024-06-28T21:53:12.000Z"
+          },
+          {
+            "abbreviation": "WEB",
+            "abbreviationLocal": "WEB",
+            "audioBibles": [
+              {
+                "dblId": "105a06b6146d11e7",
+                "id": "105a06b6146d11e7-01",
+                "name": "English - World English Bible 2013 (Drama NT)",
+                "nameLocal": "English - World English Bible 2013 (Drama NT)"
+              }
+            ],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "9879dbb7cfe39e4d",
+            "description": "Protestant",
+            "descriptionLocal": "Protestant",
+            "id": "9879dbb7cfe39e4d-04",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible",
+            "nameLocal": "World English Bible",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2024-06-28T21:53:41.000Z"
+          },
+          {
+            "abbreviation": "WEBBE",
+            "abbreviationLocal": "WEBBE",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "GB",
+                "name": "United Kingdom",
+                "nameLocal": "United Kingdom"
+              }
+            ],
+            "dblId": "7142879509583d59",
+            "description": "Ecumenical",
+            "descriptionLocal": "Ecumenical",
+            "id": "7142879509583d59-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible British Edition",
+            "nameLocal": "World English Bible British Edition",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2024-06-28T19:31:15.000Z"
+          },
+          {
+            "abbreviation": "WEBBE",
+            "abbreviationLocal": "WEBBE",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "GB",
+                "name": "United Kingdom",
+                "nameLocal": "United Kingdom"
+              }
+            ],
+            "dblId": "7142879509583d59",
+            "description": "Catholic",
+            "descriptionLocal": "Catholic",
+            "id": "7142879509583d59-02",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible British Edition",
+            "nameLocal": "World English Bible British Edition",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2024-06-28T19:31:43.000Z"
+          },
+          {
+            "abbreviation": "WEBBE",
+            "abbreviationLocal": "WEBBE",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "GB",
+                "name": "United Kingdom",
+                "nameLocal": "United Kingdom"
+              }
+            ],
+            "dblId": "7142879509583d59",
+            "description": "Orthodox",
+            "descriptionLocal": "Orthodox",
+            "id": "7142879509583d59-03",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible British Edition",
+            "nameLocal": "World English Bible British Edition",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2024-06-28T19:32:10.000Z"
+          },
+          {
+            "abbreviation": "WEBBE",
+            "abbreviationLocal": "WEBBE",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "GB",
+                "name": "United Kingdom",
+                "nameLocal": "United Kingdom"
+              }
+            ],
+            "dblId": "7142879509583d59",
+            "description": "Protestant",
+            "descriptionLocal": "Protestant",
+            "id": "7142879509583d59-04",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible British Edition",
+            "nameLocal": "World English Bible British Edition",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2024-06-28T19:32:36.000Z"
+          },
+          {
+            "abbreviation": "engWEBU",
+            "abbreviationLocal": "WEBU",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "72f4e6dc683324df",
+            "description": "Ecumenical",
+            "descriptionLocal": "Ecumenical",
+            "id": "72f4e6dc683324df-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible Updated",
+            "nameLocal": "World English Bible Updated",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-08-06T02:22:57.000Z"
+          },
+          {
+            "abbreviation": "engWEBU",
+            "abbreviationLocal": "WEBU",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "72f4e6dc683324df",
+            "description": "Protestant",
+            "descriptionLocal": "Protestant",
+            "id": "72f4e6dc683324df-02",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible Updated",
+            "nameLocal": "World English Bible Updated",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-08-06T02:24:19.000Z"
+          },
+          {
+            "abbreviation": "engWEBU",
+            "abbreviationLocal": "WEBU",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "72f4e6dc683324df",
+            "description": "Catholic",
+            "descriptionLocal": "Catholic",
+            "id": "72f4e6dc683324df-03",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible Updated",
+            "nameLocal": "World English Bible Updated",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-08-06T02:25:30.000Z"
+          },
+          {
+            "abbreviation": "engWEBUS",
+            "abbreviationLocal": "WEBUS",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              },
+              {
+                "id": "CA",
+                "name": "Canada",
+                "nameLocal": "Canada"
+              }
+            ],
+            "dblId": "32664dc3288a28df",
+            "description": "Orthodox",
+            "descriptionLocal": "Orthodox",
+            "id": "32664dc3288a28df-03",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible, American English Edition, without Strong's Numbers",
+            "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2024-06-28T16:05:13.000Z"
+          },
+          {
+            "abbreviation": "engWEBUS",
+            "abbreviationLocal": "WEBUS",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              },
+              {
+                "id": "CA",
+                "name": "Canada",
+                "nameLocal": "Canada"
+              }
+            ],
+            "dblId": "32664dc3288a28df",
+            "description": "Ecumenical",
+            "descriptionLocal": "Ecumenical",
+            "id": "32664dc3288a28df-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible, American English Edition, without Strong's Numbers",
+            "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-08-06T02:19:01.000Z"
+          },
+          {
+            "abbreviation": "engWEBUS",
+            "abbreviationLocal": "WEBUS",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              },
+              {
+                "id": "CA",
+                "name": "Canada",
+                "nameLocal": "Canada"
+              }
+            ],
+            "dblId": "32664dc3288a28df",
+            "description": "Protestant",
+            "descriptionLocal": "Protestant",
+            "id": "32664dc3288a28df-02",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World English Bible, American English Edition, without Strong's Numbers",
+            "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-08-06T02:20:18.000Z"
+          },
+          {
+            "abbreviation": "WMB",
+            "abbreviationLocal": "WMB",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "f72b840c855f362c",
+            "description": "Messianic",
+            "descriptionLocal": "Messianic",
+            "id": "f72b840c855f362c-04",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World Messianic Bible",
+            "nameLocal": "World Messianic Bible",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-08-06T02:34:19.000Z"
+          },
+          {
+            "abbreviation": "WMBBE",
+            "abbreviationLocal": "WMBBE",
+            "audioBibles": [],
+            "countries": [
+              {
+                "id": "AU",
+                "name": "Australia",
+                "nameLocal": "Australia"
+              },
+              {
+                "id": "AS",
+                "name": "American Samoa",
+                "nameLocal": "American Samoa"
+              },
+              {
+                "id": "BS",
+                "name": "Bahamas",
+                "nameLocal": "Bahamas"
+              },
+              {
+                "id": "BZ",
+                "name": "Belize",
+                "nameLocal": "Belize"
+              },
+              {
+                "id": "IO",
+                "name": "British Indian Ocean Territory",
+                "nameLocal": "British Indian Ocean Territory"
+              },
+              {
+                "id": "VG",
+                "name": "Virgin Islands, British",
+                "nameLocal": "Virgin Islands, British"
+              },
+              {
+                "id": "CA",
+                "name": "Canada",
+                "nameLocal": "Canada"
+              },
+              {
+                "id": "KE",
+                "name": "Kenya",
+                "nameLocal": "Kenya"
+              },
+              {
+                "id": "FM",
+                "name": "Micronesia, Federated States of",
+                "nameLocal": "Micronesia, Federated States of"
+              },
+              {
+                "id": "NZ",
+                "name": "New Zealand",
+                "nameLocal": "New Zealand"
+              },
+              {
+                "id": "PG",
+                "name": "Papua New Guinea",
+                "nameLocal": "Papua New Guinea"
+              },
+              {
+                "id": "WS",
+                "name": "Samoa",
+                "nameLocal": "Samoa"
+              },
+              {
+                "id": "SG",
+                "name": "Singapore",
+                "nameLocal": "Singapore"
+              },
+              {
+                "id": "TO",
+                "name": "Tonga",
+                "nameLocal": "Tonga"
+              },
+              {
+                "id": "GB",
+                "name": "United Kingdom of Great Britain and Northern Ireland",
+                "nameLocal": "United Kingdom of Great Britain and Northern Ireland"
+              }
+            ],
+            "dblId": "04da588535d2f823",
+            "description": "Messianic",
+            "descriptionLocal": "Messianic",
+            "id": "04da588535d2f823-04",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "World Messianic Bible British Edition",
+            "nameLocal": "World Messianic Bible British Edition",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-08-06T02:15:33.000Z"
+          }
+        ]
+      },
+      "status": 200
+    }
+  }
+}

@@ -1,0 +1,83 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+# PyPI distribution name; the plain "api-bible-sdk" is owned by an unrelated
+# pre-existing PyPI project, so we publish under the org-namespaced name. The
+# import package is unchanged (`import api_bible`).
+name = "americanbible-api-bible-sdk"
+description = "Python SDK for the api.bible REST API"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "American Bible Society" }]
+keywords = ["bible", "api.bible", "scripture", "sdk"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+dynamic = ["version"]
+dependencies = [
+    "httpx>=0.27,<1",
+    "pydantic>=2,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-cov",
+    "ruff",
+    "mypy",
+]
+
+[project.urls]
+Homepage = "https://api.bible/"
+Repository = "https://github.com/americanbible/api-bible-sdks"
+Issues = "https://github.com/americanbible/api-bible-sdks/issues"
+
+[tool.hatch.version]
+path = "src/api_bible/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/api_bible"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+markers = [
+    "live: tests that hit the real api.bible API (require API_BIBLE_KEY)",
+]
+
+[tool.coverage.run]
+source = ["api_bible"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+# Regression ratchet set at the measured baseline (~98.5%). Raise it as coverage
+# climbs; never lower it to make a change pass — add the missing test instead.
+fail_under = 98
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# Relative imports within the package are intentional and idiomatic, so TID252
+# is not enabled.
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src"]

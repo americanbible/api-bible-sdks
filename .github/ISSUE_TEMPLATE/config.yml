@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/americanbible/api-bible-sdks/security/advisories/new
+    about: Report privately through a GitHub security advisory — never in a public issue.
+  - name: api.bible service or data question
+    url: https://api.bible/
+    about: Missing translations, API keys, quotas, outages, and licensing are handled by api.bible, not by these SDKs.
+  - name: Terms & conditions
+    url: https://api.bible/terms-and-conditions
+    about: Acceptable use, commercial and non-commercial agreements for the api.bible API.

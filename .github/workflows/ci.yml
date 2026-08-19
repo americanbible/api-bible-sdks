@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      # The React SDK consumes the *built* output of @americanbible/api-bible-sdk
+      # (its `exports` map resolves types/JS from dist/, which is gitignored), so
+      # dependent workspaces can't typecheck/test/build until the core is built.
+      # Build the core first; the later `npm run build` fan-out rebuilds it harmlessly.
+      - run: npm run build -w @americanbible/api-bible-sdk
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:coverage
+      - run: npm run build
+
+  react:
+    # Validate the React SDK against both ends of its peer range (react ^18 || ^19)
+    # by running the React workspace's full gate — typecheck, lint, tests (with
+    # coverage thresholds), and build — under each major. The main `test` job only
+    # exercises the pinned React 18 devDeps, so without this the ^19 half of the peer
+    # claim would ship untested and its coverage/lint would go unenforced.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        react: [18, 19]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      # React 19 lane: force a single-copy React 19 tree via npm `overrides` before
+      # installing. Overrides rewrite every react / react-dom / @types spec across
+      # the workspace, avoiding the "two copies of React" hazard that a plain
+      # workspace-devDep bump causes. The 18 lane installs the lockfile unchanged.
+      - if: ${{ matrix.react == 19 }}
+        run: |
+          npm pkg set "overrides.react=^19" "overrides.react-dom=^19" "overrides.@types/react=^19" "overrides.@types/react-dom=^19"
+          npm install
+      - if: ${{ matrix.react == 18 }}
+        run: npm ci
+      # The React SDK typechecks/lints/tests/builds against the *built* core (its
+      # exports map resolves from dist/, gitignored), so build the core first.
+      - run: npm run build -w @americanbible/api-bible-sdk
+      - run: npm run typecheck -w @americanbible/api-bible-sdk-react
+      - run: npm run lint -w @americanbible/api-bible-sdk-react
+      - run: npm run test:coverage -w @americanbible/api-bible-sdk-react
+      - run: npm run build -w @americanbible/api-bible-sdk-react
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Gate on the dependencies that actually ship to consumers (runtime deps;
+      # only `zod`). Dev-toolchain advisories — e.g. esbuild's dev server, which
+      # this project never runs — are noise for a published library and are
+      # tracked/upgraded via the npm Dependabot config instead.
+      - run: npm audit --omit=dev --audit-level=moderate

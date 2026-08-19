@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest a capability or API change for one of the SDKs.
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        These SDKs wrap the api.bible REST API. If you want an api.bible
+        *endpoint* or *dataset* that does not exist yet, that request belongs
+        upstream with api.bible rather than here.
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - '@americanbible/api-bible-sdk (TypeScript)'
+        - '@americanbible/api-bible-sdk-react (React)'
+        - americanbible-api-bible-sdk (Python)
+        - All of them
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case you are blocked on, not just the API you have in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API
+      description: Sketch the call you would like to write.
+      render: text
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Current workaround
+      description: What are you doing today instead?

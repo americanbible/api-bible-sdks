@@ -1,0 +1,67 @@
+name: React Release
+
+# Publishes @americanbible/api-bible-sdk-react to npm when a tag matching
+# `react-v*` is pushed (e.g. `react-v0.2.0`). Uses npm Trusted Publishing (OIDC)
+# — no long-lived npm token is stored in the repo — and ships provenance so the
+# package page links back to this build. The tag must match the version in
+# packages/react/package.json, and the publish is gated by the package's
+# prepublishOnly hook (lint, typecheck, test, build).
+#
+# Prerelease versions (a hyphen in the version, e.g. `1.0.0-beta.1`) publish
+# under the `next` dist-tag so a bare `npm install …-react` never resolves a
+# beta; stable versions go to `latest`.
+#
+# One-time setup (mirrors how Trusted Publishing was enabled for the TS core and
+# Python): on npmjs.com, configure a trusted publisher for
+# @americanbible/api-bible-sdk-react pointing at this repository and the
+# `react-release.yml` workflow.
+
+on:
+  push:
+    tags:
+      - 'react-v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # OIDC token for npm Trusted Publishing + provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+      # Trusted Publishing requires npm >= 11.5.1; Node 20 ships npm 10.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      # The React SDK's prepublishOnly (lint/typecheck/test/build) resolves the
+      # core from its gitignored dist/, so build the core before `npm publish`
+      # triggers that hook.
+      - run: npm run build -w @americanbible/api-bible-sdk
+      - name: Verify tag matches package version
+        run: |
+          tag="${GITHUB_REF_NAME#react-v}"
+          version="$(node -p "require('./packages/react/package.json').version")"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag react-v$tag does not match package version $version"
+            exit 1
+          fi
+      - name: Determine dist-tag
+        id: disttag
+        run: |
+          version="$(node -p "require('./packages/react/package.json').version")"
+          # A hyphen marks a prerelease (1.0.0-beta.1) → publish under `next`, not
+          # `latest`, so `npm install …-react` never grabs a beta by default.
+          # Pure-shell glob match — no dependence on grep's handling of a `-` pattern.
+          case "$version" in
+            *-*) echo "tag=next" >> "$GITHUB_OUTPUT" ;;
+            *)   echo "tag=latest" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - run: npm publish -w @americanbible/api-bible-sdk-react --provenance --access public --tag ${{ steps.disttag.outputs.tag }}

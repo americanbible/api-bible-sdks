@@ -1,0 +1,47 @@
+name: TypeScript Release
+
+# Publishes @americanbible/api-bible-sdk to npm when a tag matching `ts-v*` is
+# pushed (e.g. `ts-v1.0.1`). Uses npm Trusted Publishing (OIDC) — no long-lived
+# npm token is stored in the repo — and ships provenance so the package page
+# links back to this build. The tag must match the version in
+# packages/typescript/package.json, and the publish is gated by the package's
+# prepublishOnly hook (check-version, typecheck, test, build).
+#
+# One-time setup (mirrors how PyPI Trusted Publishing was enabled for Python):
+# on npmjs.com, configure a trusted publisher for @americanbible/api-bible-sdk
+# pointing at this repository and the `typescript-release.yml` workflow.
+
+on:
+  push:
+    tags:
+      - 'ts-v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # OIDC token for npm Trusted Publishing + provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+      # Trusted Publishing requires npm >= 11.5.1; Node 20 ships npm 10.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - name: Verify tag matches package version
+        run: |
+          tag="${GITHUB_REF_NAME#ts-v}"
+          version="$(node -p "require('./packages/typescript/package.json').version")"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag ts-v$tag does not match package version $version"
+            exit 1
+          fi
+      - run: npm publish -w @americanbible/api-bible-sdk --provenance --access public

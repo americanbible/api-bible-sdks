@@ -1,0 +1,87 @@
+{
+  "name": "@americanbible/api-bible-sdk-react",
+  "version": "0.2.0",
+  "description": "React hooks and context provider for api.bible, built on @americanbible/api-bible-sdk",
+  "license": "MIT",
+  "author": "American Bible Society",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/americanbible/api-bible-sdks.git",
+    "directory": "packages/react"
+  },
+  "bugs": {
+    "url": "https://github.com/americanbible/api-bible-sdks/issues"
+  },
+  "homepage": "https://github.com/americanbible/api-bible-sdks/tree/main/packages/react#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "api.bible",
+    "bible",
+    "scripture",
+    "sdk",
+    "react",
+    "hooks",
+    "typescript",
+    "esm",
+    "cjs"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "build": "tsdown",
+    "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "@americanbible/api-bible-sdk": "^1.1.0",
+    "react": "^18 || ^19"
+  },
+  "devDependencies": {
+    "@americanbible/api-bible-sdk": "^1.1.0",
+    "@eslint/js": "^9.39.5",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^20.19.41",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitest/coverage-v8": "^1.6.1",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "jsdom": "^25.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsdown": "~0.21.10",
+    "typescript": "^5.4.0",
+    "typescript-eslint": "^8.66.0",
+    "vitest": "^1.6.1"
+  }
+}

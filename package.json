@@ -1,0 +1,25 @@
+{
+  "name": "api-bible-sdks",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Monorepo for American Bible Society's api.bible SDKs (TypeScript, React, Python).",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/americanbible/api-bible-sdks.git"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:coverage": "npm run test:coverage --workspaces --if-present",
+    "test:contract:live": "npm run test:contract:live --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

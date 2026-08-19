@@ -1,0 +1,110 @@
+name: Refresh Contract Fixtures
+
+# Re-records the offline contract fixtures (tests/contract/fixtures/recordings.json)
+# from live api.bible so they don't drift from the API. The nightly Contract
+# workflow *detects* drift; this one *fixes* it. Runs monthly and on demand, and
+# opens a PR with any changes for review — fixtures are test inputs, so
+# auto-committing them could quietly mask a real regression.
+
+on:
+  schedule:
+    - cron: '0 6 1 * *' # 06:00 UTC on the 1st of each month
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the refresh branch
+      pull-requests: write # open the PR
+    defaults:
+      run:
+        working-directory: packages/typescript
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Re-record fixtures from live api.bible
+        run: npm run record-fixtures
+        env:
+          BIBLE_API_KEY: ${{ secrets.BIBLE_API_KEY }}
+      # Guard against a partial/broken recording: the offline tier must replay
+      # the freshly captured fixtures cleanly before we propose them. A failure
+      # here means the API changed in a way the SDK schemas don't accept — that
+      # needs a code fix, not just a fixture refresh, so fail loudly instead of
+      # opening a PR.
+      - name: Validate the recorded fixtures replay cleanly
+        run: npm test -- tests/contract/contract.fixtures.test.ts
+      - name: Open a PR if fixtures changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet -- tests/contract/fixtures; then
+            echo "Fixtures unchanged — nothing to do."
+            exit 0
+          fi
+          branch="chore/refresh-contract-fixtures-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add tests/contract/fixtures
+          git commit -m "test(typescript): refresh contract fixtures from live api.bible"
+          git push origin "$branch"
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "test(typescript): refresh contract fixtures" \
+            --body "Automated refresh of the offline contract fixtures from live api.bible. The recording was validated against the SDK schemas in this run (the offline contract tier replays cleanly). Review the diff for intentional API changes vs. regressions before merging."
+
+  refresh-python:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the refresh branch
+      pull-requests: write # open the PR
+    defaults:
+      run:
+        working-directory: packages/python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]" -c requirements-dev.txt
+      - name: Re-record fixtures from live api.bible
+        run: python tests/contract/record_fixtures.py
+        env:
+          BIBLE_API_KEY: ${{ secrets.BIBLE_API_KEY }}
+      # Guard against a partial/broken recording: the offline tier must replay
+      # the freshly captured fixtures cleanly before we propose them. A failure
+      # here means the API changed in a way the SDK schemas don't accept — that
+      # needs a code fix, not just a fixture refresh, so fail loudly instead of
+      # opening a PR.
+      - name: Validate the recorded fixtures replay cleanly
+        run: pytest tests/contract/test_contract_fixtures.py
+      - name: Open a PR if fixtures changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet -- tests/contract/fixtures; then
+            echo "Fixtures unchanged — nothing to do."
+            exit 0
+          fi
+          branch="chore/refresh-python-contract-fixtures-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add tests/contract/fixtures
+          git commit -m "test(python): refresh contract fixtures from live api.bible"
+          git push origin "$branch"
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "test(python): refresh contract fixtures" \
+            --body "Automated refresh of the offline contract fixtures from live api.bible. The recording was validated against the SDK schemas in this run (the offline contract tier replays cleanly). Review the diff for intentional API changes vs. regressions before merging."

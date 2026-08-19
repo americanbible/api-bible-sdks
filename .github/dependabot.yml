@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Python SDK runtime + dev dependencies (pyproject.toml and the pinned
+  # requirements-dev.txt lockfile).
+  - package-ecosystem: "pip"
+    directory: "/packages/python"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # TypeScript/JS SDK runtime + dev dependencies. The npm workspaces monorepo
+  # uses a single root package-lock.json, so the npm ecosystem is registered at
+  # the repo root.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # GitHub Actions used across all workflows.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
