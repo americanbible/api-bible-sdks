@@ -34,13 +34,18 @@ jobs:
         run: npm run record-fixtures
         env:
           BIBLE_API_KEY: ${{ secrets.BIBLE_API_KEY }}
-      # Guard against a partial/broken recording: the offline tier must replay
-      # the freshly captured fixtures cleanly before we propose them. A failure
-      # here means the API changed in a way the SDK schemas don't accept — that
-      # needs a code fix, not just a fixture refresh, so fail loudly instead of
-      # opening a PR.
-      - name: Validate the recorded fixtures replay cleanly
-        run: npm test -- tests/contract/contract.fixtures.test.ts
+      # Two guards before anything is pushed. The offline tier must replay the
+      # freshly captured fixtures cleanly — a failure means the API changed in a
+      # way the SDK schemas don't accept, which needs a code fix rather than a
+      # fixture refresh. And the leak guard must pass: sanitizeBody strips
+      # credentials at record time, but if api.bible starts returning one under a
+      # field it doesn't know about, this is what stops it reaching a pushed
+      # branch on a public repo rather than catching it a step later on the PR.
+      # The whole directory runs so any guard added later is covered too.
+      # BIBLE_API_KEY is deliberately out of scope here, so the key-gated live
+      # tier self-skips and only the offline tests run.
+      - name: Validate the recorded fixtures (replay + leak guard)
+        run: npm test -- tests/contract/
       - name: Open a PR if fixtures changed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -81,13 +86,12 @@ jobs:
         run: python tests/contract/record_fixtures.py
         env:
           BIBLE_API_KEY: ${{ secrets.BIBLE_API_KEY }}
-      # Guard against a partial/broken recording: the offline tier must replay
-      # the freshly captured fixtures cleanly before we propose them. A failure
-      # here means the API changed in a way the SDK schemas don't accept — that
-      # needs a code fix, not just a fixture refresh, so fail loudly instead of
-      # opening a PR.
-      - name: Validate the recorded fixtures replay cleanly
-        run: pytest tests/contract/test_contract_fixtures.py
+      # Same two guards as the TypeScript job: the offline tier must replay the
+      # freshly captured fixtures cleanly, and the leak guard must pass so a
+      # credential the sanitizer doesn't recognize never reaches a pushed branch
+      # on a public repo. See the note in the `refresh` job above.
+      - name: Validate the recorded fixtures (replay + leak guard)
+        run: pytest tests/contract/
       - name: Open a PR if fixtures changed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
