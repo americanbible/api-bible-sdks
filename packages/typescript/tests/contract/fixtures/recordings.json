@@ -6,34 +6,6 @@
       "body": {
         "data": [
           {
-            "id": "685d1470fe4d5c3b-01",
-            "dblId": "685d1470fe4d5c3b",
-            "relatedDbl": null,
-            "name": "American Standard Version (Byzantine Text with Apocrypha)",
-            "nameLocal": "American Standard Version Byzantine Text with Apocrypha",
-            "abbreviation": "ASVBT",
-            "abbreviationLocal": "ASVBT",
-            "description": null,
-            "descriptionLocal": null,
-            "language": {
-              "id": "eng",
-              "name": "English",
-              "nameLocal": "English",
-              "script": "Latin",
-              "scriptDirection": "LTR"
-            },
-            "countries": [
-              {
-                "id": "US",
-                "name": "United States of America",
-                "nameLocal": "United States of America"
-              }
-            ],
-            "type": "text",
-            "updatedAt": "2025-11-14T02:19:25.000Z",
-            "audioBibles": []
-          },
-          {
             "id": "bba9f40183526463-01",
             "dblId": "bba9f40183526463",
             "relatedDbl": null,
@@ -1157,7 +1129,7 @@
               }
             ],
             "type": "text",
-            "updatedAt": "2026-08-06T02:22:57.000Z",
+            "updatedAt": "2026-08-19T02:22:46.000Z",
             "audioBibles": []
           },
           {
@@ -1185,7 +1157,7 @@
               }
             ],
             "type": "text",
-            "updatedAt": "2026-08-06T02:24:19.000Z",
+            "updatedAt": "2026-08-19T02:24:13.000Z",
             "audioBibles": []
           },
           {
@@ -1213,7 +1185,7 @@
               }
             ],
             "type": "text",
-            "updatedAt": "2026-08-06T02:25:30.000Z",
+            "updatedAt": "2026-08-19T02:25:36.000Z",
             "audioBibles": []
           },
           {
@@ -1279,7 +1251,7 @@
               }
             ],
             "type": "text",
-            "updatedAt": "2026-08-06T02:19:01.000Z",
+            "updatedAt": "2026-08-19T02:18:25.000Z",
             "audioBibles": []
           },
           {
@@ -1312,7 +1284,7 @@
               }
             ],
             "type": "text",
-            "updatedAt": "2026-08-06T02:20:18.000Z",
+            "updatedAt": "2026-08-19T02:19:48.000Z",
             "audioBibles": []
           },
           {
@@ -1340,7 +1312,7 @@
               }
             ],
             "type": "text",
-            "updatedAt": "2026-08-06T02:34:19.000Z",
+            "updatedAt": "2026-08-19T02:31:57.000Z",
             "audioBibles": []
           },
           {
@@ -1438,7 +1410,7 @@
               }
             ],
             "type": "text",
-            "updatedAt": "2026-08-06T02:15:33.000Z",
+            "updatedAt": "2026-08-19T02:14:56.000Z",
             "audioBibles": []
           }
         ]
@@ -4601,7 +4573,7 @@
       "status": 200,
       "body": {
         "data": {
-          "expiresAt": "1786387278",
+          "expiresAt": "1787162607",
           "resourceUrl": "https://invalid.example.com/105a06b6146d11e7-01/release/audio/1CO/1CO_001.mp3",
           "id": "1CO.1",
           "bibleId": "105a06b6146d11e7-01",
