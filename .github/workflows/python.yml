@@ -1,16 +1,15 @@
 name: Python
 
+# Deliberately not path-filtered, matching ci.yml. These jobs are required
+# status checks on `main`, and a filtered workflow simply does not report on a
+# PR outside its paths — GitHub then waits forever for a context that will never
+# arrive, blocking the PR permanently. The suite runs in well under a minute, so
+# always running it is cheaper than the failure mode.
 on:
   push:
     branches: [main]
-    paths:
-      - 'packages/python/**'
-      - '.github/workflows/python.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'packages/python/**'
-      - '.github/workflows/python.yml'
 
 permissions:
   contents: read
