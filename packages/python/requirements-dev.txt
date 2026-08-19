@@ -63,7 +63,7 @@ tomli==2.4.1 ; python_full_version <= '3.11'
     #   coverage
     #   mypy
     #   pytest
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   anyio
     #   exceptiongroup
