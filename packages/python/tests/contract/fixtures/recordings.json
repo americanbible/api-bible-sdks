@@ -356,7 +356,7 @@
           "bibleId": "105a06b6146d11e7-01",
           "bookId": "1CO",
           "copyright": "\u2117 2013 Hosanna",
-          "expiresAt": "1786387649",
+          "expiresAt": "1787162608",
           "id": "1CO.1",
           "next": {
             "bookId": "1CO",
@@ -3179,34 +3179,6 @@
       "body": {
         "data": [
           {
-            "abbreviation": "ASVBT",
-            "abbreviationLocal": "ASVBT",
-            "audioBibles": [],
-            "countries": [
-              {
-                "id": "US",
-                "name": "United States of America",
-                "nameLocal": "United States of America"
-              }
-            ],
-            "dblId": "685d1470fe4d5c3b",
-            "description": null,
-            "descriptionLocal": null,
-            "id": "685d1470fe4d5c3b-01",
-            "language": {
-              "id": "eng",
-              "name": "English",
-              "nameLocal": "English",
-              "script": "Latin",
-              "scriptDirection": "LTR"
-            },
-            "name": "American Standard Version (Byzantine Text with Apocrypha)",
-            "nameLocal": "American Standard Version Byzantine Text with Apocrypha",
-            "relatedDbl": null,
-            "type": "text",
-            "updatedAt": "2025-11-14T02:19:25.000Z"
-          },
-          {
             "abbreviation": "BSB",
             "abbreviationLocal": "BSB",
             "audioBibles": [],
@@ -4331,7 +4303,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-06T02:22:57.000Z"
+            "updatedAt": "2026-08-19T02:22:46.000Z"
           },
           {
             "abbreviation": "engWEBU",
@@ -4359,7 +4331,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-06T02:24:19.000Z"
+            "updatedAt": "2026-08-19T02:24:13.000Z"
           },
           {
             "abbreviation": "engWEBU",
@@ -4387,7 +4359,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-06T02:25:30.000Z"
+            "updatedAt": "2026-08-19T02:25:36.000Z"
           },
           {
             "abbreviation": "engWEBUS",
@@ -4453,7 +4425,7 @@
             "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-06T02:19:01.000Z"
+            "updatedAt": "2026-08-19T02:18:25.000Z"
           },
           {
             "abbreviation": "engWEBUS",
@@ -4486,7 +4458,7 @@
             "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-06T02:20:18.000Z"
+            "updatedAt": "2026-08-19T02:19:48.000Z"
           },
           {
             "abbreviation": "WMB",
@@ -4514,7 +4486,7 @@
             "nameLocal": "World Messianic Bible",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-06T02:34:19.000Z"
+            "updatedAt": "2026-08-19T02:31:57.000Z"
           },
           {
             "abbreviation": "WMBBE",
@@ -4612,7 +4584,7 @@
             "nameLocal": "World Messianic Bible British Edition",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-06T02:15:33.000Z"
+            "updatedAt": "2026-08-19T02:14:56.000Z"
           }
         ]
       },
