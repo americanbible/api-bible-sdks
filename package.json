@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "description": "Monorepo for American Bible Society's api.bible SDKs (TypeScript, React, Python).",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/americanbible/api-bible-sdks.git"

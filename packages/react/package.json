@@ -2,7 +2,7 @@
   "name": "@americanbible/api-bible-sdk-react",
   "version": "0.2.0",
   "description": "React hooks and context provider for api.bible, built on @americanbible/api-bible-sdk",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "American Bible Society",
   "repository": {
     "type": "git",
