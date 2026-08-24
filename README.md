@@ -49,8 +49,9 @@ Report security issues privately per [SECURITY.md](./SECURITY.md).
 
 ## License and terms
 
-These SDKs are licensed **MIT © American Bible Society** — see [LICENSE](./LICENSE).
-That covers the SDK source in this repository, and nothing else.
+These SDKs are licensed under the **Apache License 2.0** — Copyright 2026
+American Bible Society. See [LICENSE](./LICENSE). That covers the SDK source in
+this repository, and nothing else.
 
 Two things it does not cover:
 

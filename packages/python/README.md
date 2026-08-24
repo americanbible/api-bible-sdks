@@ -300,8 +300,8 @@ attempt to re-publish the same version.
 
 ## License and terms
 
-MIT © American Bible Society — see [LICENSE](LICENSE). That covers this SDK's
-source code, and nothing else.
+Licensed under the Apache License 2.0 — Copyright 2026 American Bible Society.
+See [LICENSE](LICENSE). That covers this SDK's source code, and nothing else.
 
 Your use of the API is governed by api.bible's
 [Terms & Conditions](https://api.bible/terms-and-conditions), and the scripture

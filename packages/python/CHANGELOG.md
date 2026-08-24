@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to be resent to another host. A 3xx response raises `ApiError` naming the
   redirect target's origin; previously it fell through to the response parser
   and surfaced as a misleading "empty response body" error. Not retried.
+- **License changed from MIT to Apache License 2.0.** Apache 2.0 adds an express
+  patent grant and a patent-retaliation clause that MIT does not provide.
+  Copyright remains American Bible Society. Already-published versions keep the
+  license they were released under; this applies from the next release onward.
 
 ## [1.2.0] - 2026-07-08
 

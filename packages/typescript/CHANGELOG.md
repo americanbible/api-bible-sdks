@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   your key to the redirect target. The error is terminal and is not retried.
   api.bible does not redirect in normal operation, so this should not affect
   working code.
+- **License changed from MIT to Apache License 2.0.** Apache 2.0 adds an express
+  patent grant and a patent-retaliation clause that MIT does not provide.
+  Copyright remains American Bible Society. Already-published versions keep the
+  license they were released under; this applies from the next release onward.
 
 ## [1.1.0] - 2026-07-01
 

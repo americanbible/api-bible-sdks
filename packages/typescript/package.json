@@ -2,7 +2,7 @@
   "name": "@americanbible/api-bible-sdk",
   "version": "1.1.0",
   "description": "TypeScript SDK for api.bible",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "American Bible Society",
   "repository": {
     "type": "git",

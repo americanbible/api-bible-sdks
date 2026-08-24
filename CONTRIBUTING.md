@@ -95,6 +95,17 @@ stored in the repo.
 By participating in this project you agree to abide by the
 [Code of Conduct](./CODE_OF_CONDUCT.md).
 
+## Licensing of contributions
+
+This project is licensed under the [Apache License 2.0](./LICENSE). Under
+Section 5 of that license, any contribution you intentionally submit for
+inclusion is licensed under the same terms, with no separate agreement to sign.
+Apache 2.0 includes an express patent grant, so contributing also grants users a
+patent license covering your contribution.
+
+If you are contributing on behalf of an employer, make sure you have the
+authority to license the work.
+
 ## Security
 
 Please report vulnerabilities privately per [SECURITY.md](./SECURITY.md) rather
