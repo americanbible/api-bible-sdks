@@ -30,7 +30,7 @@ idna==3.18
     #   httpx
 iniconfig==2.3.0
     # via pytest
-librt==0.11.0 ; platform_python_implementation != 'PyPy'
+librt==0.15.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 mypy==2.1.0
     # via api-bible-sdk (pyproject.toml)
