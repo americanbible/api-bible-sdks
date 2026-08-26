@@ -6,7 +6,11 @@ export const AudioChapterSummarySchema = z.object({
   bibleId: z.string(),
   number: z.string(),
   bookId: z.string(),
-  reference: z.string(),
+  // Returned by the chapters list and chapter detail endpoints, but omitted
+  // when this schema is reused for AudioBookSummary.chapters under
+  // include-chapters. Same reuse trap ChapterSummarySchema avoids by leaving
+  // reference to ChapterSchema.
+  reference: z.string().optional(),
 }).passthrough();
 
 export type AudioChapterSummary = z.infer<typeof AudioChapterSummarySchema>;
