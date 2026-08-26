@@ -13,6 +13,8 @@ import {
   RateLimitError,
   ServerError,
   ValidationError,
+  isKeywordSearchResult,
+  isReferenceSearchResult,
 } from '../src/index.js';
 
 // Smoke test for the published barrel: every runtime value the package promises
@@ -48,6 +50,11 @@ describe('public entrypoint (src/index.ts)', () => {
     expect(typeof MAX_ERROR_BODY_BYTES).toBe('number');
   });
 
+  it('exports the search-result narrowing guards', () => {
+    expect(typeof isKeywordSearchResult).toBe('function');
+    expect(typeof isReferenceSearchResult).toBe('function');
+  });
+
   it('does not export anything unexpected at runtime', () => {
     expect(Object.keys(sdk).sort()).toEqual(
       [
@@ -63,6 +70,8 @@ describe('public entrypoint (src/index.ts)', () => {
         'ServerError',
         'ValidationError',
         'createBibleClient',
+        'isKeywordSearchResult',
+        'isReferenceSearchResult',
       ].sort(),
     );
   });

@@ -273,6 +273,30 @@ describe("AudioBiblesResource", () => {
       expect(calledUrl).toContain("include-chapters=true");
     });
 
+    // Embedded chapters omit `reference` and add `position`, unlike the ones
+    // the chapters endpoints return. The include-chapters tests above assert
+    // only on the URL and mock an empty data array, so nothing exercised the
+    // embedded shape until now.
+    it("parses embedded chapters, which carry no reference", async () => {
+      const bookWithChapters = {
+        ...mockBookSummary,
+        chapters: [
+          { id: "GEN.1", bibleId: AUDIO_BIBLE_ID, bookId: BOOK_ID, number: "1", position: 0 },
+          { id: "GEN.2", bibleId: AUDIO_BIBLE_ID, bookId: BOOK_ID, number: "2", position: 1 },
+        ],
+      };
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(mockResponse(200, { data: [bookWithChapters], meta: {} }));
+      const { data } = await makeClient(
+        fetchFn as unknown as typeof fetch,
+      ).audioBibles.listBooks(AUDIO_BIBLE_ID, { includeChapters: true });
+
+      expect(data[0].chapters).toHaveLength(2);
+      expect(data[0].chapters![0].id).toBe("GEN.1");
+      expect(data[0].chapters![0].reference).toBeUndefined();
+    });
+
     it("sends include-chapters-and-sections boolean param", async () => {
       const fetchFn = vi
         .fn()

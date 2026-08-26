@@ -1,4 +1,9 @@
-import { createBibleClient, ApiError } from "../src/index.ts";
+import {
+  createBibleClient,
+  ApiError,
+  isKeywordSearchResult,
+  isReferenceSearchResult,
+} from "../src/index.ts";
 import "dotenv/config";
 // In a consumer project: import { createBibleClient, ApiError } from "@americanbible/api-bible-sdk";
 
@@ -31,13 +36,26 @@ async function main() {
       : JSON.stringify(chapter.content).slice(0, 200);
   console.log(preview + "…");
 
-  // 3. Search for a phrase.
+  // 3. Search for a phrase. A keyword query comes back as verses plus paging
+  //    metadata; a query the API reads as a scripture reference comes back as
+  //    passages instead, with no paging fields at all. Narrow to find out which.
   const { data: result } = await client.search.search(BSB_ID, {
     query: "in the beginning",
     limit: 3,
   });
-  console.log(`\nFound ${result.total} matches for "in the beginning":`);
-  result.verses?.forEach((v) => console.log(`  ${v.reference}: ${v.text}`));
+  if (isKeywordSearchResult(result)) {
+    console.log(`\nFound ${result.total} matches for "in the beginning":`);
+    result.verses.forEach((v) => console.log(`  ${v.reference}: ${v.text}`));
+  }
+
+  // 4. The same endpoint, given a reference, returns passages.
+  const { data: byReference } = await client.search.search(BSB_ID, {
+    query: "John 3:16-19",
+  });
+  if (isReferenceSearchResult(byReference)) {
+    console.log("\nSearching by reference returns passages:");
+    byReference.passages.forEach((p) => console.log(`  ${p.reference} (${p.verseCount} verses)`));
+  }
 }
 
 main().catch((err) => {

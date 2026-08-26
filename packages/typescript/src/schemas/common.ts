@@ -18,7 +18,17 @@ export const CountrySchema = z.object({
   nameLocal: z.string().optional().nullable(),
 }).passthrough();
 
+/**
+ * FUMS (Fair Use Management System) analytics metadata.
+ *
+ * api.bible returns this alongside responses so usage can be reported back for
+ * fair-use tracking. Current responses populate `fumsToken` — the value you
+ * submit when reporting usage — and nothing else; the remaining fields belong
+ * to the older JavaScript-embed flow and are frequently absent. Any field not
+ * listed here is still preserved, since the schema is `.passthrough()`.
+ */
 export const MetaSchema = z.object({
+  fumsToken: z.string().optional(),
   fumsId: z.string().optional(),
   fums: z.string().optional(),
   fumsJsInclude: z.string().optional(),

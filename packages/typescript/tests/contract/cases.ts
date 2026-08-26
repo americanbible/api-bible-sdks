@@ -38,10 +38,22 @@ export const CASES: ContractCase[] = [
 
   { name: 'verses.list', run: async (c) => { await c.verses.list(BSB, 'GEN.1'); } },
   { name: 'verses.get', run: async (c) => { await c.verses.get(BSB, 'GEN.1.1', { contentType: 'text' }); } },
+  // The edges of the Bible, where the API sends `next: {}` / `previous: {}`
+  // instead of omitting the key. GEN.1.1 above never reaches either edge, which
+  // is why the required `id` on the nav pointer went unnoticed until a consumer
+  // hit it.
+  { name: 'verses.get.boundary', run: async (c) => {
+    await c.verses.get(BSB, 'REV.22.21', { contentType: 'text' });
+    await c.verses.get(BSB, 'GEN.intro.0', { contentType: 'text' });
+  } },
 
   { name: 'passages.get', run: async (c) => { await c.passages.get(BSB, 'GEN.1.1-GEN.1.3', { contentType: 'text' }); } },
 
   { name: 'search', run: async (c) => { await c.search.search(BSB, { query: 'love', limit: 3 }); } },
+  // /search answers in one of two disjoint shapes. A query the API parses as a
+  // scripture reference returns `passages` and omits the paging scalars
+  // entirely, so the keyword case above cannot cover it.
+  { name: 'search.reference', run: async (c) => { await c.search.search(BSB, { query: 'John 3:16-19' }); } },
 
   {
     name: 'sections',
@@ -77,6 +89,13 @@ export const CASES: ContractCase[] = [
       const books = await c.audioBibles.listBooks(audioBible.id);
       const book = books.data[0];
       if (!book) return;
+
+      // Embedded chapters are a different shape from the ones the chapters
+      // endpoints return — they omit `reference` — so nothing above covers
+      // them. Scoped to getBook rather than listBooks({ includeChapters }):
+      // identical shape, one book's chapters instead of every book's, which
+      // keeps the recording from growing by ~9k lines.
+      await c.audioBibles.getBook(audioBible.id, book.id, { includeChapters: true });
 
       const chapters = await c.audioBibles.listChapters(audioBible.id, book.id);
       const chapter = chapters.data[0];

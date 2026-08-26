@@ -20,6 +20,9 @@ export const ChapterSchema = ChapterSummarySchema.extend({
   reference: z.string().optional(),
   verseCount: z.number().optional(),
   content: ContentFieldSchema.optional(),
+  // Returned on every chapter detail; the summaries in list responses omit it.
+  // Matches Verse/Passage/Section, which already model it.
+  copyright: z.string().optional(),
   next: ChapterNavSchema.optional(),
   previous: ChapterNavSchema.optional(),
 });

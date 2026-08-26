@@ -39,6 +39,14 @@ const mockBible = {
   audioBibles: [],
 };
 
+// What /bibles/{id} and /bibles?include-full-details=true add on top of the
+// listing shape. `info` is null on some Bibles.
+const mockBibleFullDetails = {
+  ...mockBible,
+  copyright: 'PUBLIC DOMAIN except in the United Kingdom…',
+  info: '<p>This historical translation…</p>',
+};
+
 function makeClient(fetchFn: typeof globalThis.fetch) {
   return createBibleClient({
     apiKey: 'test-key',
@@ -116,6 +124,22 @@ describe('BiblesResource', () => {
       expect(calledUrl).toContain('include-full-details=true');
     });
 
+    // The plain listing omits copyright/info; include-full-details adds them.
+    // One schema serves both, so both must parse.
+    it('parses listings with and without copyright/info', async () => {
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(
+          mockResponse(200, { data: [mockBible, mockBibleFullDetails], meta: {} }),
+        );
+      const { data } = await makeClient(fetchFn as unknown as typeof fetch).bibles.list();
+
+      expect(data[0].copyright).toBeUndefined();
+      expect(data[0].info).toBeUndefined();
+      expect(data[1].copyright).toBeDefined();
+      expect(data[1].info).toBeDefined();
+    });
+
     it('does not append query params when called with no options', async () => {
       const fetchFn = vi
         .fn()
@@ -141,6 +165,29 @@ describe('BiblesResource', () => {
       expect(data.id).toBe(BIBLE_ID);
       expect(data.abbreviation).toBe('BSB');
       expect(meta?.fumsId).toBe('fums-456');
+    });
+
+    // API.Bible's Terms §7 require displaying both, so they must be typed
+    // rather than reachable only by casting around the SDK.
+    it('types copyright and info', async () => {
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(mockResponse(200, { data: mockBibleFullDetails, meta: {} }));
+      const { data } = await makeClient(fetchFn as unknown as typeof fetch).bibles.get(BIBLE_ID);
+
+      expect(data.copyright).toBe('PUBLIC DOMAIN except in the United Kingdom…');
+      expect(data.info).toBe('<p>This historical translation…</p>');
+    });
+
+    it('accepts a null info', async () => {
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(
+          mockResponse(200, { data: { ...mockBibleFullDetails, info: null }, meta: {} }),
+        );
+      const { data } = await makeClient(fetchFn as unknown as typeof fetch).bibles.get(BIBLE_ID);
+
+      expect(data.info).toBeNull();
     });
 
     it('calls the correct URL path', async () => {
