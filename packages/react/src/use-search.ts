@@ -3,6 +3,17 @@ import { stableStringify } from './stable-stringify.js';
 import { useAsyncResource } from './use-async-resource.js';
 import type { AsyncResource } from './types.js';
 
+/** Options for {@link useSearch}. */
+export interface UseSearchOptions {
+  /**
+   * Debounce the query by this many milliseconds — ideal for search-as-you-type.
+   * A run of keystrokes collapses to a single request once typing settles;
+   * intermediate queries are cancelled before they fire. Omit (or `0`) to search
+   * on every change.
+   */
+  debounceMs?: number;
+}
+
 /**
  * Full-text search across a Bible's text.
  *
@@ -18,18 +29,6 @@ import type { AsyncResource } from './types.js';
  * with `isKeywordSearchResult` / `isReferenceSearchResult` (both re-exported
  * from this package) before reading either side.
  *
-/** Options for {@link useSearch}. */
-export interface UseSearchOptions {
-  /**
-   * Debounce the query by this many milliseconds — ideal for search-as-you-type.
-   * A run of keystrokes collapses to a single request once typing settles;
-   * intermediate queries are cancelled before they fire. Omit (or `0`) to search
-   * on every change.
-   */
-  debounceMs?: number;
-}
-
-/**
  * @param bibleId  Bible ID to search. When falsy the hook stays idle (no request).
  * @param params   Search params. `query` is required by the API; `limit`,
  *                 `offset`, `sort`, `range`, and `fuzziness` are optional.
