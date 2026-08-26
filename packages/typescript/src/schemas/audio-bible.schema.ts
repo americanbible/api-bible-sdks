@@ -24,7 +24,12 @@ const TimecodeSchema = z.object({
 const AudioChapterNavSchema = z.object({
   id: z.string(),
   bookId: z.string(),
-  number: z.string(),
+  // Audio Bibles disagree on this one: some return "2", others return 2. The
+  // text-side chapter nav and AudioChapterSummary.number are always strings, so
+  // coerce rather than leaking the union to callers. Coercion (not a union with
+  // .transform) because Fetcher.get pins a schema's input type to its output
+  // type, and z.coerce is runtime-only — same reason expiresAt below uses it.
+  number: z.coerce.string(),
 }).passthrough();
 
 export const AudioChapterSchema = AudioChapterSummarySchema.extend({
