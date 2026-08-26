@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `isKeywordSearchResult` / `isReferenceSearchResult` are now re-exported from
+  the core SDK. `/search` answers in one of two disjoint shapes depending on the
+  query — a keyword query returns pagination plus `verses`, a scripture
+  reference returns `passages` and no pagination — and nothing in the response
+  says which. Narrow a `useSearch` result with these before reading either side.
+
 ### Changed
 
 - **License changed from MIT to Apache License 2.0.** Apache 2.0 adds an express

@@ -10,10 +10,13 @@ import type { AsyncResource } from './types.js';
  * and unwraps the `{ data }` envelope. All lifecycle/state lives in
  * {@link useAsyncResource} — this mirrors the `usePassages`/`useBooks` template.
  *
- * The result (`SearchResult`) carries its own pagination state — `total`,
- * `limit`, `offset` — so callers page by incrementing `params.offset`; there is
+ * A keyword query returns pagination state on the result — `total`, `limit`,
+ * `offset` — so callers page by incrementing `params.offset`; there is
  * deliberately no paginate/debounce helper here (the core SDK owns query build,
- * validation, and paging).
+ * validation, and paging). A query the API reads as a scripture reference
+ * returns `passages` instead and carries no pagination fields at all, so narrow
+ * with `isKeywordSearchResult` / `isReferenceSearchResult` (both re-exported
+ * from this package) before reading either side.
  *
 /** Options for {@link useSearch}. */
 export interface UseSearchOptions {
