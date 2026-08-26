@@ -7,8 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `isKeywordSearchResult` / `isReferenceSearchResult` type guards, and the
+  `KeywordSearchResult` / `ReferenceSearchResult` types they narrow to. `/search`
+  answers in one of two disjoint shapes depending on the query, and nothing in
+  the response says which; the guards let callers branch without null-checking
+  every field. `isKeywordSearchResult` narrows `total` and `verses`;
+  `isReferenceSearchResult` narrows `passages`.
+- `Bible.copyright` and `Bible.info` are now typed. Both are returned by
+  `bibles.get` and by `bibles.list({ includeFullDetails: true })`, and both are
+  the fields API.Bible's Terms §7 require you to display — previously they
+  survived only as untyped passthrough, so displaying them meant casting around
+  the SDK. Optional, because the plain `/bibles` listing omits them, and
+  nullable, because `info` is null on some Bibles.
+- `Chapter.copyright` is now typed, matching `Verse`, `Passage`, and `Section`,
+  which already declared it.
+- `Meta.fumsToken` is now typed. It is the value you submit when reporting FUMS
+  usage, and the only field current responses populate; the four previously
+  declared fields (`fumsId`, `fums`, `fumsJs`, `fumsJsInclude`) belong to the
+  older JavaScript-embed flow and are kept for backward compatibility.
+- `SearchPassage.bookId` and `SearchPassage.chapterIds`, both returned by the
+  API and previously unmodelled.
+
+### Fixed
+
+- **Reference searches no longer throw.** A query the API parses as a scripture
+  reference (`"John 3:16-19"`) returns `passages` alone, omitting `query`,
+  `limit`, `offset`, `total`, and `verseCount`. All five were required, so every
+  reference query failed with `ValidationError` and that branch of `/search` was
+  unusable through the SDK. They are now optional, and `SearchPassage` is as
+  lenient as the structurally identical `Passage`.
+- `verses.get` no longer throws at the first and last verse of a Bible. The API
+  returns `next: {}` / `previous: {}` there rather than omitting the key, so the
+  nav pointer's required `id` failed to validate. Every `VerseNavSchema` field is
+  now optional. (Chapters and sections omit the key instead and were unaffected.)
+- `audioBibles.listBooks` / `getBook` with `includeChapters` no longer throw.
+  Embedded chapters omit `reference`, which `AudioChapterSummary` required.
+- `audioBibles.getChapter` no longer throws for audio Bibles that return the nav
+  pointer's `number` as a JSON number rather than a string; it is coerced to a
+  string, matching every other chapter `number` in the SDK.
+
 ### Changed
 
+- **`SearchResult`'s five paging fields are now optional** (`query`, `limit`,
+  `offset`, `total`, `verseCount`). This is the fix above, but it widens the
+  public type: code like `data.total.toFixed()` or `const n: number = data.total`
+  no longer typechecks. The old type was unsound — it promised a `number` the API
+  does not always send. Migrate by narrowing with `isKeywordSearchResult`, which
+  restores `total` as a non-optional `number`, or by using `data.total ?? 0`.
+  Runtime behaviour is unchanged for keyword searches.
 - **Redirects are no longer followed.** Requests are sent with
   `redirect: "manual"`, and a 3xx response now throws an `ApiError` naming the
   redirect target's origin instead of being followed. `fetch` strips only
