@@ -70,10 +70,12 @@ export const CASES: ContractCase[] = [
 
   {
     name: 'audio',
-    // Unlike every other case, this one does not run against the BSB — it takes
-    // whichever audio Bible api.bible lists first for `eng`, so the recording is
-    // third-party licensed content (at time of writing, Faith Comes By Hearing,
-    // ℗ 2013 Hosanna) and can change between refreshes.
+    // Unlike every other case, this one does not pin a Bible — it takes whichever
+    // audio Bible api.bible lists first for `eng`. That listing reorders, so the
+    // Bible recorded here changes between refreshes (it has already moved once,
+    // which is how the numeric nav `number` above came to light), and whatever
+    // lands may be third-party licensed rather than public domain. Check the
+    // recorded `copyright` before assuming anything about the content.
     //
     // The recorded fixture is deliberately metadata-only. `getChapter` returns a
     // presigned S3 `resourceUrl` that grants real access to the audio until its

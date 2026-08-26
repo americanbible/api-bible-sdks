@@ -33,6 +33,11 @@ const AudioChapterNavSchema = z.object({
 }).passthrough();
 
 export const AudioChapterSchema = AudioChapterSummarySchema.extend({
+  // Re-narrowed: the chapter detail endpoint always sends `reference`. Only the
+  // embedded AudioBookSummary.chapters shape omits it, so leaving the summary's
+  // `.optional()` to flow through here would push a null check onto every
+  // getChapter caller for a field they always receive.
+  reference: z.string(),
   resourceUrl: z.string(),
   // Present only when api.bible has timecode data for the chapter; not a request option.
   timecodes: z.array(TimecodeSchema).optional(),

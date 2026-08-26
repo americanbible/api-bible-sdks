@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-08-26
+
+Bringing the schemas in line with what api.bible actually returns fixed four
+endpoints that threw on valid responses, but doing so widened two public types.
+That is a breaking change for TypeScript consumers even though no runtime
+behaviour regressed, so this is a major release — see **Changed** for the two
+migrations, both one-liners.
+
 ### Added
 
 - `isKeywordSearchResult` / `isReferenceSearchResult` type guards, and the
@@ -57,6 +65,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   does not always send. Migrate by narrowing with `isKeywordSearchResult`, which
   restores `total` as a non-optional `number`, or by using `data.total ?? 0`.
   Runtime behaviour is unchanged for keyword searches.
+- **`VerseNav.id` is now optional**, the type-surface half of the boundary fix
+  above. `verse.next?.id` was already `string | undefined` and is unaffected;
+  only an explicit `if (verse.next) { f(verse.next.id) }` needs a second check.
+  Chapter and section nav pointers are unchanged.
+- **`AudioChapterSummary.reference` is now optional**, so the summaries inside
+  `AudioBookSummary.chapters` typecheck. `audioBibles.getChapter` re-narrows it
+  to a required `string` — that endpoint always sends it — so only code reading
+  `reference` off a *list* or *embedded* summary needs a guard.
 - **Redirects are no longer followed.** Requests are sent with
   `redirect: "manual"`, and a 3xx response now throws an `ApiError` naming the
   redirect target's origin instead of being followed. `fetch` strips only
