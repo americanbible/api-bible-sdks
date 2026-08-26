@@ -130,3 +130,95 @@ def test_search_sends_query_and_parses_results(make_client) -> None:
 
     assert result.total == 1
     assert result.verses[0].reference == "John 3:16"
+
+
+# Regression coverage for the shapes that made the TypeScript SDK throw. The
+# equivalent contract cases (`verses.get.boundary`, `search.reference`) exercise
+# these against recorded live payloads; these keep them covered without a key.
+
+
+def test_verse_nav_accepts_empty_pointer_at_bible_boundary(make_client) -> None:
+    # At the first and last verse the API sends `next: {}` / `previous: {}`
+    # rather than omitting the key. A required `id` made this raise.
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "data": {
+                    "id": "REV.22.21",
+                    "bibleId": "bba9f40183526463-01",
+                    "bookId": "REV",
+                    "chapterId": "REV.22",
+                    "next": {},
+                    "previous": {"id": "REV.22.20", "number": "20"},
+                }
+            },
+        )
+
+    with make_client(handler) as client:
+        verse = client.verses.get("bba9f40183526463-01", "REV.22.21")
+
+    assert verse.next is not None
+    assert verse.next.id is None
+    assert verse.previous is not None
+    assert verse.previous.id == "REV.22.20"
+
+
+def test_reference_search_parses_without_paging_scalars(make_client) -> None:
+    # A query the API reads as a scripture reference returns `passages` alone —
+    # no query/limit/offset/total/verseCount, and no `verses` key.
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "data": {
+                    "passages": [
+                        {
+                            "id": "JHN.3.16-JHN.3.19",
+                            "orgId": "JHN.3.16-JHN.3.19",
+                            "bibleId": "bba9f40183526463-01",
+                            "bookId": "JHN",
+                            "chapterIds": ["JHN.3"],
+                            "reference": "John 3:16-19",
+                            "content": "<p>For God so loved the world…</p>",
+                            "verseCount": 4,
+                            "copyright": "Berean Standard Bible",
+                        }
+                    ]
+                }
+            },
+        )
+
+    with make_client(handler) as client:
+        result = client.search.search("bba9f40183526463-01", "John 3:16-19")
+
+    assert result.total is None
+    assert result.verses == []
+    assert len(result.passages) == 1
+    passage = result.passages[0]
+    assert passage.reference == "John 3:16-19"
+    assert passage.content is not None  # `content`, not `text`
+    assert passage.verse_count == 4
+    assert passage.copyright == "Berean Standard Bible"
+
+
+def test_bible_exposes_copyright_and_info(make_client) -> None:
+    # Terms §7 requires displaying both; previously they fell to `model_extra`.
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "data": {
+                    "id": "abc",
+                    "name": "Test",
+                    "copyright": "Public Domain",
+                    "info": None,
+                }
+            },
+        )
+
+    with make_client(handler) as client:
+        bible = client.bibles.get("abc")
+
+    assert bible.copyright == "Public Domain"
+    assert bible.info is None
