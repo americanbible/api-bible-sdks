@@ -1,6 +1,6 @@
 {
   "name": "@americanbible/api-bible-sdk-react",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "React hooks and context provider for api.bible, built on @americanbible/api-bible-sdk",
   "license": "Apache-2.0",
   "author": "American Bible Society",
@@ -62,12 +62,12 @@
     "node": ">=20"
   },
   "peerDependencies": {
-    "@americanbible/api-bible-sdk": "^1.1.0",
+    "@americanbible/api-bible-sdk": "^2.0.0",
     "react": "^18 || ^19"
   },
   "devDependencies": {
-    "@americanbible/api-bible-sdk": "^1.1.0",
-    "@eslint/js": "^9.39.5",
+    "@americanbible/api-bible-sdk": "^2.0.0",
+    "@eslint/js": "^10.0.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.1.0",
     "@types/node": "^20.19.41",

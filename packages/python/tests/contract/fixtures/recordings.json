@@ -1,12 +1,12 @@
 {
   "_comment": "Recorded api.bible responses, keyed by pathname+search, then sanitized (see sanitize_body in replay.py). Scripture text is the Berean Standard Bible (public domain, CC0). Audio-bible entries are third-party licensed metadata only - presigned URLs are rewritten to invalid.example.com and FUMS tokens are dropped. Regenerate with `python tests/contract/record_fixtures.py`.",
   "requests": {
-    "/v1/audio-bibles/105a06b6146d11e7-01": {
+    "/v1/audio-bibles/aadc8a2f4bdb467b-01": {
       "body": {
         "data": {
-          "abbreviation": "WEB13",
-          "abbreviationLocal": "WEB13",
-          "copyright": "\u2117 2013 Hosanna",
+          "abbreviation": "BSBA",
+          "abbreviationLocal": "BSBA",
+          "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God&#39;s Word has been dedicated to the public domain. The Holy Bible, Berean Standard Audio Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, the Berean Bible Translation Committee, and Barry Hays. This audio narration of God&#39;s Word has been dedicated to the public domain.",
           "countries": [
             {
               "id": "US",
@@ -14,11 +14,11 @@
               "nameLocal": "United States"
             }
           ],
-          "dblId": "105a06b6146d11e7",
-          "description": null,
-          "descriptionLocal": null,
-          "id": "105a06b6146d11e7-01",
-          "info": null,
+          "dblId": "aadc8a2f4bdb467b",
+          "description": "Berean Standard Bible - Narration by Barry Hays",
+          "descriptionLocal": "Berean Standard Bible - Narration by Barry Hays",
+          "id": "aadc8a2f4bdb467b-01",
+          "info": "<p><a href=\"https://listentogodsword.org/\">https://listentogodsword.org/</a></p>",
           "language": {
             "id": "eng",
             "name": "English",
@@ -26,346 +26,857 @@
             "script": "Latin",
             "scriptDirection": "LTR"
           },
-          "name": "English - World English Bible 2013 (Drama NT)",
-          "nameLocal": "English - World English Bible 2013 (Drama NT)",
-          "relatedDbl": "9879dbb7cfe39e4d",
+          "name": "Berean Standard Audio Bible - (Non-drama)",
+          "nameLocal": "Berean Standard Audio Bible - (Non-drama)",
+          "relatedDbl": "317e03834065a236",
           "type": "audio",
-          "updatedAt": "2024-07-01T22:16:16.000Z"
+          "updatedAt": "2026-05-29T02:47:04.000Z"
         }
       },
       "status": 200
     },
-    "/v1/audio-bibles/105a06b6146d11e7-01/books": {
+    "/v1/audio-bibles/aadc8a2f4bdb467b-01/books": {
       "body": {
         "data": [
           {
-            "abbreviation": "1 Corinthians",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "1CO",
-            "name": "1 Corinthians",
-            "nameLong": "Paul\u2019s First Letter to the Corinthians"
+            "abbreviation": "GEN",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "GEN",
+            "name": "GEN",
+            "nameLong": "Genesis"
           },
           {
-            "abbreviation": "1 John",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "1JN",
-            "name": "1 John",
-            "nameLong": "John\u2019s First Letter"
+            "abbreviation": "EXO",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "EXO",
+            "name": "EXO",
+            "nameLong": "Exodus"
           },
           {
-            "abbreviation": "1 Peter",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "1PE",
-            "name": "1 Peter",
-            "nameLong": "Peter\u2019s First Letter"
+            "abbreviation": "LEV",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "LEV",
+            "name": "LEV",
+            "nameLong": "Leviticus"
           },
           {
-            "abbreviation": "1 Thessalonians",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "1TH",
-            "name": "1 Thessalonians",
-            "nameLong": "Paul\u2019s First Letter to the Thessalonians"
+            "abbreviation": "NUM",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "NUM",
+            "name": "NUM",
+            "nameLong": "Numbers"
           },
           {
-            "abbreviation": "1 Timothy",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "1TI",
-            "name": "1 Timothy",
-            "nameLong": "Paul\u2019s First Letter to Timothy"
+            "abbreviation": "DEU",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "DEU",
+            "name": "DEU",
+            "nameLong": "Deuteronomy"
           },
           {
-            "abbreviation": "2 Corinthians",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "2CO",
-            "name": "2 Corinthians",
-            "nameLong": "Paul\u2019s Second Letter to the Corinthians"
+            "abbreviation": "JOS",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "JOS",
+            "name": "JOS",
+            "nameLong": "Joshua"
           },
           {
-            "abbreviation": "2 John",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "2JN",
-            "name": "2 John",
-            "nameLong": "John\u2019s Second Letter"
+            "abbreviation": "JDG",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "JDG",
+            "name": "JDG",
+            "nameLong": "Judges"
           },
           {
-            "abbreviation": "2 Peter",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "2PE",
-            "name": "2 Peter",
-            "nameLong": "Peter\u2019s Second Letter"
+            "abbreviation": "RUT",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "RUT",
+            "name": "RUT",
+            "nameLong": "Ruth"
           },
           {
-            "abbreviation": "2 Thessalonians",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "2TH",
-            "name": "2 Thessalonians",
-            "nameLong": "Paul\u2019s Second Letter to the Thessalonians"
+            "abbreviation": "1SA",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "1SA",
+            "name": "1SA",
+            "nameLong": "1 Samuel"
           },
           {
-            "abbreviation": "2 Timothy",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "2TI",
-            "name": "2 Timothy",
-            "nameLong": "Paul\u2019s Second Letter to Timothy"
+            "abbreviation": "2SA",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "2SA",
+            "name": "2SA",
+            "nameLong": "2 Samuel"
           },
           {
-            "abbreviation": "3 John",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "3JN",
-            "name": "3 John",
-            "nameLong": "John\u2019s Third Letter"
+            "abbreviation": "1KI",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "1KI",
+            "name": "1KI",
+            "nameLong": "1 Kiings"
           },
           {
-            "abbreviation": "Acts",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "ACT",
-            "name": "Acts",
-            "nameLong": "The Acts of the Apostles"
+            "abbreviation": "2KI",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "2KI",
+            "name": "2KI",
+            "nameLong": "2 Kings"
           },
           {
-            "abbreviation": "Colossians",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "COL",
-            "name": "Colossians",
-            "nameLong": "Paul\u2019s Letter to the Colossians"
+            "abbreviation": "1CH",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "1CH",
+            "name": "1CH",
+            "nameLong": "1 Chronicles"
           },
           {
-            "abbreviation": "Ephesians",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "EPH",
-            "name": "Ephesians",
-            "nameLong": "Paul\u2019s Letter to the Ephesians"
+            "abbreviation": "2CH",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "2CH",
+            "name": "2CH",
+            "nameLong": "2 Chronicles"
           },
           {
-            "abbreviation": "Galatians",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "GAL",
-            "name": "Galatians",
-            "nameLong": "Paul\u2019s Letter to the Galatians"
+            "abbreviation": "EZR",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "EZR",
+            "name": "EZR",
+            "nameLong": "Ezra"
           },
           {
-            "abbreviation": "Hebrews",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "HEB",
-            "name": "Hebrews",
-            "nameLong": "The Letter to the Hebrews"
+            "abbreviation": "NEH",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "NEH",
+            "name": "NEH",
+            "nameLong": "Nehemiah"
           },
           {
-            "abbreviation": "James",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "JAS",
-            "name": "James",
-            "nameLong": "The Letter from James"
+            "abbreviation": "EST",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "EST",
+            "name": "EST",
+            "nameLong": "Esther"
           },
           {
-            "abbreviation": "John",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "JHN",
-            "name": "John",
-            "nameLong": "The Good News According to John"
+            "abbreviation": "JOB",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "JOB",
+            "name": "JOB",
+            "nameLong": "Job"
           },
           {
-            "abbreviation": "Jude",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "JUD",
-            "name": "Jude",
-            "nameLong": "The Letter from Jude"
+            "abbreviation": "PSA",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "PSA",
+            "name": "PSA",
+            "nameLong": "Psalms"
           },
           {
-            "abbreviation": "Luke",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "LUK",
-            "name": "Luke",
-            "nameLong": "The Good News According to Luke"
+            "abbreviation": "PRO",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "PRO",
+            "name": "PRO",
+            "nameLong": "Proverbs"
           },
           {
-            "abbreviation": "Matthew",
-            "bibleId": "105a06b6146d11e7-01",
+            "abbreviation": "ECC",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "ECC",
+            "name": "ECC",
+            "nameLong": "Ecclesiastes"
+          },
+          {
+            "abbreviation": "SNG",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "SNG",
+            "name": "SNG",
+            "nameLong": "Song of Solomon"
+          },
+          {
+            "abbreviation": "ISA",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "ISA",
+            "name": "ISA",
+            "nameLong": "Isaiah"
+          },
+          {
+            "abbreviation": "JER",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "JER",
+            "name": "JER",
+            "nameLong": "Jeremiah"
+          },
+          {
+            "abbreviation": "LAM",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "LAM",
+            "name": "LAM",
+            "nameLong": "Lamentations"
+          },
+          {
+            "abbreviation": "EZK",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "EZK",
+            "name": "EZK",
+            "nameLong": "Ezekiel"
+          },
+          {
+            "abbreviation": "DAN",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "DAN",
+            "name": "DAN",
+            "nameLong": "Daniel"
+          },
+          {
+            "abbreviation": "HOS",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "HOS",
+            "name": "HOS",
+            "nameLong": "Hosea"
+          },
+          {
+            "abbreviation": "JOL",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "JOL",
+            "name": "JOL",
+            "nameLong": "Joel"
+          },
+          {
+            "abbreviation": "AMO",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "AMO",
+            "name": "AMO",
+            "nameLong": "Amos"
+          },
+          {
+            "abbreviation": "OBA",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "OBA",
+            "name": "OBA",
+            "nameLong": "Obadiah"
+          },
+          {
+            "abbreviation": "JON",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "JON",
+            "name": "JON",
+            "nameLong": "Jonah"
+          },
+          {
+            "abbreviation": "MIC",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "MIC",
+            "name": "MIC",
+            "nameLong": "Micah"
+          },
+          {
+            "abbreviation": "NAM",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "NAM",
+            "name": "NAM",
+            "nameLong": "Nahum"
+          },
+          {
+            "abbreviation": "HAB",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "HAB",
+            "name": "HAB",
+            "nameLong": "Habakkuk"
+          },
+          {
+            "abbreviation": "ZEP",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "ZEP",
+            "name": "ZEP",
+            "nameLong": "Zephaniah"
+          },
+          {
+            "abbreviation": "HAG",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "HAG",
+            "name": "HAG",
+            "nameLong": "Haggai"
+          },
+          {
+            "abbreviation": "ZEC",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "ZEC",
+            "name": "ZEC",
+            "nameLong": "Zechariah"
+          },
+          {
+            "abbreviation": "MAL",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "MAL",
+            "name": "MAL",
+            "nameLong": "Malachi"
+          },
+          {
+            "abbreviation": "MAT",
+            "bibleId": "aadc8a2f4bdb467b-01",
             "id": "MAT",
             "name": "Matthew",
-            "nameLong": "The Good News According to Matthew"
+            "nameLong": "Matthew"
           },
           {
-            "abbreviation": "Mark",
-            "bibleId": "105a06b6146d11e7-01",
+            "abbreviation": "MRK",
+            "bibleId": "aadc8a2f4bdb467b-01",
             "id": "MRK",
             "name": "Mark",
-            "nameLong": "The Good News According to Mark"
+            "nameLong": "Mark"
           },
           {
-            "abbreviation": "Philemon",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "PHM",
-            "name": "Philemon",
-            "nameLong": "Paul\u2019s Letter to Philemon"
+            "abbreviation": "LUK",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "LUK",
+            "name": "Luke",
+            "nameLong": "Luke"
           },
           {
-            "abbreviation": "Philippians",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "PHP",
-            "name": "Philippians",
-            "nameLong": "Paul\u2019s Letter to the Philippians"
+            "abbreviation": "JHN",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "JHN",
+            "name": "John",
+            "nameLong": "John"
           },
           {
-            "abbreviation": "Revelation",
-            "bibleId": "105a06b6146d11e7-01",
-            "id": "REV",
-            "name": "Revelation",
-            "nameLong": "The Revelation to John"
+            "abbreviation": "ACT",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "ACT",
+            "name": "Acts",
+            "nameLong": "Acts"
           },
           {
-            "abbreviation": "Romans",
-            "bibleId": "105a06b6146d11e7-01",
+            "abbreviation": "ROM",
+            "bibleId": "aadc8a2f4bdb467b-01",
             "id": "ROM",
             "name": "Romans",
-            "nameLong": "Paul\u2019s Letter to the Romans"
+            "nameLong": "Romans"
           },
           {
-            "abbreviation": "Titus",
-            "bibleId": "105a06b6146d11e7-01",
+            "abbreviation": "1CO",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "1CO",
+            "name": "1Corinthians",
+            "nameLong": "1Corinthians"
+          },
+          {
+            "abbreviation": "2CO",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "2CO",
+            "name": "2Corinthians",
+            "nameLong": "2Corinthians"
+          },
+          {
+            "abbreviation": "GAL",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "GAL",
+            "name": "Galatians",
+            "nameLong": "Galatians"
+          },
+          {
+            "abbreviation": "EPH",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "EPH",
+            "name": "Ephesians",
+            "nameLong": "Ephesians"
+          },
+          {
+            "abbreviation": "PHP",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "PHP",
+            "name": "Philippians",
+            "nameLong": "Philippians"
+          },
+          {
+            "abbreviation": "COL",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "COL",
+            "name": "Colossians",
+            "nameLong": "Colossians"
+          },
+          {
+            "abbreviation": "1TH",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "1TH",
+            "name": "1Thessalonians",
+            "nameLong": "1Thessalonians"
+          },
+          {
+            "abbreviation": "2TH",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "2TH",
+            "name": "2Thessalonians",
+            "nameLong": "2Thessalonians"
+          },
+          {
+            "abbreviation": "1TI",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "1TI",
+            "name": "1Timothy",
+            "nameLong": "1Timothy"
+          },
+          {
+            "abbreviation": "2TI",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "2TI",
+            "name": "2Timothy",
+            "nameLong": "2Timothy"
+          },
+          {
+            "abbreviation": "TIT",
+            "bibleId": "aadc8a2f4bdb467b-01",
             "id": "TIT",
             "name": "Titus",
-            "nameLong": "Paul\u2019s Letter to Titus"
+            "nameLong": "Titus"
+          },
+          {
+            "abbreviation": "PHM",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "PHM",
+            "name": "Philemon",
+            "nameLong": "Philemon"
+          },
+          {
+            "abbreviation": "HEB",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "HEB",
+            "name": "Hebrews",
+            "nameLong": "Hebrews"
+          },
+          {
+            "abbreviation": "JAS",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "JAS",
+            "name": "James",
+            "nameLong": "James"
+          },
+          {
+            "abbreviation": "1PE",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "1PE",
+            "name": "1Peter",
+            "nameLong": "1Peter"
+          },
+          {
+            "abbreviation": "2PE",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "2PE",
+            "name": "2Peter",
+            "nameLong": "2Peter"
+          },
+          {
+            "abbreviation": "1JN",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "1JN",
+            "name": "1John",
+            "nameLong": "1John"
+          },
+          {
+            "abbreviation": "2JN",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "2JN",
+            "name": "2John",
+            "nameLong": "2John"
+          },
+          {
+            "abbreviation": "3JN",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "3JN",
+            "name": "3John",
+            "nameLong": "3John"
+          },
+          {
+            "abbreviation": "JUD",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "JUD",
+            "name": "Judas",
+            "nameLong": "Judas"
+          },
+          {
+            "abbreviation": "REV",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "id": "REV",
+            "name": "Revelation",
+            "nameLong": "Revelation"
           }
         ]
       },
       "status": 200
     },
-    "/v1/audio-bibles/105a06b6146d11e7-01/books/1CO/chapters": {
+    "/v1/audio-bibles/aadc8a2f4bdb467b-01/books/GEN/chapters": {
       "body": {
         "data": [
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.1",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.1",
             "number": "1",
-            "reference": "1 Corinthians 1"
+            "reference": "GEN 1"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.2",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.2",
             "number": "2",
-            "reference": "1 Corinthians 2"
+            "reference": "GEN 2"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.3",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.3",
             "number": "3",
-            "reference": "1 Corinthians 3"
+            "reference": "GEN 3"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.4",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.4",
             "number": "4",
-            "reference": "1 Corinthians 4"
+            "reference": "GEN 4"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.5",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.5",
             "number": "5",
-            "reference": "1 Corinthians 5"
+            "reference": "GEN 5"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.6",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.6",
             "number": "6",
-            "reference": "1 Corinthians 6"
+            "reference": "GEN 6"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.7",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.7",
             "number": "7",
-            "reference": "1 Corinthians 7"
+            "reference": "GEN 7"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.8",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.8",
             "number": "8",
-            "reference": "1 Corinthians 8"
+            "reference": "GEN 8"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.9",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.9",
             "number": "9",
-            "reference": "1 Corinthians 9"
+            "reference": "GEN 9"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.10",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.10",
             "number": "10",
-            "reference": "1 Corinthians 10"
+            "reference": "GEN 10"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.11",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.11",
             "number": "11",
-            "reference": "1 Corinthians 11"
+            "reference": "GEN 11"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.12",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.12",
             "number": "12",
-            "reference": "1 Corinthians 12"
+            "reference": "GEN 12"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.13",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.13",
             "number": "13",
-            "reference": "1 Corinthians 13"
+            "reference": "GEN 13"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.14",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.14",
             "number": "14",
-            "reference": "1 Corinthians 14"
+            "reference": "GEN 14"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.15",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.15",
             "number": "15",
-            "reference": "1 Corinthians 15"
+            "reference": "GEN 15"
           },
           {
-            "bibleId": "105a06b6146d11e7-01",
-            "bookId": "1CO",
-            "id": "1CO.16",
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.16",
             "number": "16",
-            "reference": "1 Corinthians 16"
+            "reference": "GEN 16"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.17",
+            "number": "17",
+            "reference": "GEN 17"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.18",
+            "number": "18",
+            "reference": "GEN 18"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.19",
+            "number": "19",
+            "reference": "GEN 19"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.20",
+            "number": "20",
+            "reference": "GEN 20"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.21",
+            "number": "21",
+            "reference": "GEN 21"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.22",
+            "number": "22",
+            "reference": "GEN 22"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.23",
+            "number": "23",
+            "reference": "GEN 23"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.24",
+            "number": "24",
+            "reference": "GEN 24"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.25",
+            "number": "25",
+            "reference": "GEN 25"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.26",
+            "number": "26",
+            "reference": "GEN 26"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.27",
+            "number": "27",
+            "reference": "GEN 27"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.28",
+            "number": "28",
+            "reference": "GEN 28"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.29",
+            "number": "29",
+            "reference": "GEN 29"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.30",
+            "number": "30",
+            "reference": "GEN 30"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.31",
+            "number": "31",
+            "reference": "GEN 31"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.32",
+            "number": "32",
+            "reference": "GEN 32"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.33",
+            "number": "33",
+            "reference": "GEN 33"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.34",
+            "number": "34",
+            "reference": "GEN 34"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.35",
+            "number": "35",
+            "reference": "GEN 35"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.36",
+            "number": "36",
+            "reference": "GEN 36"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.37",
+            "number": "37",
+            "reference": "GEN 37"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.38",
+            "number": "38",
+            "reference": "GEN 38"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.39",
+            "number": "39",
+            "reference": "GEN 39"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.40",
+            "number": "40",
+            "reference": "GEN 40"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.41",
+            "number": "41",
+            "reference": "GEN 41"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.42",
+            "number": "42",
+            "reference": "GEN 42"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.43",
+            "number": "43",
+            "reference": "GEN 43"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.44",
+            "number": "44",
+            "reference": "GEN 44"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.45",
+            "number": "45",
+            "reference": "GEN 45"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.46",
+            "number": "46",
+            "reference": "GEN 46"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.47",
+            "number": "47",
+            "reference": "GEN 47"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.48",
+            "number": "48",
+            "reference": "GEN 48"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.49",
+            "number": "49",
+            "reference": "GEN 49"
+          },
+          {
+            "bibleId": "aadc8a2f4bdb467b-01",
+            "bookId": "GEN",
+            "id": "GEN.50",
+            "number": "50",
+            "reference": "GEN 50"
           }
         ]
       },
       "status": 200
     },
-    "/v1/audio-bibles/105a06b6146d11e7-01/chapters/1CO.1": {
+    "/v1/audio-bibles/aadc8a2f4bdb467b-01/chapters/GEN.1": {
       "body": {
         "data": {
-          "bibleId": "105a06b6146d11e7-01",
-          "bookId": "1CO",
-          "copyright": "\u2117 2013 Hosanna",
-          "expiresAt": "1787162608",
-          "id": "1CO.1",
+          "bibleId": "aadc8a2f4bdb467b-01",
+          "bookId": "GEN",
+          "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God&#39;s Word has been dedicated to the public domain. The Holy Bible, Berean Standard Audio Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, the Berean Bible Translation Committee, and Barry Hays. This audio narration of God&#39;s Word has been dedicated to the public domain.",
+          "expiresAt": "1787776464",
+          "id": "GEN.1",
           "next": {
-            "bookId": "1CO",
-            "id": "1CO.2",
-            "number": "2"
+            "bookId": "GEN",
+            "id": "GEN.2",
+            "number": 2
           },
           "number": "1",
-          "reference": "1 Corinthians 1",
-          "resourceUrl": "https://invalid.example.com/105a06b6146d11e7-01/release/audio/1CO/1CO_001.mp3"
+          "reference": "GEN 1",
+          "resourceUrl": "https://invalid.example.com/aadc8a2f4bdb467b-01/release/audio_1/p_01-book-gen/GEN_001.mp3"
         },
         "meta": {}
       },
@@ -374,6 +885,33 @@
     "/v1/audio-bibles?language=eng": {
       "body": {
         "data": [
+          {
+            "abbreviation": "BSBA",
+            "abbreviationLocal": "BSBA",
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States",
+                "nameLocal": "United States"
+              }
+            ],
+            "dblId": "aadc8a2f4bdb467b",
+            "description": "Berean Standard Bible - Narration by Barry Hays",
+            "descriptionLocal": "Berean Standard Bible - Narration by Barry Hays",
+            "id": "aadc8a2f4bdb467b-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Berean Standard Audio Bible - (Non-drama)",
+            "nameLocal": "Berean Standard Audio Bible - (Non-drama)",
+            "relatedDbl": "317e03834065a236",
+            "type": "audio",
+            "updatedAt": "2026-05-29T02:47:04.000Z"
+          },
           {
             "abbreviation": "WEB13",
             "abbreviationLocal": "WEB13",
@@ -3126,6 +3664,29 @@
       },
       "status": 200
     },
+    "/v1/bibles/bba9f40183526463-01/search?query=John 3:16-19": {
+      "body": {
+        "data": {
+          "passages": [
+            {
+              "bibleId": "bba9f40183526463-01",
+              "bookId": "JHN",
+              "chapterIds": [
+                "JHN.3"
+              ],
+              "content": "<p class=\"b\"></p><p class=\"m\"><span data-number=\"16\" data-sid=\"JHN 3:16\" class=\"v\">16</span>For God so loved the world that He gave His one and only  Son, that everyone who believes in Him shall not perish but have eternal life. <span data-number=\"17\" data-sid=\"JHN 3:17\" class=\"v\">17</span>For God did not send His Son into the world to condemn the world, but to save the world through Him. <span data-number=\"18\" data-sid=\"JHN 3:18\" class=\"v\">18</span>Whoever believes in Him is not condemned, but whoever does not believe has already been condemned, because he has not believed in the name of God\u2019s one and only Son.</p><p class=\"b\"></p><p class=\"m\"><span data-number=\"19\" data-sid=\"JHN 3:19\" class=\"v\">19</span>And this is the verdict: The Light has come into the world, but men loved the darkness rather than the Light because their deeds were evil. </p>",
+              "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God's Word has been dedicated to the public domain",
+              "id": "JHN.3.16-JHN.3.19",
+              "orgId": "JHN.3.16-JHN.3.19",
+              "reference": "John 3:16-19",
+              "verseCount": 4
+            }
+          ]
+        },
+        "meta": {}
+      },
+      "status": 200
+    },
     "/v1/bibles/bba9f40183526463-01/sections/GEN.S1": {
       "body": {
         "data": {
@@ -3169,6 +3730,50 @@
             "number": "0"
           },
           "reference": "Genesis 1:1",
+          "verseCount": 1
+        },
+        "meta": {}
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/verses/GEN.intro.0?content-type=text": {
+      "body": {
+        "data": {
+          "bibleId": "bba9f40183526463-01",
+          "bookId": "GEN",
+          "chapterId": "GEN.intro",
+          "content": "    Genesis\n",
+          "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God's Word has been dedicated to the public domain",
+          "id": "GEN.intro.0",
+          "next": {
+            "id": "GEN.1.1",
+            "number": "1"
+          },
+          "orgId": "GEN.intro.0",
+          "previous": {},
+          "reference": "Genesis",
+          "verseCount": 0
+        },
+        "meta": {}
+      },
+      "status": 200
+    },
+    "/v1/bibles/bba9f40183526463-01/verses/REV.22.21?content-type=text": {
+      "body": {
+        "data": {
+          "bibleId": "bba9f40183526463-01",
+          "bookId": "REV",
+          "chapterId": "REV.22",
+          "content": "    \n [21] The grace of the Lord Jesus  be with all the saints.\n    \nAmen.\n",
+          "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God's Word has been dedicated to the public domain",
+          "id": "REV.22.21",
+          "next": {},
+          "orgId": "REV.22.21",
+          "previous": {
+            "id": "REV.22.20",
+            "number": "20"
+          },
+          "reference": "Revelation 22:21",
           "verseCount": 1
         },
         "meta": {}
@@ -3330,6 +3935,41 @@
             "relatedDbl": null,
             "type": "text",
             "updatedAt": "2025-10-01T02:35:46.000Z"
+          },
+          {
+            "abbreviation": "BSB",
+            "abbreviationLocal": "BSB",
+            "audioBibles": [
+              {
+                "dblId": "aadc8a2f4bdb467b",
+                "id": "aadc8a2f4bdb467b-01",
+                "name": "Berean Standard Audio Bible - (Non-drama)",
+                "nameLocal": "Berean Standard Audio Bible - (Non-drama)"
+              }
+            ],
+            "countries": [
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              }
+            ],
+            "dblId": "317e03834065a236",
+            "description": null,
+            "descriptionLocal": null,
+            "id": "317e03834065a236-01",
+            "language": {
+              "id": "eng",
+              "name": "English",
+              "nameLocal": "English",
+              "script": "Latin",
+              "scriptDirection": "LTR"
+            },
+            "name": "Berean Standard Bible",
+            "nameLocal": "Berean Standard Bible",
+            "relatedDbl": null,
+            "type": "text",
+            "updatedAt": "2026-02-14T02:16:47.000Z"
           },
           {
             "abbreviation": "engLXXup",
@@ -4303,7 +4943,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-19T02:22:46.000Z"
+            "updatedAt": "2026-08-22T02:19:43.000Z"
           },
           {
             "abbreviation": "engWEBU",
@@ -4331,7 +4971,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-19T02:24:13.000Z"
+            "updatedAt": "2026-08-22T02:21:15.000Z"
           },
           {
             "abbreviation": "engWEBU",
@@ -4359,7 +4999,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-19T02:25:36.000Z"
+            "updatedAt": "2026-08-22T02:22:25.000Z"
           },
           {
             "abbreviation": "engWEBUS",
@@ -4425,7 +5065,7 @@
             "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-19T02:18:25.000Z"
+            "updatedAt": "2026-08-22T02:15:29.000Z"
           },
           {
             "abbreviation": "engWEBUS",
@@ -4458,7 +5098,7 @@
             "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-19T02:19:48.000Z"
+            "updatedAt": "2026-08-22T02:17:03.000Z"
           },
           {
             "abbreviation": "WMB",
@@ -4486,7 +5126,7 @@
             "nameLocal": "World Messianic Bible",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-19T02:31:57.000Z"
+            "updatedAt": "2026-08-20T02:35:28.000Z"
           },
           {
             "abbreviation": "WMBBE",
@@ -4584,7 +5224,7 @@
             "nameLocal": "World Messianic Bible British Edition",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-19T02:14:56.000Z"
+            "updatedAt": "2026-08-20T02:15:09.000Z"
           }
         ]
       },

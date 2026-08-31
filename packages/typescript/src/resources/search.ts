@@ -14,13 +14,18 @@ export class SearchResource {
   constructor(private readonly fetcher: Fetcher) {}
 
   /**
-   * Full-text search across a Bible. Returns verses and/or passages matching
-   * the query, sorted by relevance unless overridden.
+   * Full-text search across a Bible.
+   *
+   * The response comes back in one of two disjoint shapes, chosen by the API:
+   * a keyword query returns paging metadata plus `verses`, while a query that
+   * parses as a scripture reference (`'John 3:16-19'`) returns `passages` and
+   * omits the paging fields entirely. Narrow with {@link isReferenceSearchResult}
+   * / {@link isKeywordSearchResult} — see {@link SearchResult}.
    *
    * @param bibleId  Bible to search within.
    * @param params   Query (required), plus paging, sort, and fuzziness options. See {@link SearchParams}.
    * @param signal   Optional AbortSignal.
-   * @returns        Search results with `query`, `limit`, `offset`, `total`, and matching `verses`/`passages`.
+   * @returns        Either the keyword shape (`query`/`limit`/`offset`/`total`/`verseCount`/`verses`) or the reference shape (`passages`).
    * @throws {NotFoundError}   if the Bible does not exist.
    * @throws {BadRequestError} if the query is malformed or too long.
    * @example
@@ -28,8 +33,12 @@ export class SearchResource {
    *     'bba9f40183526463-01',
    *     { query: 'love', limit: 10, sort: 'relevance' },
    *   );
-   *   console.log(`${data.total} matches`);
-   *   for (const v of data.verses ?? []) console.log(v.reference, v.text);
+   *   if (isReferenceSearchResult(data)) {
+   *     for (const p of data.passages) console.log(p.reference);
+   *   } else if (isKeywordSearchResult(data)) {
+   *     console.log(`${data.total} matches`);
+   *     for (const v of data.verses) console.log(v.reference, v.text);
+   *   }
    */
   search(bibleId: string, params: SearchParams, signal?: AbortSignal): Promise<ApiResponse<SearchResult>> {
     return this.fetcher.get(

@@ -37,6 +37,17 @@ export { type ApiResponse, type Meta, type ContentNode } from './schemas/common.
 // Shared base for ChapterGetParams / VerseGetParams / PassageGetParams /
 // SectionGetParams — exported so consumers can name or extend it directly.
 export { type ContentRenderingParams } from './schemas/content-params.js';
-export { type SearchResult, type SearchVerse, type SearchPassage, type SearchParams } from './schemas/search.schema.js';
+// `/search` returns one of two disjoint shapes; the guards narrow to whichever
+// one came back. See SearchResultSchema's docs in search.schema.ts.
+export {
+  isKeywordSearchResult,
+  isReferenceSearchResult,
+  type SearchResult,
+  type KeywordSearchResult,
+  type ReferenceSearchResult,
+  type SearchVerse,
+  type SearchPassage,
+  type SearchParams,
+} from './schemas/search.schema.js';
 export { type Section, type SectionSummary, type SectionGetParams } from './schemas/section.schema.js';
 export { type Verse, type VerseSummary, type VerseGetParams } from './schemas/verse.schema.js';

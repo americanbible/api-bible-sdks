@@ -6,7 +6,11 @@ export const AudioChapterSummarySchema = z.object({
   bibleId: z.string(),
   number: z.string(),
   bookId: z.string(),
-  reference: z.string(),
+  // Returned by the chapters list and chapter detail endpoints, but omitted
+  // when this schema is reused for AudioBookSummary.chapters under
+  // include-chapters. Same reuse trap ChapterSummarySchema avoids by leaving
+  // reference to ChapterSchema.
+  reference: z.string().optional(),
 }).passthrough();
 
 export type AudioChapterSummary = z.infer<typeof AudioChapterSummarySchema>;
@@ -20,10 +24,20 @@ const TimecodeSchema = z.object({
 const AudioChapterNavSchema = z.object({
   id: z.string(),
   bookId: z.string(),
-  number: z.string(),
+  // Audio Bibles disagree on this one: some return "2", others return 2. The
+  // text-side chapter nav and AudioChapterSummary.number are always strings, so
+  // coerce rather than leaking the union to callers. Coercion (not a union with
+  // .transform) because Fetcher.get pins a schema's input type to its output
+  // type, and z.coerce is runtime-only — same reason expiresAt below uses it.
+  number: z.coerce.string(),
 }).passthrough();
 
 export const AudioChapterSchema = AudioChapterSummarySchema.extend({
+  // Re-narrowed: the chapter detail endpoint always sends `reference`. Only the
+  // embedded AudioBookSummary.chapters shape omits it, so leaving the summary's
+  // `.optional()` to flow through here would push a null check onto every
+  // getChapter caller for a field they always receive.
+  reference: z.string(),
   resourceUrl: z.string(),
   // Present only when api.bible has timecode data for the chapter; not a request option.
   timecodes: z.array(TimecodeSchema).optional(),
