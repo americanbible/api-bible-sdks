@@ -107,6 +107,11 @@ describe('public entrypoint (src/index.ts)', () => {
       'ServerError',
       'ValidationError',
       'MAX_ERROR_BODY_BYTES',
+      // /search answers in one of two disjoint shapes; these narrow a
+      // SearchResult to whichever came back. Useful straight from useSearch,
+      // so they are worth having re-exported here.
+      'isKeywordSearchResult',
+      'isReferenceSearchResult',
     ];
 
     const expected = [...ownExports, ...reExportedCoreValues].sort();

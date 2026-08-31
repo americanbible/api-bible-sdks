@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-08-26
+
+Closes the parity gap with the TypeScript SDK's 2.0.0 schema fixes. Two of those
+four bugs existed here too, and the shared contract-case table had drifted so
+that neither could be caught — the two missing cases are added below.
+
+### Added
+
+- `Bible.copyright` and `Bible.info` are now typed. Both are returned by
+  `bibles.get` and by `bibles.list(include_full_details=True)`, and both are the
+  fields API.Bible's Terms §7 require you to display — previously they reached
+  consumers only through `model_extra`.
+- `SearchPassage.content`, `.verse_count`, and `.copyright`, all returned by the
+  API and previously unmodelled.
+- Contract cases `verses.get.boundary` and `search.reference`, mirroring the
+  TypeScript case table. Their absence is why the two fixes below went unnoticed:
+  `GEN.1.1` never reaches either edge of a Bible, and the keyword search case
+  cannot reach the reference branch.
+
+### Fixed
+
+- **`verses.get` no longer raises at the first and last verse of a Bible.** The
+  API returns `next: {}` / `previous: {}` there rather than omitting the key, and
+  `_Nav.id` was required, so `REV.22.21` and `GEN.intro.0` failed to validate.
+  `id` is now optional. Chapters and sections omit the key instead and were
+  unaffected, though they share the model.
+
+### Removed
+
+- **`SearchPassage.text`**, which the API never sends — a passage carries
+  `content`; it is `SearchVerse` that carries `text`. The attribute was always
+  `None`, and the real content was landing in `model_extra`. Read `.content`
+  instead.
+
 ### Changed
 
 - **Redirects are refused explicitly.** `follow_redirects=False` is now set per
