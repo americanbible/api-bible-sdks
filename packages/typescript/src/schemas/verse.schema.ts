@@ -12,8 +12,13 @@ export const VerseSummarySchema = z.object({
   position: z.coerce.number().optional(),
 }).passthrough();
 
+// At the first and last verse of a Bible the API returns an empty object rather
+// than omitting the key — `previous: {}` on GEN.intro.0, `next: {}` on
+// REV.22.21 — so `.optional()` on the parent is not enough and every field here
+// must be optional too. Chapters and sections omit the key at their boundaries
+// instead, which is why their nav schemas differ.
 const VerseNavSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   number: z.string().optional(),
   bookId: z.string().optional(),
 }).passthrough();

@@ -217,6 +217,19 @@ type ApiResponse<T> = {
 
 Every method accepts an optional `AbortSignal` as its final argument.
 
+#### FUMS metadata
+
+API.Bible's Fair Use Management System tracks how scripture content is used, and reporting usage back is a requirement for web applications. The field you report is `meta.fumsToken`:
+
+```typescript
+const { data, meta } = await client.chapters.get(bibleId, 'JHN.3');
+if (meta?.fumsToken) reportToFums(meta.fumsToken);
+```
+
+`fumsToken` is the only field current responses populate. `Meta` also declares `fumsId`, `fums`, `fumsJs`, and `fumsJsInclude` — these belong to the older JavaScript-embed flow and are typically absent. Responses that return no content, such as `bibles.get`, carry no `meta` at all, so always check before reading it.
+
+Separately, `Bible.copyright` and `Bible.info` are the two fields API.Bible's Terms §7 require you to display. Both are returned by `bibles.get` and by `bibles.list({ includeFullDetails: true })`, and both are omitted from the plain listing.
+
 ---
 
 ### `client.bibles`
@@ -303,19 +316,47 @@ audioBibles.getChapter(audioBibleId: string, chapterId: string, signal?: AbortSi
 ### `client.search`
 
 ```typescript
-search.search(bibleId: string, params?: SearchParams, signal?: AbortSignal): Promise<ApiResponse<SearchResult>>
+search.search(bibleId: string, params: SearchParams, signal?: AbortSignal): Promise<ApiResponse<SearchResult>>
 ```
+
+`params` is required, because `query` is.
 
 **`SearchParams`:**
 
 | Param       | Type                                                | Description                                                      |
 | ----------- | --------------------------------------------------- | ---------------------------------------------------------------- |
-| `query`     | `string`                                            | Search query string.                                             |
+| `query`     | `string`                                            | **Required.** Search query string.                               |
 | `limit`     | `number`                                            | Max results to return.                                           |
 | `offset`    | `number`                                            | Pagination offset.                                               |
 | `sort`      | `'relevance' \| 'canonical' \| 'reverse-canonical'` | Sort order.                                                      |
 | `range`     | `string`                                            | Limit search to a passage range (e.g. `"GEN"`, `"MAT.1-MAT.5"`). |
 | `fuzziness` | `'AUTO' \| '0' \| '1' \| '2'`                       | Fuzzy match level.                                               |
+
+**Two response shapes.** API.Bible answers a search in one of two ways, and it picks based on the query — no parameter selects between them, and no field in the response tags which one you got:
+
+| Query | You get |
+| ----- | ------- |
+| A keyword (`"love"`, `"Jude"`, or a query matching nothing) | `query`, `limit`, `offset`, `total`, `verseCount`, `verses` — never `passages` |
+| Something it parses as a scripture reference (`"John 3:16-19"`, `"John 3"`) | `passages` — and nothing else |
+
+Every field on `SearchResult` is therefore optional. Rather than null-checking each one, narrow with the exported guards:
+
+```typescript
+import { isKeywordSearchResult, isReferenceSearchResult } from '@americanbible/api-bible-sdk';
+
+const { data } = await client.search.search(bibleId, { query });
+
+if (isReferenceSearchResult(data)) {
+  // `passages` is non-optional here
+  for (const passage of data.passages) console.log(passage.reference);
+} else if (isKeywordSearchResult(data)) {
+  // `total` and `verses` are non-optional here
+  console.log(`${data.total} matches`);
+  for (const verse of data.verses) console.log(verse.reference, verse.text);
+}
+```
+
+`isKeywordSearchResult` narrows to `KeywordSearchResult` and `isReferenceSearchResult` to `ReferenceSearchResult`; both are exported. A keyword search with no matches still returns the full keyword shape with `verses: []`, so it takes the keyword branch rather than falling through.
 
 ---
 

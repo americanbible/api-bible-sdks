@@ -7,8 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-26
+
+Requires core SDK **2.0.0**. The core's schema fixes widen two public types, and
+because these hooks return the core's types directly, the break passes straight
+through to consumers — see **Changed**.
+
+### Added
+
+- `isKeywordSearchResult` / `isReferenceSearchResult` are now re-exported from
+  the core SDK. `/search` answers in one of two disjoint shapes depending on the
+  query — a keyword query returns pagination plus `verses`, a scripture
+  reference returns `passages` and no pagination — and nothing in the response
+  says which. Narrow a `useSearch` result with these before reading either side.
+
 ### Changed
 
+- **Peer dependency is now `@americanbible/api-bible-sdk` `^2.0.0`** (was
+  `^1.1.0`). Required, not cosmetic: this package re-exports the two guards
+  above, which do not exist in 1.1.0, and the old range would also have accepted
+  a 1.2.0 core — handing consumers the widened types with no version signal.
+- **`useSearch` inherits the core's `SearchResult` widening.** `result.data.total`
+  is now `number | undefined`, so `data.total.toFixed()` no longer typechecks.
+  Narrow with `isKeywordSearchResult`, which restores `total` as a non-optional
+  `number`, or use `data.total ?? 0`. Runtime behaviour is unchanged for keyword
+  searches. See the core 2.0.0 changelog for the full list of widened types.
 - **License changed from MIT to Apache License 2.0.** Apache 2.0 adds an express
   patent grant and a patent-retaliation clause that MIT does not provide.
   Copyright remains American Bible Society. Already-published versions keep the

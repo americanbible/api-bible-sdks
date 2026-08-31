@@ -37,11 +37,21 @@ def _sections(c: BibleClient) -> None:
         c.sections.get(BSB, for_book[0].id)
 
 
+def _verses_boundary(c: BibleClient) -> None:
+    # The edges of the Bible, where the API sends `next: {}` / `previous: {}`
+    # instead of omitting the key. GEN.1.1 above never reaches either edge, which
+    # is why the required `id` on the nav pointer went unnoticed. Mirrors the
+    # TypeScript `verses.get.boundary` case.
+    c.verses.get(BSB, "REV.22.21", content_type="text")
+    c.verses.get(BSB, "GEN.intro.0", content_type="text")
+
+
 def _audio(c: BibleClient) -> None:
-    # Unlike every other case, this one does not run against the BSB — it takes
-    # whichever audio Bible api.bible lists first for "eng", so the recording is
-    # third-party licensed content (at time of writing, Faith Comes By Hearing,
-    # (P) 2013 Hosanna) and can change between refreshes.
+    # Unlike every other case, this one does not pin a Bible — it takes whichever
+    # audio Bible api.bible lists first for "eng". That listing reorders, so the
+    # Bible recorded here changes between refreshes, and whatever lands may be
+    # third-party licensed rather than public domain. Check the recorded
+    # copyright before assuming anything about the content.
     #
     # The recorded fixture is deliberately metadata-only. get_chapter returns a
     # presigned S3 resource_url that grants real access to the audio until its
@@ -74,8 +84,13 @@ CASES: list[ContractCase] = [
     ("chapters.get", lambda c: c.chapters.get(BSB, "GEN.1", content_type="text")),
     ("verses.list", lambda c: c.verses.list(BSB, "GEN.1")),
     ("verses.get", lambda c: c.verses.get(BSB, "GEN.1.1", content_type="text")),
+    ("verses.get.boundary", _verses_boundary),
     ("passages.get", lambda c: c.passages.get(BSB, "GEN.1.1-GEN.1.3", content_type="text")),
     ("search", lambda c: c.search.search(BSB, "love", limit=3)),
+    # /search answers in one of two disjoint shapes. A query the API parses as a
+    # scripture reference returns `passages` and omits the paging scalars
+    # entirely, so the keyword case above cannot cover it.
+    ("search.reference", lambda c: c.search.search(BSB, "John 3:16-19")),
     ("sections", _sections),
     ("audio", _audio),
 ]

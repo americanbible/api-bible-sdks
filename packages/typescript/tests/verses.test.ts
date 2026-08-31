@@ -107,6 +107,38 @@ describe("VersesResource", () => {
       expect(meta?.fumsId).toBe("fums-123");
     });
 
+    // At the edges of a Bible the API sends an empty nav object rather than
+    // omitting the key, so the inner schema still runs and every field in it
+    // has to be optional. Both cases are reachable: GEN.intro.0 is the first
+    // verse and REV.22.21 the last.
+    it("parses the last verse of a Bible, whose next is an empty object", async () => {
+      const lastVerse = { ...mockVerse, id: "REV.22.21", next: {} };
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(mockResponse(200, { data: lastVerse, meta: {} }));
+      const { data } = await makeClient(
+        fetchFn as unknown as typeof fetch,
+      ).verses.get(BIBLE_ID, "REV.22.21");
+
+      expect(data.next).toEqual({});
+      expect(data.next?.id).toBeUndefined();
+      expect(data.previous?.id).toBe("intro.GEN");
+    });
+
+    it("parses the first verse of a Bible, whose previous is an empty object", async () => {
+      const firstVerse = { ...mockVerse, id: "GEN.intro.0", previous: {} };
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(mockResponse(200, { data: firstVerse, meta: {} }));
+      const { data } = await makeClient(
+        fetchFn as unknown as typeof fetch,
+      ).verses.get(BIBLE_ID, "GEN.intro.0");
+
+      expect(data.previous).toEqual({});
+      expect(data.previous?.id).toBeUndefined();
+      expect(data.next?.id).toBe("GEN.1.2");
+    });
+
     it("calls the correct URL path", async () => {
       const fetchFn = vi
         .fn()

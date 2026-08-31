@@ -88,9 +88,16 @@ class Country(_Model):
 
 
 class _Nav(_Model):
-    """A next/previous navigation pointer."""
+    """A next/previous navigation pointer.
 
-    id: str
+    ``id`` is optional because at the first and last verse of a Bible the API
+    sends ``next: {}`` / ``previous: {}`` rather than omitting the key, and a
+    required ``id`` made ``verses.get`` raise there. Chapters and sections omit
+    the key instead, so they were never affected — but this model is shared with
+    them, and an empty pointer is harmless to accept.
+    """
+
+    id: str | None = None
     number: str | None = None
     book_id: str | None = Field(default=None, alias="bookId")
 
@@ -107,6 +114,11 @@ class Bible(_Model):
     countries: list[Country] = Field(default_factory=list)
     type: str | None = None
     updated_at: str | None = Field(default=None, alias="updatedAt")
+    # API.Bible's Terms §7 require displaying both. Returned by `bibles.get` and
+    # by `bibles.list(include_full_details=True)`; the plain listing omits them,
+    # and `info` is null on some Bibles.
+    copyright: str | None = None
+    info: str | None = None
 
 
 class Book(_Model):
@@ -234,7 +246,12 @@ class SearchPassage(_Model):
     book_id: str | None = Field(default=None, alias="bookId")
     chapter_ids: list[str] | None = Field(default=None, alias="chapterIds")
     reference: str | None = None
-    text: str | None = None
+    # Always an HTML string: /search takes no content-type parameter, so the
+    # node-array variant cannot occur here. A passage carries `content`; it is
+    # `SearchVerse` that carries `text`.
+    content: str | None = None
+    verse_count: int | None = Field(default=None, alias="verseCount")
+    copyright: str | None = None
 
 
 class SearchResult(_Model):
