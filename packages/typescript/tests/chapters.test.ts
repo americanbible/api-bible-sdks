@@ -27,6 +27,7 @@ const mockChapter = {
   reference: "Genesis 1",
   verseCount: 31,
   content: "<p>In the beginning...</p>",
+  copyright: "Public Domain",
   next: { id: "GEN.2", number: "2", bookId: BOOK_ID },
 };
 
@@ -101,6 +102,31 @@ describe("ChaptersResource", () => {
       expect(data.verseCount).toBe(31);
       expect(data.next?.id).toBe("GEN.2");
       expect(meta?.fumsId).toBe("fums-123");
+    });
+
+    // API.Bible's Terms §7 require displaying this, so it must be typed rather
+    // than reachable only by casting around the SDK.
+    it("types copyright on a chapter", async () => {
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(mockResponse(200, { data: mockChapter, meta: {} }));
+      const { data } = await makeClient(
+        fetchFn as unknown as typeof fetch,
+      ).chapters.get(BIBLE_ID, CHAPTER_ID);
+
+      expect(data.copyright).toBe("Public Domain");
+    });
+
+    it("parses a chapter with no copyright", async () => {
+      const { copyright: _omitted, ...withoutCopyright } = mockChapter;
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(mockResponse(200, { data: withoutCopyright, meta: {} }));
+      const { data } = await makeClient(
+        fetchFn as unknown as typeof fetch,
+      ).chapters.get(BIBLE_ID, CHAPTER_ID);
+
+      expect(data.copyright).toBeUndefined();
     });
 
     it("calls the correct URL path", async () => {

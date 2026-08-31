@@ -27,6 +27,12 @@ export const BibleSchema = z.object({
   language: LanguageSchema,
   countries: z.array(CountrySchema),
   audioBibles: z.array(EmbeddedAudioBibleSchema),
+  // Returned by /bibles/{id} and by /bibles?include-full-details=true, absent
+  // from the plain /bibles listing that shares this schema — hence optional.
+  // API.Bible's Terms §7 require displaying both, so they are typed rather than
+  // left to passthrough. `info` is null on some Bibles. Mirrors AudioBibleSchema.
+  copyright: z.string().optional().nullable(),
+  info: z.string().optional().nullable(),
 }).passthrough();
 
 export type Bible = z.infer<typeof BibleSchema>;

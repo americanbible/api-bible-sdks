@@ -3,18 +3,6 @@ import { stableStringify } from './stable-stringify.js';
 import { useAsyncResource } from './use-async-resource.js';
 import type { AsyncResource } from './types.js';
 
-/**
- * Full-text search across a Bible's text.
- *
- * Thin by design: maps 1:1 to `client.search.search`, forwards the abort signal,
- * and unwraps the `{ data }` envelope. All lifecycle/state lives in
- * {@link useAsyncResource} — this mirrors the `usePassages`/`useBooks` template.
- *
- * The result (`SearchResult`) carries its own pagination state — `total`,
- * `limit`, `offset` — so callers page by incrementing `params.offset`; there is
- * deliberately no paginate/debounce helper here (the core SDK owns query build,
- * validation, and paging).
- *
 /** Options for {@link useSearch}. */
 export interface UseSearchOptions {
   /**
@@ -27,6 +15,20 @@ export interface UseSearchOptions {
 }
 
 /**
+ * Full-text search across a Bible's text.
+ *
+ * Thin by design: maps 1:1 to `client.search.search`, forwards the abort signal,
+ * and unwraps the `{ data }` envelope. All lifecycle/state lives in
+ * {@link useAsyncResource} — this mirrors the `usePassages`/`useBooks` template.
+ *
+ * A keyword query returns pagination state on the result — `total`, `limit`,
+ * `offset` — so callers page by incrementing `params.offset`; there is
+ * deliberately no paginate/debounce helper here (the core SDK owns query build,
+ * validation, and paging). A query the API reads as a scripture reference
+ * returns `passages` instead and carries no pagination fields at all, so narrow
+ * with `isKeywordSearchResult` / `isReferenceSearchResult` (both re-exported
+ * from this package) before reading either side.
+ *
  * @param bibleId  Bible ID to search. When falsy the hook stays idle (no request).
  * @param params   Search params. `query` is required by the API; `limit`,
  *                 `offset`, `sort`, `range`, and `fuzziness` are optional.
