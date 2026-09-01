@@ -1164,7 +1164,7 @@
               }
             ],
             "type": "text",
-            "updatedAt": "2026-08-22T02:19:43.000Z",
+            "updatedAt": "2026-08-27T02:23:35.000Z",
             "audioBibles": []
           },
           {
@@ -1192,7 +1192,7 @@
               }
             ],
             "type": "text",
-            "updatedAt": "2026-08-22T02:21:15.000Z",
+            "updatedAt": "2026-08-27T02:25:01.000Z",
             "audioBibles": []
           },
           {
@@ -1220,7 +1220,7 @@
               }
             ],
             "type": "text",
-            "updatedAt": "2026-08-22T02:22:25.000Z",
+            "updatedAt": "2026-08-27T02:26:13.000Z",
             "audioBibles": []
           },
           {
@@ -1286,7 +1286,7 @@
               }
             ],
             "type": "text",
-            "updatedAt": "2026-08-22T02:15:29.000Z",
+            "updatedAt": "2026-08-27T02:18:30.000Z",
             "audioBibles": []
           },
           {
@@ -1319,7 +1319,7 @@
               }
             ],
             "type": "text",
-            "updatedAt": "2026-08-22T02:17:03.000Z",
+            "updatedAt": "2026-08-27T02:19:58.000Z",
             "audioBibles": []
           },
           {
@@ -5577,7 +5577,7 @@
       "status": 200,
       "body": {
         "data": {
-          "expiresAt": "1787759646",
+          "expiresAt": "1788247977",
           "resourceUrl": "https://invalid.example.com/aadc8a2f4bdb467b-01/release/audio_1/p_01-book-gen/GEN_001.mp3",
           "id": "GEN.1",
           "bibleId": "aadc8a2f4bdb467b-01",
