@@ -5,6 +5,17 @@ name: Refresh Contract Fixtures
 # workflow *detects* drift; this one *fixes* it. Runs monthly and on demand, and
 # opens a PR with any changes for review — fixtures are test inputs, so
 # auto-committing them could quietly mask a real regression.
+#
+# The PR it opens needs one manual click before it can merge. GitHub does not
+# let events raised with GITHUB_TOKEN start new workflow runs (loop prevention),
+# so the PR's checks sit at "action_required" until a maintainer approves them:
+# Actions tab -> the queued run -> "Approve and run". Dependabot is exempt from
+# this; github-actions[bot] is not. The PR is assigned so it does not go unseen
+# waiting for that click — the first monthly run sat unnoticed for eight days.
+#
+# This is a discoverability cost, not a verification gap: the validate step below
+# already runs the full contract tier plus the leak guard before anything is
+# pushed, so the PR's CI is a second run of checks that have already passed.
 
 on:
   schedule:
@@ -49,6 +60,9 @@ jobs:
       - name: Open a PR if fixtures changed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Who to assign the PR to, so it does not sit unseen. Override with
+          # `gh variable set FIXTURE_REVIEWER --body <user>`.
+          FIXTURE_REVIEWER: ${{ vars.FIXTURE_REVIEWER }}
         run: |
           if git diff --quiet -- tests/contract/fixtures; then
             echo "Fixtures unchanged — nothing to do."
@@ -64,8 +78,13 @@ jobs:
           gh pr create \
             --base main \
             --head "$branch" \
+            --assignee "${FIXTURE_REVIEWER:-mjvinti}" \
             --title "test(typescript): refresh contract fixtures" \
-            --body "Automated refresh of the offline contract fixtures from live api.bible. The recording was validated against the SDK schemas in this run (the offline contract tier replays cleanly). Review the diff for intentional API changes vs. regressions before merging."
+            --body "**This PR needs one click before its checks will run.** Go to the Actions tab, open the queued run for this branch, and choose *Approve and run*. GitHub does not let a PR opened with \`GITHUB_TOKEN\` start its own workflow runs, so the checks stay at \`action_required\` until a maintainer approves them.
+
+          Automated refresh of the offline contract fixtures from live api.bible. The recording was already validated in the run that produced it — the offline contract tier replays cleanly and the leak guard found no credentials — so approving CI re-runs checks that have passed once already.
+
+          Review the diff for intentional API changes vs. regressions before merging. Timestamp-only churn (\`updatedAt\`, \`expiresAt\`) is normal; a changed \`resourceUrl\` or any added token is not."
 
   refresh-python:
     runs-on: ubuntu-latest
@@ -95,6 +114,8 @@ jobs:
       - name: Open a PR if fixtures changed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # See the note in the `refresh` job above.
+          FIXTURE_REVIEWER: ${{ vars.FIXTURE_REVIEWER }}
         run: |
           if git diff --quiet -- tests/contract/fixtures; then
             echo "Fixtures unchanged — nothing to do."
@@ -110,5 +131,10 @@ jobs:
           gh pr create \
             --base main \
             --head "$branch" \
+            --assignee "${FIXTURE_REVIEWER:-mjvinti}" \
             --title "test(python): refresh contract fixtures" \
-            --body "Automated refresh of the offline contract fixtures from live api.bible. The recording was validated against the SDK schemas in this run (the offline contract tier replays cleanly). Review the diff for intentional API changes vs. regressions before merging."
+            --body "**This PR needs one click before its checks will run.** Go to the Actions tab, open the queued run for this branch, and choose *Approve and run*. GitHub does not let a PR opened with \`GITHUB_TOKEN\` start its own workflow runs, so the checks stay at \`action_required\` until a maintainer approves them.
+
+          Automated refresh of the offline contract fixtures from live api.bible. The recording was already validated in the run that produced it — the offline contract tier replays cleanly and the leak guard found no credentials — so approving CI re-runs checks that have passed once already.
+
+          Review the diff for intentional API changes vs. regressions before merging. Timestamp-only churn (\`updatedAt\`, \`expiresAt\`) is normal; a changed \`resourceUrl\` or any added token is not."
