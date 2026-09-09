@@ -867,7 +867,7 @@
           "bibleId": "aadc8a2f4bdb467b-01",
           "bookId": "GEN",
           "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God&#39;s Word has been dedicated to the public domain. The Holy Bible, Berean Standard Audio Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, the Berean Bible Translation Committee, and Barry Hays. This audio narration of God&#39;s Word has been dedicated to the public domain.",
-          "expiresAt": "1787776464",
+          "expiresAt": "1788247976",
           "id": "GEN.1",
           "next": {
             "bookId": "GEN",
@@ -4943,7 +4943,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-22T02:19:43.000Z"
+            "updatedAt": "2026-08-27T02:23:35.000Z"
           },
           {
             "abbreviation": "engWEBU",
@@ -4971,7 +4971,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-22T02:21:15.000Z"
+            "updatedAt": "2026-08-27T02:25:01.000Z"
           },
           {
             "abbreviation": "engWEBU",
@@ -4999,7 +4999,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-22T02:22:25.000Z"
+            "updatedAt": "2026-08-27T02:26:13.000Z"
           },
           {
             "abbreviation": "engWEBUS",
@@ -5065,7 +5065,7 @@
             "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-22T02:15:29.000Z"
+            "updatedAt": "2026-08-27T02:18:30.000Z"
           },
           {
             "abbreviation": "engWEBUS",
@@ -5098,7 +5098,7 @@
             "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-22T02:17:03.000Z"
+            "updatedAt": "2026-08-27T02:19:58.000Z"
           },
           {
             "abbreviation": "WMB",
