@@ -44,7 +44,7 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-pydantic==2.13.4
+pydantic==2.13.5
     # via api-bible-sdk (pyproject.toml)
 pydantic-core==2.46.4
     # via pydantic
