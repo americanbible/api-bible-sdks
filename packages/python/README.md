@@ -14,6 +14,15 @@ A production-quality Python SDK for [api.bible](https://api.bible/).
 
 ## Install
 
+> **Not yet on PyPI.** The package is complete and tested; publishing is waiting
+> on the release account setup. Until then, install from source:
+
+```bash
+pip install "git+https://github.com/americanbible/api-bible-sdks.git#subdirectory=packages/python"
+```
+
+Once published, the install will be:
+
 ```bash
 pip install americanbible-api-bible-sdk
 ```

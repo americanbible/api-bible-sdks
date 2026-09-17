@@ -8,9 +8,12 @@ Official SDKs for [api.bible](https://api.bible/), maintained by the [American B
 | ------------------------------------------------------- | --------------------- | ----------------------------- |
 | [`@americanbible/api-bible-sdk`](./packages/typescript) | `packages/typescript` | Active (TypeScript / Node.js) |
 | [`@americanbible/api-bible-sdk-react`](./packages/react) | `packages/react`      | Active (React 18+)            |
-| [`americanbible-api-bible-sdk`](./packages/python) (Python) | `packages/python`  | Active (Python 3.10+)         |
+| [`americanbible-api-bible-sdk`](./packages/python) (Python) | `packages/python`  | Coming soon (Python 3.10+)    |
 
 See each package's README for installation and usage.
+
+The Python SDK is complete and tested but not yet on PyPI — install it from
+source in the meantime. See [its README](./packages/python#install).
 
 ## Repository layout
 
