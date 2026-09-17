@@ -33,8 +33,11 @@ jobs:
           node-version: 20
           registry-url: 'https://registry.npmjs.org'
           cache: npm
-      # Trusted Publishing requires npm >= 11.5.1; Node 20 ships npm 10.
-      - run: npm install -g npm@latest
+      # Trusted Publishing requires npm >= 11.5.1; Node 20 ships npm 10. Pinned
+      # to the 11 line rather than @latest: npm 12 requires Node >= 22.22 and
+      # aborts with EBADENGINE here, which is how ts-v2.0.0 first failed. Revisit
+      # when this job moves off Node 20 (already EOL since 2026-04-30).
+      - run: npm install -g npm@11
       - run: npm ci
       - name: Verify tag matches package version
         run: |
