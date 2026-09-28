@@ -187,9 +187,13 @@ count errors, or forward request metadata to your telemetry backend:
   error, willRetry, durationMs }`.
 
 Both receive only response metadata — **never your api-key or request headers** —
-so they are safe to log, and any error they throw is swallowed by the core so
-telemetry can't break a request. The `ResponseMeta` / `RetryMeta` types are
-re-exported from this package.
+and any error they throw is swallowed by the core so telemetry can't break a
+request. They can still carry user data, so don't log them wholesale:
+`meta.url` includes the query string (a `useSearch` query is whatever the user
+typed), and `RetryMeta.error` may hold up to 4 KB of the response body. Log
+`new URL(meta.url).pathname` rather than the full URL, or use
+[`onSettled`](#per-request-events-onsettled), whose events carry no user input.
+The `ResponseMeta` / `RetryMeta` types are re-exported from this package.
 
 ```tsx
 import { ApiBibleProvider } from '@americanbible/api-bible-sdk-react';
