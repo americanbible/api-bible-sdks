@@ -17,9 +17,21 @@ export type ApiBibleProviderProps =
 // real key before forwarding upstream, so this value never leaves your backend.
 const PROXY_SENTINEL_KEY = 'proxy';
 
+// The core requires an absolute URL, but a same-origin proxy path
+// ('/api/bible') is the natural browser config — resolve it against the page
+// origin. During SSR there is no origin; hooks never fetch on the server
+// (effects don't run) and the browser builds its own client on hydration, so a
+// loopback placeholder just keeps server render from throwing. `//host` is
+// protocol-relative, not a path, so it falls through to the core's validation.
+function resolveBaseUrl(baseUrl: string | undefined): string | undefined {
+  if (baseUrl === undefined || !baseUrl.startsWith('/') || baseUrl.startsWith('//')) return baseUrl;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+  return new URL(baseUrl, origin).toString();
+}
+
 function buildClient(config: ApiBibleConfig): BibleClient {
   const apiKey = config.apiKey && config.apiKey.trim() !== '' ? config.apiKey : PROXY_SENTINEL_KEY;
-  return createBibleClient({ ...config, apiKey });
+  return createBibleClient({ ...config, apiKey, baseUrl: resolveBaseUrl(config.baseUrl) });
 }
 
 /**

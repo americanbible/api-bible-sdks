@@ -23,14 +23,15 @@ npm install @americanbible/api-bible-sdk-react @americanbible/api-bible-sdk reac
 
 api.bible keys must not ship in browser bundles. The provider is designed for a
 **server-side proxy**: point `baseUrl` at your own backend (which injects the
-real key) and omit `apiKey` in the browser.
+real key) and omit `apiKey` in the browser. A path such as `'/api/bible'` is
+resolved against the page's origin; an absolute `https://` URL works too.
 
 ```tsx
 import { ApiBibleProvider, useBooks } from '@americanbible/api-bible-sdk-react';
 
 function App() {
   return (
-    <ApiBibleProvider config={{ baseUrl: 'https://your-app.example/api/bible' }}>
+    <ApiBibleProvider config={{ baseUrl: '/api/bible' }}>
       <BookList bibleId="bba9f40183526463-01" />
     </ApiBibleProvider>
   );

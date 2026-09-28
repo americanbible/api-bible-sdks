@@ -1,9 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Component, type ReactNode } from 'react';
-import { render, renderHook } from '@testing-library/react';
-import type { BibleClient } from '@americanbible/api-bible-sdk';
+import { render, renderHook, waitFor } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
+import { InvalidInputError, type BibleClient } from '@americanbible/api-bible-sdk';
 import { ApiBibleProvider } from '../src/provider.js';
 import { useApiBible } from '../src/use-api-bible.js';
+import { useBooks } from '../src/use-books.js';
 
 function fakeClient(): BibleClient {
   return { books: { list: vi.fn() } } as unknown as BibleClient;
@@ -123,6 +125,51 @@ describe('ApiBibleProvider + useApiBible', () => {
       </ApiBibleProvider>,
     );
     expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+});
+
+describe('ApiBibleProvider relative baseUrl (same-origin proxy)', () => {
+  it('resolves a relative baseUrl against the page origin', async () => {
+    // Never settles: only the request URL matters here.
+    const fetchMock = vi.fn<Parameters<typeof fetch>, Promise<Response>>(() => new Promise(() => {}));
+    renderHook(() => useBooks('bba9f40183526463-01'), {
+      wrapper: ({ children }) => (
+        <ApiBibleProvider config={{ baseUrl: '/api/bible', fetch: fetchMock }}>{children}</ApiBibleProvider>
+      ),
+    });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(String(fetchMock.mock.calls[0]![0])).toBe(
+      `${window.location.origin}/api/bible/bibles/bba9f40183526463-01/books`,
+    );
+  });
+
+  it('renders on the server (no window) without throwing', () => {
+    vi.stubGlobal('window', undefined);
+    try {
+      expect(() =>
+        renderToString(
+          <ApiBibleProvider config={{ baseUrl: '/api/bible' }}>
+            <div />
+          </ApiBibleProvider>,
+        ),
+      ).not.toThrow();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('leaves a protocol-relative baseUrl to the core, which rejects it', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let caught: Error | undefined;
+    render(
+      <ErrorBoundary onError={(e) => (caught = e)}>
+        <ApiBibleProvider config={{ baseUrl: '//evil.example/api' }}>
+          <div />
+        </ApiBibleProvider>
+      </ErrorBoundary>,
+    );
+    expect(caught).toBeInstanceOf(InvalidInputError);
     spy.mockRestore();
   });
 });
