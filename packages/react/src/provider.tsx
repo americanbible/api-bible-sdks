@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { createBibleClient, type BibleClient } from '@americanbible/api-bible-sdk';
 import { ApiBibleContext, type ApiBibleContextValue } from './context.js';
+import { isProduction } from './env.js';
 import type { ApiBibleConfig, SettledObserver } from './types.js';
 
 /**
@@ -30,6 +31,15 @@ function resolveBaseUrl(baseUrl: string | undefined): string | undefined {
   if (baseUrl === undefined || !baseUrl.startsWith('/') || baseUrl.startsWith('//')) return baseUrl;
   const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
   return new URL(baseUrl, origin).toString();
+}
+
+// True when requests would go straight to api.bible — the core's default host
+// or any explicit *.api.bible URL — rather than to the caller's own backend.
+function targetsApiBible(baseUrl: string | undefined): boolean {
+  if (baseUrl === undefined) return true;
+  // Only reached after the client built successfully, so the URL parses.
+  const { hostname } = new URL(resolveBaseUrl(baseUrl)!);
+  return hostname === 'api.bible' || hostname.endsWith('.api.bible');
 }
 
 function buildClient(config: ApiBibleConfig): BibleClient {
@@ -65,15 +75,27 @@ export function ApiBibleProvider(props: ApiBibleProviderProps): ReactElement {
   });
   const [value] = useState<ApiBibleContextValue>(() => ({ client, onSettled }));
 
-  // Proxy-first guardrail — dev only, and never throws: warn if a real key is
-  // about to be shipped to a browser against the default api.bible host.
+  // Config guardrails — dev only, and never throw:
+  //  - no key and no proxy: every request would go to api.bible carrying the
+  //    placeholder key and fail with an AuthError;
+  //  - a real key in a browser, talking to api.bible (default or explicit URL):
+  //    the key is about to ship in the bundle.
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production') return;
+    if (isProduction()) return;
     const config = props.config;
     if (!config) return;
     const { apiKey, baseUrl } = config;
     const realKey = !!apiKey && apiKey.trim() !== '' && apiKey !== PROXY_SENTINEL_KEY;
-    if (realKey && !baseUrl && typeof window !== 'undefined') {
+    if (!realKey && !baseUrl) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[api-bible] ApiBibleProvider has no `apiKey` and no `baseUrl`, so requests go to ' +
+          'api.bible without a key and will fail with an AuthError. Set `baseUrl` to your ' +
+          'server-side proxy (or pass `apiKey` in a trusted server environment).',
+      );
+      return;
+    }
+    if (realKey && typeof window !== 'undefined' && targetsApiBible(baseUrl)) {
       // eslint-disable-next-line no-console
       console.warn(
         '[api-bible] Using an api.bible key directly in the browser exposes it in your bundle. ' +
@@ -96,7 +118,7 @@ export function ApiBibleProvider(props: ApiBibleProviderProps): ReactElement {
   const apiKey = props.config?.apiKey;
   const baseUrl = props.config?.baseUrl;
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production' || warnedStaleProps.current) return;
+    if (isProduction() || warnedStaleProps.current) return;
     const first = initialProps.current;
     if (clientProp !== first.client || apiKey !== first.config?.apiKey || baseUrl !== first.config?.baseUrl) {
       warnedStaleProps.current = true;
