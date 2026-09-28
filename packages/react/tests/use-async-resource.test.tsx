@@ -17,6 +17,9 @@ import { ApiBibleProvider } from '../src/provider.js';
 import { useAsyncResource } from '../src/use-async-resource.js';
 
 const client = { books: { list: vi.fn() } } as unknown as BibleClient;
+// The signature every `useAsyncResource` run callback has.
+type Run<T> = (client: BibleClient, signal: AbortSignal) => Promise<T>;
+
 const wrapper = ({ children }: { children: ReactNode }) => (
   <ApiBibleProvider client={client}>{children}</ApiBibleProvider>
 );
@@ -24,7 +27,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 describe('useAsyncResource', () => {
   it('aborts the in-flight request when the component unmounts', () => {
     let signal: AbortSignal | undefined;
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<number>>((_client, s) => {
+    const run = vi.fn<Run<number>>((_client, s) => {
       signal = s;
       return new Promise<number>(() => {}); // never settles
     });
@@ -38,7 +41,7 @@ describe('useAsyncResource', () => {
 
   it('aborts the previous request when deps change', () => {
     const signals: AbortSignal[] = [];
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<number>>((_client, s) => {
+    const run = vi.fn<Run<number>>((_client, s) => {
       signals.push(s);
       return new Promise<number>(() => {});
     });
@@ -56,7 +59,7 @@ describe('useAsyncResource', () => {
 
   it('ignores a stale result that resolves after deps changed', async () => {
     const resolvers: Array<(v: string) => void> = [];
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<string>>(
+    const run = vi.fn<Run<string>>(
       () => new Promise<string>((resolve) => resolvers.push(resolve)),
     );
 
@@ -78,7 +81,7 @@ describe('useAsyncResource', () => {
 
   it('turns a synchronous SDK throw into error state', async () => {
     const boom = new NotFoundError('boom', 404, '');
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<number>>(() => {
+    const run = vi.fn<Run<number>>(() => {
       throw boom;
     });
 
@@ -90,7 +93,7 @@ describe('useAsyncResource', () => {
   });
 
   it('wraps a non-SDK throw as a BibleError', async () => {
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<number>>(() => {
+    const run = vi.fn<Run<number>>(() => {
       throw new TypeError('kaboom');
     });
 
@@ -102,7 +105,7 @@ describe('useAsyncResource', () => {
 
   it('distinguishes first load (isLoading) from a background refetch (isFetching)', async () => {
     const resolvers: Array<(v: string) => void> = [];
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<string>>(
+    const run = vi.fn<Run<string>>(
       () => new Promise<string>((resolve) => resolvers.push(resolve)),
     );
 
@@ -134,7 +137,7 @@ describe('useAsyncResource', () => {
   });
 
   it('reports idle status and issues no request when disabled', () => {
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<number>>(() => Promise.resolve(1));
+    const run = vi.fn<Run<number>>(() => Promise.resolve(1));
 
     const { result } = renderHook(() => useAsyncResource<number>(run, ['k'], { enabled: false }), {
       wrapper,
@@ -148,7 +151,7 @@ describe('useAsyncResource', () => {
 
   it('does not cause an extra render while staying disabled across dep changes', () => {
     let renders = 0;
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<number>>(() => Promise.resolve(1));
+    const run = vi.fn<Run<number>>(() => Promise.resolve(1));
 
     const { rerender } = renderHook(
       ({ k }) => {
@@ -167,7 +170,7 @@ describe('useAsyncResource', () => {
   });
 
   it('sets status to error when the request rejects', async () => {
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<number>>(() =>
+    const run = vi.fn<Run<number>>(() =>
       Promise.reject(new NotFoundError('nope', 404, '')),
     );
 
@@ -180,7 +183,7 @@ describe('useAsyncResource', () => {
 
   it('keeps last-good data when a refetch fails, then recovers on the next success', async () => {
     const controls: Array<{ resolve: (v: string) => void; reject: (e: unknown) => void }> = [];
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<string>>(
+    const run = vi.fn<Run<string>>(
       () => new Promise<string>((resolve, reject) => controls.push({ resolve, reject })),
     );
 
@@ -209,7 +212,7 @@ describe('useAsyncResource', () => {
 describe('useAsyncResource de-duplication', () => {
   it('shares one in-flight request across identical resourceKey + deps', async () => {
     const resolvers: Array<(v: string) => void> = [];
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<string>>(
+    const run = vi.fn<Run<string>>(
       () => new Promise<string>((resolve) => resolvers.push(resolve)),
     );
 
@@ -225,7 +228,7 @@ describe('useAsyncResource de-duplication', () => {
   });
 
   it('does not share across different resourceKeys with identical deps', () => {
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<string>>(() => new Promise<string>(() => {}));
+    const run = vi.fn<Run<string>>(() => new Promise<string>(() => {}));
 
     // Same deps `['k']`, different operations — as useVerses vs useSectionsForChapter
     // would collide on `[bibleId, chapterId]`. Must stay two separate requests.
@@ -240,7 +243,7 @@ describe('useAsyncResource de-duplication', () => {
   it('keeps the shared request alive until the last subscriber unmounts', async () => {
     const resolvers: Array<(v: string) => void> = [];
     const signals: AbortSignal[] = [];
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<string>>((_c, s) => {
+    const run = vi.fn<Run<string>>((_c, s) => {
       signals.push(s);
       return new Promise<string>((resolve) => resolvers.push(resolve));
     });
@@ -258,7 +261,7 @@ describe('useAsyncResource de-duplication', () => {
 
   it('aborts the shared request only once the last subscriber unmounts', () => {
     const signals: AbortSignal[] = [];
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<string>>((_c, s) => {
+    const run = vi.fn<Run<string>>((_c, s) => {
       signals.push(s);
       return new Promise<string>(() => {}); // never settles
     });
@@ -275,7 +278,7 @@ describe('useAsyncResource de-duplication', () => {
 
   it('refetch() forces a fresh request instead of rejoining a shared in-flight one', async () => {
     const resolvers: Array<(v: string) => void> = [];
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<string>>(
+    const run = vi.fn<Run<string>>(
       () => new Promise<string>((resolve) => resolvers.push(resolve)),
     );
 
@@ -298,7 +301,7 @@ describe('useAsyncResource de-duplication', () => {
 
   it('issues a fresh request after the shared one settles (in-flight only, no cache)', async () => {
     const resolvers: Array<(v: string) => void> = [];
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<string>>(
+    const run = vi.fn<Run<string>>(
       () => new Promise<string>((resolve) => resolvers.push(resolve)),
     );
 
@@ -319,7 +322,7 @@ describe('useAsyncResource debounce', () => {
   it('collapses a burst of dep changes into one request after the delay', () => {
     vi.useFakeTimers();
     try {
-      const run = vi.fn<[BibleClient, AbortSignal], Promise<string>>(
+      const run = vi.fn<Run<string>>(
         () => new Promise<string>(() => {}), // pending; we only count calls
       );
 
@@ -346,7 +349,7 @@ describe('useAsyncResource debounce', () => {
   it('does not fire until the debounce delay elapses', () => {
     vi.useFakeTimers();
     try {
-      const run = vi.fn<[BibleClient, AbortSignal], Promise<string>>(() => new Promise<string>(() => {}));
+      const run = vi.fn<Run<string>>(() => new Promise<string>(() => {}));
 
       renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op', debounceMs: 100 }), { wrapper });
 
@@ -362,7 +365,7 @@ describe('useAsyncResource debounce', () => {
   it('cancels a pending debounced request on unmount', () => {
     vi.useFakeTimers();
     try {
-      const run = vi.fn<[BibleClient, AbortSignal], Promise<string>>(() => new Promise<string>(() => {}));
+      const run = vi.fn<Run<string>>(() => new Promise<string>(() => {}));
 
       const { unmount } = renderHook(
         () => useAsyncResource(run, ['k'], { resourceKey: 'op', debounceMs: 100 }),
@@ -398,7 +401,7 @@ describe('useAsyncResource typed-error preservation', () => {
   it.each(TYPED_ERRORS)(
     'surfaces a rejected $name unchanged (concrete type + identity)',
     async ({ error, type }) => {
-      const run = vi.fn<[BibleClient, AbortSignal], Promise<number>>(() => Promise.reject(error));
+      const run = vi.fn<Run<number>>(() => Promise.reject(error));
       const { result } = renderHook(() => useAsyncResource<number>(run, ['k']), { wrapper });
 
       await waitFor(() => expect(result.current.status).toBe('error'));
@@ -410,7 +413,7 @@ describe('useAsyncResource typed-error preservation', () => {
 
   it('preserves a synchronously thrown InvalidInputError (eager arg validation)', async () => {
     const error = new InvalidInputError('bad argument');
-    const run = vi.fn<[BibleClient, AbortSignal], Promise<number>>(() => {
+    const run = vi.fn<Run<number>>(() => {
       throw error;
     });
     const { result } = renderHook(() => useAsyncResource<number>(run, ['k']), { wrapper });

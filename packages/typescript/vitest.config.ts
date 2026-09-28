@@ -9,10 +9,10 @@ export default defineConfig({
       include: ['src/**'],
       // version.ts is generated from package.json by sync-version.mjs.
       exclude: ['src/version.ts'],
-      // Thresholds set just below the measured baseline (lines/statements
-      // ~99.8%, functions ~98.6%, branches ~93.5%) — a ratchet that blocks
-      // regressions without being arbitrary. Re-measure and raise after large
-      // additions to coverage.
+      // Thresholds set just below the measured baseline (vitest 4 / v8:
+      // statements ~98.6%, lines ~99.5%, functions 100%, branches ~92.6%) — a
+      // ratchet that blocks regressions without being arbitrary. Re-measure and
+      // raise after large additions to coverage.
       thresholds: {
         lines: 98,
         functions: 97,

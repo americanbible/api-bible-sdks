@@ -36,7 +36,7 @@ function jsonResponse(status: number, body: string): Response {
   } as unknown as Response;
 }
 
-const fetchMock = vi.fn<Parameters<typeof fetch>, Promise<Response>>();
+const fetchMock = vi.fn<typeof fetch>();
 
 function realClientWrapper(onSettled?: SettledObserver) {
   return ({ children }: { children: ReactNode }) => (
@@ -99,7 +99,7 @@ describe('end-to-end: hook through a real client (fetch stubbed)', () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse(429, '{"error":"rate limited"}'))
       .mockResolvedValueOnce(jsonResponse(200, OK_BOOKS_BODY));
-    const onSettled = vi.fn<Parameters<SettledObserver>, void>();
+    const onSettled = vi.fn<SettledObserver>();
 
     const { result } = renderHook(() => useBooks(BIBLE_ID), { wrapper: realClientWrapper(onSettled) });
 
@@ -111,7 +111,7 @@ describe('end-to-end: hook through a real client (fetch stubbed)', () => {
 
   it('reports schema drift to onSettled as a ValidationError', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, '{"data":"not-an-array"}'));
-    const onSettled = vi.fn<Parameters<SettledObserver>, void>();
+    const onSettled = vi.fn<SettledObserver>();
 
     const { result } = renderHook(() => useBooks(BIBLE_ID), { wrapper: realClientWrapper(onSettled) });
 

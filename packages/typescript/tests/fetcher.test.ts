@@ -436,6 +436,43 @@ describe('Fetcher', () => {
       expect(fetchFn).toHaveBeenCalledTimes(1);
     });
 
+    // Cancelling the oversized body is best-effort: if cancel() itself rejects,
+    // the caller must still get the size-limit ApiError, not the cancel failure.
+    it('still reports the size limit when cancelling an over-cap declared body rejects', async () => {
+      const response = {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-length': '5000' }),
+        body: { cancel: () => Promise.reject(new Error('cancel failed')) },
+        text: () => Promise.resolve(JSON.stringify(SUCCESS_BODY)),
+      } as unknown as Response;
+      const fetcher = makeCappedFetcher(vi.fn().mockResolvedValue(response) as unknown as typeof fetch, 100);
+      const err = await fetcher.get('/test', TestSchema).catch(e => e) as ApiError;
+      expect(err).toBeInstanceOf(ApiError);
+      expect(err.message).toContain('exceeded');
+    });
+
+    it('still reports the size limit when cancelling an over-cap stream rejects', async () => {
+      const enc = new TextEncoder();
+      const chunks = ['aaaa', 'bbbb', 'cccc'];
+      const reader = {
+        read: async () => (chunks.length ? { done: false, value: enc.encode(chunks.shift()!) } : { done: true }),
+        cancel: () => Promise.reject(new Error('cancel failed')),
+        releaseLock: () => {},
+      };
+      const response = {
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        body: { getReader: () => reader },
+        text: () => Promise.resolve(''),
+      } as unknown as Response;
+      const fetcher = makeCappedFetcher(vi.fn().mockResolvedValue(response) as unknown as typeof fetch, 6);
+      const err = await fetcher.get('/test', TestSchema).catch(e => e) as ApiError;
+      expect(err).toBeInstanceOf(ApiError);
+      expect(err.message).toContain('exceeded');
+    });
+
     it('reads and parses a streamed body that is under the cap (default undici path)', async () => {
       const fetchFn = vi.fn().mockResolvedValue(
         streamResponse([JSON.stringify(SUCCESS_BODY)], { 'content-type': 'application/json' }),
@@ -1111,6 +1148,30 @@ describe('Fetcher', () => {
         fetcher.get('/test', TestSchema, undefined, controller.signal),
       ).rejects.toThrow();
       // First request ran, sleep was aborted — second request never started.
+      expect(fetchFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('cuts a backoff sleep short when the signal aborts while it is in progress', async () => {
+      // Unlike the test above (signal already aborted when sleep() starts), this
+      // aborts *during* the sleep — e.g. a React component unmounting while the
+      // SDK waits out a 429. onRetry runs synchronously right before sleep()
+      // registers its abort listener, so a microtask queued from it is
+      // guaranteed to fire mid-sleep: no timers, no race.
+      const controller = new AbortController();
+      const fetchFn = vi.fn()
+        .mockResolvedValueOnce(mockResponse(429, {}))
+        .mockResolvedValue(mockResponse(200, SUCCESS_BODY));
+      const fetcher = new Fetcher({
+        baseUrl: 'https://rest.api.bible/v1',
+        apiKey: 'test-key',
+        fetch: fetchFn as unknown as typeof fetch,
+        // A 10s backoff: the test finishes instantly only if the abort cuts it short.
+        retry: { maxAttempts: 3, baseDelayMs: 10_000, maxDelayMs: 10_000, jitter: () => 1 },
+        onRetry: () => queueMicrotask(() => controller.abort()),
+      });
+
+      const err = await fetcher.get('/test', TestSchema, undefined, controller.signal).catch(e => e) as Error;
+      expect(err.name).toBe('AbortError');
       expect(fetchFn).toHaveBeenCalledTimes(1);
     });
   });

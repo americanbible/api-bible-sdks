@@ -189,7 +189,7 @@ describe('ApiBibleProvider + useApiBible', () => {
 describe('ApiBibleProvider relative baseUrl (same-origin proxy)', () => {
   it('resolves a relative baseUrl against the page origin', async () => {
     // Never settles: only the request URL matters here.
-    const fetchMock = vi.fn<Parameters<typeof fetch>, Promise<Response>>(() => new Promise(() => {}));
+    const fetchMock = vi.fn<typeof fetch>(() => new Promise(() => {}));
     renderHook(() => useBooks('bba9f40183526463-01'), {
       wrapper: ({ children }) => (
         <ApiBibleProvider config={{ baseUrl: '/api/bible', fetch: fetchMock }}>{children}</ApiBibleProvider>
