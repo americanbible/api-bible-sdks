@@ -25,4 +25,9 @@ export default tseslint.config(
     files: ['src/**/*.{ts,tsx}'],
     rules: { 'no-console': 'error' },
   },
+  {
+    // Maintainer scripts run under Node, not in the browser bundle.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: { process: 'readonly', console: 'readonly', URL: 'readonly' } },
+  },
 );

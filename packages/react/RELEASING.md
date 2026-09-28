@@ -33,10 +33,13 @@ must be published by hand. Do this once, before launch day.
    of `main`. Use a prerelease of the launch version (e.g. `1.0.0-rc.0`) and the
    `next` dist-tag so `latest` stays empty until the real release. You need
    `npm login` with publish rights to `@americanbible` and 2FA enabled.
-   `prepublishOnly` runs the full gate first.
+   `prepublishOnly` runs the full gate first; check the tarball before it does.
    ```bash
    npm run build -w @americanbible/api-bible-sdk
    npm version <launch-version>-rc.0 --no-git-tag-version -w @americanbible/api-bible-sdk-react
+   npm run build -w @americanbible/api-bible-sdk-react
+   npm run check:package -w @americanbible/api-bible-sdk-react
+   npm run smoke -w @americanbible/api-bible-sdk-react
    npm publish -w @americanbible/api-bible-sdk-react --access public --tag next
    ```
    Discard the local `package.json` version bump afterwards; it is not
@@ -69,13 +72,17 @@ must be published by hand. Do this once, before launch day.
    npm run typecheck -w @americanbible/api-bible-sdk-react
    npm run test:coverage -w @americanbible/api-bible-sdk-react
    npm run build -w @americanbible/api-bible-sdk-react
+   npm run check:package -w @americanbible/api-bible-sdk-react   # publint + attw
+   npm run smoke -w @americanbible/api-bible-sdk-react           # install + load the tarball
    npm publish --dry-run -w @americanbible/api-bible-sdk-react
    ```
 4. **Commit** the version + changelog change to `main` (via PR).
 5. **Tag and push.** `git tag react-v<x.y.z> && git push origin react-v<x.y.z>`.
-   The tag triggers the release workflow, which re-verifies the tag matches
-   `package.json`, runs the full gate via `prepublishOnly`, and publishes with
-   `--provenance`. A **prerelease** version (a hyphen, e.g. `1.0.0-beta.1`) is
+   The tag triggers the release workflow. Its `build` job (no publish rights)
+   re-verifies the tag matches `package.json`, runs the full gate, packs the
+   tarball, and checks it with publint, attw, and the install smoke test. Its
+   `publish` job (the only one with the OIDC token) publishes that exact
+   tarball with `--provenance` and `--ignore-scripts`. A **prerelease** version (a hyphen, e.g. `1.0.0-beta.1`) is
    published under the `next` dist-tag; a stable version goes to `latest`.
 6. **Verify.** On npmjs.com confirm the provenance badge is present, then check
    the version and dist-tag:

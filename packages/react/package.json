@@ -55,6 +55,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "build": "tsdown",
+    "check:package": "publint --strict && attw --pack .",
+    "smoke": "node scripts/smoke-test.mjs",
     "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build",
     "lint": "eslint . --max-warnings 0"
   },
@@ -67,6 +69,7 @@
   },
   "devDependencies": {
     "@americanbible/api-bible-sdk": "^2.0.0",
+    "@arethetypeswrong/cli": "^0.18.5",
     "@eslint/js": "^10.0.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.1.0",
@@ -77,6 +80,7 @@
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "jsdom": "^25.0.1",
+    "publint": "^0.3.24",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tsdown": "~0.21.10",

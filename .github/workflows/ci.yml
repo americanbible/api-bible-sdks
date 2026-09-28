@@ -67,6 +67,14 @@ jobs:
       - run: npm run lint -w @americanbible/api-bible-sdk-react
       - run: npm run test:coverage -w @americanbible/api-bible-sdk-react
       - run: npm run build -w @americanbible/api-bible-sdk-react
+      # The tests above import src/; these check what npm would actually ship:
+      # package.json/exports hygiene (publint), type resolution under every
+      # module mode (attw), and an install of the packed tarball into a clean
+      # project that loads the ESM and CJS entries under this lane's React.
+      - run: npm run check:package -w @americanbible/api-bible-sdk-react
+      - run: npm run smoke -w @americanbible/api-bible-sdk-react
+        env:
+          SMOKE_REACT_VERSION: ${{ matrix.react }}
 
   # Named `audit-npm`, not `audit`, so the status-check context stays distinct
   # from python.yml's audit job. Two jobs reporting the same context name let a
