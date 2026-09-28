@@ -69,6 +69,150 @@ const client = createBibleClient({ apiKey: process.env.BIBLE_API_KEY! });
 > client identity stable, so context consumers don't re-render and in-flight
 > requests aren't dropped. In development, changing the prop logs a warning.
 
+> **Configuration errors throw during render.** An invalid `config` — a plaintext
+> `http://` `baseUrl` on a non-loopback host, out-of-range retry settings, or
+> neither `config` nor `client` — throws an `InvalidInputError` (or `Error`)
+> from the provider, as does calling a hook outside a provider. Those are
+> programming errors, so they fail fast rather than surfacing in a hook's `error`.
+> Put the provider under an [error boundary](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)
+> so a bad deploy shows your fallback UI instead of a blank page. Request
+> failures never throw; they arrive in each hook's `error`.
+
+## Server-side proxy
+
+The proxy holds the real api-key and forwards the SDK's requests to api.bible. A
+careless proxy becomes an open relay for your key, so this reference version
+(a Next.js route handler — the same shape works in any server using the Fetch
+API):
+
+- **injects the key server-side** and forwards none of the browser's headers
+  (cookies, the SDK's placeholder `api-key`);
+- **allowlists** `GET` requests under `/bibles` and `/audio-bibles` — every
+  endpoint the SDK calls — and rejects encoded `/` or `\` in the path, so no
+  request can reach another route with your key;
+- **refuses redirects**, so the key is never replayed to another host;
+- **passes back** `Retry-After` and `X-RateLimit-Remaining`, which the SDK's
+  backoff and your `onResponse` hook read;
+- **rate-limits per client IP**, so one visitor can't spend your whole quota.
+
+```ts
+// app/api/bible/[...path]/route.ts — runs on your server only.
+const UPSTREAM = 'https://rest.api.bible/v1';
+const PREFIX = '/api/bible'; // where this route is mounted
+const ALLOWED = /^\/(bibles|audio-bibles)(\/|$)/;
+const PASS_HEADERS = ['content-type', 'retry-after', 'x-ratelimit-remaining'];
+
+// Fixed window per IP. In memory, so it counts per server instance — on
+// serverless or multi-instance hosting, use your platform's rate limiting.
+const WINDOW_MS = 60_000;
+const MAX_PER_WINDOW = 120;
+const hits = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  if (hits.size > 10_000) for (const [key, w] of hits) if (w.resetAt <= now) hits.delete(key);
+  const w = hits.get(ip);
+  if (!w || w.resetAt <= now) {
+    hits.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return false;
+  }
+  return ++w.count > MAX_PER_WINDOW;
+}
+
+// Only GET is exported, so Next.js answers every other method with 405.
+export async function GET(req: Request): Promise<Response> {
+  // `URL` resolves `.` / `..` segments; encoded slashes survive it, so reject them.
+  const { pathname, search } = new URL(req.url);
+  const path = pathname.slice(PREFIX.length);
+  if (!ALLOWED.test(path) || /%2f|%5c/i.test(path)) return new Response('Not found', { status: 404 });
+
+  // Trust X-Forwarded-For only if your host sets it (Vercel, most load balancers do).
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (isRateLimited(ip)) {
+    return new Response('Too many requests', { status: 429, headers: { 'retry-after': '60' } });
+  }
+
+  const upstream = await fetch(UPSTREAM + path + search, {
+    headers: { 'api-key': process.env.BIBLE_API_KEY!, accept: 'application/json' },
+    redirect: 'error',
+  });
+  const headers = new Headers();
+  for (const name of PASS_HEADERS) {
+    const value = upstream.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return new Response(upstream.body, { status: upstream.status, headers });
+}
+```
+
+Point the provider at it with `config={{ baseUrl: '/api/bible' }}`. If your app
+sets a Next.js `basePath`, include it in both `PREFIX` and `baseUrl`.
+
+## Next.js (App Router)
+
+The hooks and provider are Client Component APIs (the package entry is marked
+`'use client'`). Two rules follow:
+
+**Mount the provider from your own Client Component.** A Server Component can
+only pass serializable props to a Client Component, so `onSettled`,
+`onResponse`, `onRetry`, or a pre-built `client` cannot be passed from
+`app/layout.tsx` directly. Wrap the provider instead:
+
+```tsx
+// app/providers.tsx
+'use client';
+
+import type { ReactNode } from 'react';
+import { ApiBibleProvider } from '@americanbible/api-bible-sdk-react';
+
+export function Providers({ children }: { children: ReactNode }) {
+  return <ApiBibleProvider config={{ baseUrl: '/api/bible' }}>{children}</ApiBibleProvider>;
+}
+```
+
+```tsx
+// app/layout.tsx (a Server Component)
+import type { ReactNode } from 'react';
+import { Providers } from './providers';
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}
+```
+
+**In Server Components, use the core SDK directly.** Everything this package
+re-exports becomes a client reference inside a Server Component, so
+`createBibleClient` can't be called there and `instanceof NotFoundError` won't
+match. Import from `@americanbible/api-bible-sdk` instead — on the server you can
+use the key directly:
+
+```tsx
+// app/books/page.tsx (a Server Component)
+import { createBibleClient, NotFoundError } from '@americanbible/api-bible-sdk';
+
+const client = createBibleClient({ apiKey: process.env.BIBLE_API_KEY! });
+
+export default async function BooksPage() {
+  try {
+    const { data: books } = await client.books.list('bba9f40183526463-01');
+    return <ul>{books.map((book) => <li key={book.id}>{book.name}</li>)}</ul>;
+  } catch (err) {
+    if (err instanceof NotFoundError) return <p>Bible not found.</p>;
+    throw err;
+  }
+}
+```
+
+During server rendering the hooks render their initial `loading` state and issue
+no request; they fetch after hydration. Fetch in a Server Component (as above)
+when the data should be in the initial HTML.
+
 ## API
 
 - **`<ApiBibleProvider config | client>`** — builds and shares one client.
