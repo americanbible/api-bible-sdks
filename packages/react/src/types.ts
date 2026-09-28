@@ -43,6 +43,24 @@ export interface AsyncResource<T> {
 }
 
 /**
+ * Reported to the provider's `onSettled` once per network request a hook
+ * issued — not once per component: components sharing a de-duplicated request
+ * produce a single event. Cancelled requests are not reported.
+ */
+export interface SettledEvent {
+  /** SDK operation, e.g. `'books.list'`. Never ids, params, or URLs — safe to log. */
+  resourceKey: string | undefined;
+  outcome: 'success' | 'error';
+  /** Wall time of the whole logical request, including the core's retries and backoff. */
+  durationMs: number;
+  /** The typed SDK error when `outcome` is `'error'`. */
+  error?: BibleError;
+}
+
+/** Receives a {@link SettledEvent}. Anything it throws is swallowed. */
+export type SettledObserver = (event: SettledEvent) => void;
+
+/**
  * Provider configuration: the core SDK's {@link BibleClientConfig}, except
  * `apiKey` is OPTIONAL. Omit it to run in proxy mode — point `baseUrl` at your
  * own backend and let the server hold the real key. When provided, the key is

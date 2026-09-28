@@ -47,6 +47,10 @@ Licensed under the Apache License 2.0.
 - Request cancellation on unmount and on input change, and in-flight
   de-duplication: components requesting the same endpoint and params at the same
   time share one network call, cancelled only when the last one unmounts.
+- `onSettled` provider prop — one telemetry event per network request
+  (`{ resourceKey, outcome, durationMs, error? }`), covering retries and
+  failures such as `ValidationError` that the core's `onResponse` / `onRetry`
+  never see. Events carry no ids, params, or URLs.
 - Re-exports every type and error class from `@americanbible/api-bible-sdk`, so
   `instanceof NotFoundError` works from a single import.
 - Verified under React 18 and 19, StrictMode, and server-side rendering

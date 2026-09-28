@@ -217,6 +217,39 @@ import { ApiBibleProvider } from '@americanbible/api-bible-sdk-react';
 The callbacks are set once, when the provider builds its client (like all other
 config).
 
+### Per-request events: `onSettled`
+
+`onResponse` / `onRetry` see individual HTTP attempts. To measure what your users
+actually wait for — and to catch failures that never produce an HTTP response,
+such as a `ValidationError` when the API's response shape drifts — pass
+`onSettled` to the provider. It fires **once per network request a hook issued**:
+components sharing a de-duplicated request produce one event, retries are folded
+into it, and cancelled requests are not reported.
+
+The event is `{ resourceKey, outcome, durationMs, error? }`. `resourceKey` is the
+SDK operation (e.g. `'books.list'`), never ids, params, or URLs, so events carry
+no user input (such as a search query). `durationMs` covers the whole request,
+including the core's retries and backoff. Unlike `config`, `onSettled` may change
+after mount; the latest one is used. Anything it throws is swallowed.
+
+```tsx
+import { ApiBibleProvider, ValidationError } from '@americanbible/api-bible-sdk-react';
+
+<ApiBibleProvider
+  config={{ baseUrl: '/api/bible' }}
+  onSettled={(e) => {
+    metrics.histogram('api_bible.hook_request_ms', e.durationMs, {
+      op: e.resourceKey,
+      outcome: e.outcome,
+    });
+    // Schema drift: the SDK and the live API disagree — worth an alert.
+    if (e.error instanceof ValidationError) metrics.increment('api_bible.schema_drift', { op: e.resourceKey });
+  }}
+>
+  {children}
+</ApiBibleProvider>;
+```
+
 ## Rate limits
 
 api.bible enforces per-key rate limits. Three layers keep you under them:
