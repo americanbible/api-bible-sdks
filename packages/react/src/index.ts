@@ -27,7 +27,7 @@ export { useAudioChapters } from './use-audio-chapters.js';
 export { useAudioChapter } from './use-audio-chapter.js';
 
 // Shared types
-export type { AsyncResource, ApiBibleConfig } from './types.js';
+export type { AsyncResource, ApiBibleConfig, SettledEvent, SettledObserver } from './types.js';
 
 // Re-export the core SDK's types AND error classes so consumers import from a
 // single package and `instanceof NotFoundError` works (one copy of the core).

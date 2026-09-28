@@ -1,25 +1,40 @@
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { createBibleClient, type BibleClient } from '@americanbible/api-bible-sdk';
-import { ApiBibleContext } from './context.js';
-import type { ApiBibleConfig } from './types.js';
+import { ApiBibleContext, type ApiBibleContextValue } from './context.js';
+import type { ApiBibleConfig, SettledObserver } from './types.js';
 
 /**
  * Initialize with EITHER `config` (common path — we build the client) OR a
  * pre-built `client` (tests, SSR, or advanced reuse). Modeled as a union so
  * "both" and "neither" are unrepresentable.
+ *
+ * `onSettled` receives one {@link SettledEvent} per network request a hook
+ * issued. Unlike `config`, it may change after mount; the latest one is used.
  */
 export type ApiBibleProviderProps =
-  | { config: ApiBibleConfig; client?: never; children: ReactNode }
-  | { client: BibleClient; config?: never; children: ReactNode };
+  | { config: ApiBibleConfig; client?: never; onSettled?: SettledObserver; children: ReactNode }
+  | { client: BibleClient; config?: never; onSettled?: SettledObserver; children: ReactNode };
 
 // Non-blank placeholder that satisfies the core SDK's required-key check in
 // proxy mode. Your proxy is expected to overwrite the `api-key` header with the
 // real key before forwarding upstream, so this value never leaves your backend.
 const PROXY_SENTINEL_KEY = 'proxy';
 
+// The core requires an absolute URL, but a same-origin proxy path
+// ('/api/bible') is the natural browser config — resolve it against the page
+// origin. During SSR there is no origin; hooks never fetch on the server
+// (effects don't run) and the browser builds its own client on hydration, so a
+// loopback placeholder just keeps server render from throwing. `//host` is
+// protocol-relative, not a path, so it falls through to the core's validation.
+function resolveBaseUrl(baseUrl: string | undefined): string | undefined {
+  if (baseUrl === undefined || !baseUrl.startsWith('/') || baseUrl.startsWith('//')) return baseUrl;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+  return new URL(baseUrl, origin).toString();
+}
+
 function buildClient(config: ApiBibleConfig): BibleClient {
   const apiKey = config.apiKey && config.apiKey.trim() !== '' ? config.apiKey : PROXY_SENTINEL_KEY;
-  return createBibleClient({ ...config, apiKey });
+  return createBibleClient({ ...config, apiKey, baseUrl: resolveBaseUrl(config.baseUrl) });
 }
 
 /**
@@ -40,6 +55,15 @@ export function ApiBibleProvider(props: ApiBibleProviderProps): ReactElement {
     if (props.config) return buildClient(props.config);
     throw new Error('ApiBibleProvider requires either a `config` or a `client` prop.');
   });
+
+  // The observer lives in a ref so a new `onSettled` (e.g. an inline arrow, fresh
+  // every render) takes effect without changing the context value's identity —
+  // which would re-render every consumer.
+  const onSettled = useRef(props.onSettled);
+  useEffect(() => {
+    onSettled.current = props.onSettled;
+  });
+  const [value] = useState<ApiBibleContextValue>(() => ({ client, onSettled }));
 
   // Proxy-first guardrail — dev only, and never throws: warn if a real key is
   // about to be shipped to a browser against the default api.bible host.
@@ -85,5 +109,5 @@ export function ApiBibleProvider(props: ApiBibleProviderProps): ReactElement {
     }
   }, [clientProp, apiKey, baseUrl]);
 
-  return <ApiBibleContext.Provider value={client}>{props.children}</ApiBibleContext.Provider>;
+  return <ApiBibleContext.Provider value={value}>{props.children}</ApiBibleContext.Provider>;
 }

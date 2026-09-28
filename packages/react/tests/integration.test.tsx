@@ -4,6 +4,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { ValidationError } from '@americanbible/api-bible-sdk';
 import { ApiBibleProvider } from '../src/provider.js';
 import { useBooks } from '../src/use-books.js';
+import type { SettledObserver } from '../src/types.js';
 
 // End-to-end smoke tier. The per-hook tests mock the BibleClient; these instead
 // drive a hook through a REAL client built by the provider, stubbing only the
@@ -37,7 +38,7 @@ function jsonResponse(status: number, body: string): Response {
 
 const fetchMock = vi.fn<Parameters<typeof fetch>, Promise<Response>>();
 
-function realClientWrapper() {
+function realClientWrapper(onSettled?: SettledObserver) {
   return ({ children }: { children: ReactNode }) => (
     <ApiBibleProvider
       config={{
@@ -47,6 +48,7 @@ function realClientWrapper() {
         // Deterministic, instant retries — no real backoff sleep in tests.
         retry: { jitter: () => 0 },
       }}
+      onSettled={onSettled}
     >
       {children}
     </ApiBibleProvider>
@@ -91,5 +93,30 @@ describe('end-to-end: hook through a real client (fetch stubbed)', () => {
 
     await waitFor(() => expect(result.current.error).toBeInstanceOf(ValidationError));
     expect(result.current.data).toBeUndefined();
+  });
+
+  it('reports a retried request as ONE onSettled event (logical, not per attempt)', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(429, '{"error":"rate limited"}'))
+      .mockResolvedValueOnce(jsonResponse(200, OK_BOOKS_BODY));
+    const onSettled = vi.fn<Parameters<SettledObserver>, void>();
+
+    const { result } = renderHook(() => useBooks(BIBLE_ID), { wrapper: realClientWrapper(onSettled) });
+
+    await waitFor(() => expect(result.current.status).toBe('success'));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(onSettled).toHaveBeenCalledTimes(1);
+    expect(onSettled.mock.calls[0]![0]).toMatchObject({ resourceKey: 'books.list', outcome: 'success' });
+  });
+
+  it('reports schema drift to onSettled as a ValidationError', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, '{"data":"not-an-array"}'));
+    const onSettled = vi.fn<Parameters<SettledObserver>, void>();
+
+    const { result } = renderHook(() => useBooks(BIBLE_ID), { wrapper: realClientWrapper(onSettled) });
+
+    await waitFor(() => expect(result.current.status).toBe('error'));
+    expect(onSettled).toHaveBeenCalledTimes(1);
+    expect(onSettled.mock.calls[0]![0].error).toBeInstanceOf(ValidationError);
   });
 });

@@ -3,7 +3,7 @@
 React hooks and a context provider for [api.bible](https://api.bible/),
 built on top of [`@americanbible/api-bible-sdk`](../typescript).
 
-> Status: **Preview (v0.2).** A self-contained slice — a provider, a
+> Status: **Pre-release — not yet published to npm.** A self-contained slice — a provider, a
 > client accessor hook, and resource hooks (`useBibles`, `useBible`, `useBooks`,
 > `useChapters`, `useChapter`, `usePassages`, `useSearch`, `useSectionsForBook`,
 > `useSectionsForChapter`, `useSection`, `useVerses`, `useVerse`,
@@ -23,14 +23,15 @@ npm install @americanbible/api-bible-sdk-react @americanbible/api-bible-sdk reac
 
 api.bible keys must not ship in browser bundles. The provider is designed for a
 **server-side proxy**: point `baseUrl` at your own backend (which injects the
-real key) and omit `apiKey` in the browser.
+real key) and omit `apiKey` in the browser. A path such as `'/api/bible'` is
+resolved against the page's origin; an absolute `https://` URL works too.
 
 ```tsx
 import { ApiBibleProvider, useBooks } from '@americanbible/api-bible-sdk-react';
 
 function App() {
   return (
-    <ApiBibleProvider config={{ baseUrl: 'https://your-app.example/api/bible' }}>
+    <ApiBibleProvider config={{ baseUrl: '/api/bible' }}>
       <BookList bibleId="bba9f40183526463-01" />
     </ApiBibleProvider>
   );
@@ -186,9 +187,13 @@ count errors, or forward request metadata to your telemetry backend:
   error, willRetry, durationMs }`.
 
 Both receive only response metadata — **never your api-key or request headers** —
-so they are safe to log, and any error they throw is swallowed by the core so
-telemetry can't break a request. The `ResponseMeta` / `RetryMeta` types are
-re-exported from this package.
+and any error they throw is swallowed by the core so telemetry can't break a
+request. They can still carry user data, so don't log them wholesale:
+`meta.url` includes the query string (a `useSearch` query is whatever the user
+typed), and `RetryMeta.error` may hold up to 4 KB of the response body. Log
+`new URL(meta.url).pathname` rather than the full URL, or use
+[`onSettled`](#per-request-events-onsettled), whose events carry no user input.
+The `ResponseMeta` / `RetryMeta` types are re-exported from this package.
 
 ```tsx
 import { ApiBibleProvider } from '@americanbible/api-bible-sdk-react';
@@ -215,6 +220,39 @@ import { ApiBibleProvider } from '@americanbible/api-bible-sdk-react';
 
 The callbacks are set once, when the provider builds its client (like all other
 config).
+
+### Per-request events: `onSettled`
+
+`onResponse` / `onRetry` see individual HTTP attempts. To measure what your users
+actually wait for — and to catch failures that never produce an HTTP response,
+such as a `ValidationError` when the API's response shape drifts — pass
+`onSettled` to the provider. It fires **once per network request a hook issued**:
+components sharing a de-duplicated request produce one event, retries are folded
+into it, and cancelled requests are not reported.
+
+The event is `{ resourceKey, outcome, durationMs, error? }`. `resourceKey` is the
+SDK operation (e.g. `'books.list'`), never ids, params, or URLs, so events carry
+no user input (such as a search query). `durationMs` covers the whole request,
+including the core's retries and backoff. Unlike `config`, `onSettled` may change
+after mount; the latest one is used. Anything it throws is swallowed.
+
+```tsx
+import { ApiBibleProvider, ValidationError } from '@americanbible/api-bible-sdk-react';
+
+<ApiBibleProvider
+  config={{ baseUrl: '/api/bible' }}
+  onSettled={(e) => {
+    metrics.histogram('api_bible.hook_request_ms', e.durationMs, {
+      op: e.resourceKey,
+      outcome: e.outcome,
+    });
+    // Schema drift: the SDK and the live API disagree — worth an alert.
+    if (e.error instanceof ValidationError) metrics.increment('api_bible.schema_drift', { op: e.resourceKey });
+  }}
+>
+  {children}
+</ApiBibleProvider>;
+```
 
 ## Rate limits
 

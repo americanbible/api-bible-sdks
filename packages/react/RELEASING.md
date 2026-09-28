@@ -6,7 +6,7 @@ published version — fix forward and deprecate the bad one (see
 [SECURITY.md](../../SECURITY.md)).
 
 This package depends on the core SDK (`@americanbible/api-bible-sdk`) as a
-**peer** dependency (`^1.1.0`), ships no runtime dependencies of its own, and is
+**peer** dependency (`^2.0.0`), ships no runtime dependencies of its own, and is
 versioned and released **independently** of the core.
 
 ## Prerequisites
@@ -15,10 +15,42 @@ versioned and released **independently** of the core.
   [`.github/workflows/react-release.yml`](../../.github/workflows/react-release.yml) —
   no token is stored in the repo. One-time setup: a trusted publisher for this
   package must be configured on npmjs.com pointing at this repo + that workflow.
+  npm only allows that once the package exists — see
+  [First publish (one-time)](#first-publish-one-time).
 - **Manual recovery** commands below (`npm deprecate`, `npm dist-tag`,
   `npm unpublish`) are run by a human, not CI. You need publish rights to the
   `@americanbible` scope and an authenticated session: `npm login`. Verify with
   `npm whoami`.
+
+## First publish (one-time)
+
+npm Trusted Publishing — whether set up on npmjs.com or with `npm trust` — can
+only be configured for a package that **already exists** on the registry. Until
+it is configured, `react-release.yml` cannot publish, so the very first version
+must be published by hand. Do this once, before launch day.
+
+1. **Publish a bootstrap prerelease by hand** from a clean, up-to-date checkout
+   of `main`. Use a prerelease of the launch version (e.g. `1.0.0-rc.0`) and the
+   `next` dist-tag so `latest` stays empty until the real release. You need
+   `npm login` with publish rights to `@americanbible` and 2FA enabled.
+   `prepublishOnly` runs the full gate first.
+   ```bash
+   npm run build -w @americanbible/api-bible-sdk
+   npm version <launch-version>-rc.0 --no-git-tag-version -w @americanbible/api-bible-sdk-react
+   npm publish -w @americanbible/api-bible-sdk-react --access public --tag next
+   ```
+   Discard the local `package.json` version bump afterwards; it is not
+   committed. This one version has no provenance (only CI can attest it).
+2. **Configure the trusted publisher.** On npmjs.com: the package → Settings →
+   Trusted publishing → GitHub Actions, with repository
+   `americanbible/api-bible-sdks`, workflow `react-release.yml`, and environment
+   `npm`. Or from the CLI (npm ≥ 11.15.0):
+   ```bash
+   npm trust github @americanbible/api-bible-sdk-react --file react-release.yml --repo americanbible/api-bible-sdks --env npm
+   ```
+3. **Rehearse the pipeline.** Release `<launch-version>-rc.1` through the normal
+   flow below (it lands on `next`), and confirm on npmjs.com that it carries the
+   provenance badge. Only then cut the stable release.
 
 ## Cutting a release
 

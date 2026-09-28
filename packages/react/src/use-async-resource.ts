@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BibleError, type BibleClient } from '@americanbible/api-bible-sdk';
 import { stableStringify } from './stable-stringify.js';
-import { useApiBible } from './use-api-bible.js';
-import type { AsyncResource } from './types.js';
+import { useApiBibleContext } from './use-api-bible.js';
+import type { ApiBibleContextValue } from './context.js';
+import type { AsyncResource, SettledEvent } from './types.js';
 
 // One state object per request. A single `setState` per transition keeps
 // isLoading / data / error mutually consistent in every render — there is no
@@ -78,6 +79,42 @@ function runToPromise(
   } catch (err) {
     return Promise.reject(err);
   }
+}
+
+function toBibleError(err: unknown): BibleError {
+  return err instanceof BibleError ? err : new BibleError(String(err), err);
+}
+
+// Wrap `run` so the request that actually hits the network reports once when it
+// settles. `acquire` only calls `run` when it starts a new request — joiners of a
+// shared in-flight request never do — so N components produce ONE event.
+// Cancellation is a non-event (as for `error` state); the core's internal
+// timeout is not this signal, so a timeout still reports as a NetworkError.
+function instrument(
+  run: (client: BibleClient, signal: AbortSignal) => Promise<unknown>,
+  resourceKey: string | undefined,
+  observer: ApiBibleContextValue['onSettled'],
+): (client: BibleClient, signal: AbortSignal) => Promise<unknown> {
+  return (client, signal) => {
+    const startedAt = performance.now();
+    const promise = runToPromise(run, client, signal);
+    const report = (event: Pick<SettledEvent, 'outcome' | 'error'>) => {
+      const notify = observer.current;
+      if (!notify || signal.aborted) return;
+      try {
+        notify({ resourceKey, durationMs: performance.now() - startedAt, ...event });
+      } catch {
+        // Same contract as the core's onResponse/onRetry: telemetry never breaks a request.
+      }
+    };
+    // A side branch: it handles the rejection itself, so it never produces an
+    // unhandled-rejection warning, and callers still await the original promise.
+    promise.then(
+      () => report({ outcome: 'success' }),
+      (err) => report({ outcome: 'error', error: toBibleError(err) }),
+    );
+    return promise;
+  };
 }
 
 interface Subscription {
@@ -184,7 +221,7 @@ export function useAsyncResource<T>(
   deps: readonly unknown[],
   options: UseAsyncResourceOptions = {},
 ): AsyncResource<T> {
-  const client = useApiBible();
+  const { client, onSettled } = useApiBibleContext();
   const { enabled = true, resourceKey, debounceMs } = options;
 
   const [state, setState] = useState<State<T>>(() =>
@@ -240,7 +277,7 @@ export function useAsyncResource<T>(
       // `stableStringify` keeps the key independent of object key order in `deps`.
       const key =
         forced || resourceKey === undefined ? undefined : `${resourceKey}:${stableStringify(deps)}`;
-      const acquired = acquire(client, key, run);
+      const acquired = acquire(client, key, instrument(run, resourceKey, onSettled));
       sub = acquired;
 
       void (async () => {
@@ -250,7 +287,7 @@ export function useAsyncResource<T>(
         } catch (err) {
           // Cancellation is expected on unmount / deps change — swallow it.
           if (!active || acquired.isAborted()) return;
-          const error = err instanceof BibleError ? err : new BibleError(String(err), err);
+          const error = toBibleError(err);
           // Keep the last-good `data` visible through a failed refetch.
           setState((prev) => ({ status: 'error', data: prev.data, error }));
         }
