@@ -15,8 +15,10 @@ package stands alone with its own `pyproject.toml`.
 
 ## Prerequisites
 
-- **Node.js 20+** and **npm 10+** for the TS and React packages. A `.nvmrc` /
+- **Node.js 20.19+** and **npm 10+** for the TS and React packages. A `.nvmrc` /
   `.node-version` pins the major — `nvm use` (or `fnm use` / `nodenv`) picks it up.
+  The dev toolchain (vitest's vite, jsdom) needs 20.19 or later; the published
+  packages themselves still run on any Node 20.
 - **Python 3.10+** for the Python package.
 
 ## Setup

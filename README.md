@@ -28,7 +28,7 @@ packages/
 
 ## Development
 
-Requirements: Node.js 20+ and npm 10+.
+Requirements: Node.js 20.19+ and npm 10+.
 
 ```bash
 # Install all workspace dependencies (single root lockfile)

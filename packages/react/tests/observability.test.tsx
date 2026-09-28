@@ -9,10 +9,10 @@ import type { SettledObserver } from '../src/types.js';
 // Mock ONLY the core client factory so we can assert exactly what config the
 // provider forwards to it — the observability seam (onResponse / onRetry) plus
 // the transport config. Every other core export the provider touches stays real.
-// The generic `vi.fn<[config], client>` types the call so toHaveBeenCalledWith
+// The generic `vi.fn<(config) => client>` types the call so toHaveBeenCalledWith
 // accepts a config matcher without an unused parameter.
 const createBibleClient = vi.hoisted(() =>
-  vi.fn<[BibleClientConfig], BibleClient>(
+  vi.fn<(config: BibleClientConfig) => BibleClient>(
     () => ({ books: { list: vi.fn() } }) as unknown as BibleClient,
   ),
 );
@@ -101,7 +101,7 @@ describe('onSettled: one telemetry event per network request', () => {
 
   it('reports once for components sharing a de-duplicated request, with no ids or params', async () => {
     const { client, list, resolve } = deferredClient();
-    const onSettled = vi.fn<Parameters<SettledObserver>, void>();
+    const onSettled = vi.fn<SettledObserver>();
     const { result } = renderHook(() => [useBooks(BIBLE_ID), useBooks(BIBLE_ID)], {
       wrapper: wrapperWith(client, onSettled),
     });
@@ -119,7 +119,7 @@ describe('onSettled: one telemetry event per network request', () => {
 
   it('reports a failure with the typed error', async () => {
     const { client, reject } = deferredClient();
-    const onSettled = vi.fn<Parameters<SettledObserver>, void>();
+    const onSettled = vi.fn<SettledObserver>();
     const { result } = renderHook(() => useBooks(BIBLE_ID), { wrapper: wrapperWith(client, onSettled) });
 
     await act(async () => reject(new Error('boom')));
@@ -133,7 +133,7 @@ describe('onSettled: one telemetry event per network request', () => {
 
   it('does not report a request cancelled by unmount', async () => {
     const { client, resolve } = deferredClient();
-    const onSettled = vi.fn<Parameters<SettledObserver>, void>();
+    const onSettled = vi.fn<SettledObserver>();
     const { unmount } = renderHook(() => useBooks(BIBLE_ID), { wrapper: wrapperWith(client, onSettled) });
 
     unmount();
@@ -156,8 +156,8 @@ describe('onSettled: one telemetry event per network request', () => {
 
   it('uses the latest onSettled prop without remounting the provider', async () => {
     const { client, list, resolve } = deferredClient();
-    const first = vi.fn<Parameters<SettledObserver>, void>();
-    const second = vi.fn<Parameters<SettledObserver>, void>();
+    const first = vi.fn<SettledObserver>();
+    const second = vi.fn<SettledObserver>();
     function Books() {
       useBooks(BIBLE_ID);
       return null;
