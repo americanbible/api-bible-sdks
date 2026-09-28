@@ -78,6 +78,63 @@ describe('ApiBibleProvider + useApiBible', () => {
     spy.mockRestore();
   });
 
+  it('warns in dev when a real key is used against an explicit api.bible baseUrl', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    renderHook(() => useApiBible(), {
+      wrapper: ({ children }) => (
+        <ApiBibleProvider config={{ apiKey: 'real-key-123', baseUrl: 'https://rest.api.bible/v1' }}>
+          {children}
+        </ApiBibleProvider>
+      ),
+    });
+    expect(spy).toHaveBeenCalledWith(expect.stringContaining('exposes it in your bundle'));
+    spy.mockRestore();
+  });
+
+  it('does not warn about the key when it goes to your own backend', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    renderHook(() => useApiBible(), {
+      wrapper: ({ children }) => (
+        <ApiBibleProvider config={{ apiKey: 'real-key-123', baseUrl: 'https://your-app.example/api/bible' }}>
+          {children}
+        </ApiBibleProvider>
+      ),
+    });
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('warns in dev when there is neither an apiKey nor a baseUrl', () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    renderHook(() => useApiBible(), {
+      wrapper: ({ children }) => <ApiBibleProvider config={{}}>{children}</ApiBibleProvider>,
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(expect.stringContaining('no `apiKey` and no `baseUrl`'));
+    spy.mockRestore();
+  });
+
+  it('stays silent in production builds', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const { rerender } = render(
+        <ApiBibleProvider config={{ apiKey: 'real-key-123' }}>
+          <div />
+        </ApiBibleProvider>,
+      );
+      rerender(
+        <ApiBibleProvider config={{ apiKey: 'another-key' }}>
+          <div />
+        </ApiBibleProvider>,
+      );
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('does not warn in proxy mode', () => {
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     renderHook(() => useApiBible(), {
