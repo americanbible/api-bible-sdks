@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { Component, type ReactNode } from 'react';
+import { Component, StrictMode, type ReactNode } from 'react';
 import { render, renderHook, waitFor } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { InvalidInputError, type BibleClient } from '@americanbible/api-bible-sdk';
@@ -112,6 +112,36 @@ describe('ApiBibleProvider + useApiBible', () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy).toHaveBeenCalledWith(expect.stringContaining('no `apiKey` and no `baseUrl`'));
     spy.mockRestore();
+  });
+
+  it('logs each mount-time warning once under StrictMode', () => {
+    // StrictMode mounts, unmounts, and re-mounts effects in development; the
+    // guardrail should still speak once per provider instance, not per run.
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      render(
+        <StrictMode>
+          <ApiBibleProvider config={{}}>
+            <div />
+          </ApiBibleProvider>
+        </StrictMode>,
+      );
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(expect.stringContaining('no `apiKey` and no `baseUrl`'));
+
+      spy.mockClear();
+      render(
+        <StrictMode>
+          <ApiBibleProvider config={{ apiKey: 'real-key-123' }}>
+            <div />
+          </ApiBibleProvider>
+        </StrictMode>,
+      );
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(expect.stringContaining('exposes it in your bundle'));
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('stays silent in production builds', () => {

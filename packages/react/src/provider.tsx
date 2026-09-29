@@ -80,8 +80,12 @@ export function ApiBibleProvider(props: ApiBibleProviderProps): ReactElement {
   //    placeholder key and fail with an AuthError;
   //  - a real key in a browser, talking to api.bible (default or explicit URL):
   //    the key is about to ship in the bundle.
+  // The ref makes it once per provider instance: StrictMode re-runs mount effects
+  // in development, but refs survive its simulated unmount/remount.
+  const checkedConfig = useRef(false);
   useEffect(() => {
-    if (isProduction()) return;
+    if (isProduction() || checkedConfig.current) return;
+    checkedConfig.current = true;
     const config = props.config;
     if (!config) return;
     const { apiKey, baseUrl } = config;

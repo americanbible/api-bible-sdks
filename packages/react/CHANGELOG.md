@@ -21,7 +21,8 @@ Licensed under the Apache License 2.0.
   (`'/api/bible'`) is resolved against the page origin. In development, the
   provider warns when a real key is used in a browser against api.bible
   (default or explicit `*.api.bible` URL), and when neither `apiKey` nor
-  `baseUrl` is set (every request would fail with an `AuthError`).
+  `baseUrl` is set (every request would fail with an `AuthError`). Each warning
+  logs once per provider, including under StrictMode.
 - Resource hooks, each a thin wrapper over the matching core method:
   - Bibles: `useBibles(params?)`, `useBible(bibleId)`
   - Books and chapters: `useBooks(bibleId, params?)`,
