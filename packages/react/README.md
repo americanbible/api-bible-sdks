@@ -203,7 +203,8 @@ export default async function BooksPage() {
     const { data: books } = await client.books.list('bba9f40183526463-01');
     return <ul>{books.map((book) => <li key={book.id}>{book.name}</li>)}</ul>;
   } catch (err) {
-    if (err instanceof NotFoundError) return <p>Bible not found.</p>;
+    // An unknown or unlicensed Bible ID comes back as AuthError, not NotFoundError.
+    if (err instanceof NotFoundError) return <p>Not found.</p>;
     throw err;
   }
 }
@@ -268,12 +269,14 @@ Every resource hook returns the same `AsyncResource<T>`:
   input's result is never shown for another; only `refetch()` keeps it.
 - **`error`** — a typed SDK error (a `BibleError` subclass such as `NotFoundError`
   or `RateLimitError`; narrow with `instanceof`), or `undefined`. Cancellations are
-  never surfaced here.
+  never surfaced here. Note that api.bible answers an unknown Bible ID, or one
+  your key isn't licensed for, with an auth error, so it surfaces as `AuthError`
+  (not `NotFoundError`); the error message names the Bible.
 - **`status`** — `'idle' | 'loading' | 'success' | 'error'`.
 - **`isLoading`** — `true` only on the first load for the current inputs (including
-  after an input change), while there is no `data` yet. A
-  background `refetch` keeps the previous `data` and leaves this `false`, so an
-  `if (isLoading)` spinner never flashes over content already on screen.
+  after an input change), while there is no `data` yet. A background `refetch`
+  keeps the previous `data` and leaves this `false`, so an `if (isLoading)`
+  spinner never flashes over content already on screen.
 - **`isFetching`** — `true` whenever a request is in flight, including a background
   `refetch`. Pair with `data` for stale-while-revalidate UIs (e.g. dim the current
   content while refetching).
