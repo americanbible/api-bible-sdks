@@ -335,7 +335,12 @@ export class Fetcher {
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.apiKey = config.apiKey;
     this.timeout = config.timeout ?? 10_000;
-    this.fetchFn = config.fetch ?? globalThis.fetch;
+    // Never store the bare global: `this.fetchFn(…)` would call it with the
+    // Fetcher as `this`, and browsers' WebIDL `fetch` throws "Illegal
+    // invocation" for any receiver other than the global (Node doesn't check).
+    // The wrapper also looks `fetch` up per call, so a polyfill or interceptor
+    // (e.g. MSW) installed after the client is built is still honored.
+    this.fetchFn = config.fetch ?? ((input, init) => globalThis.fetch(input, init));
     this.maxResponseBytes = config.maxResponseBytes ?? DEFAULT_MAX_RESPONSE_BYTES;
     if (this.maxResponseBytes < 1) throw new InvalidInputError('maxResponseBytes must be >= 1');
     this.onResponse = config.onResponse;

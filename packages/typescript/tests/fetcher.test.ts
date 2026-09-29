@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { Fetcher, DEFAULT_USER_AGENT, nextRetryDelay, type RetryMeta } from '../src/http/fetcher.js';
 import { SDK_VERSION } from '../src/version.js';
 import {
@@ -54,6 +54,45 @@ function getRequestHeader(
 const SUCCESS_BODY = { data: { id: 'abc' }, meta: {} };
 
 describe('Fetcher', () => {
+  describe('default fetch', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('calls the global fetch with the global as its receiver (browser WebIDL check)', async () => {
+      // Mimics a browser's fetch, which throws "Illegal invocation" unless called
+      // with `this` as the global (or undefined). Node's fetch doesn't check, so
+      // without this stub a method-style call on the Fetcher goes unnoticed.
+      const receivers: unknown[] = [];
+      vi.stubGlobal('fetch', function (this: unknown) {
+        receivers.push(this);
+        if (this !== undefined && this !== globalThis) {
+          throw new TypeError("Failed to execute 'fetch' on 'Window': Illegal invocation");
+        }
+        return Promise.resolve(mockResponse(200, SUCCESS_BODY));
+      });
+      const fetcher = new Fetcher({
+        baseUrl: 'https://rest.api.bible/v1',
+        apiKey: 'test-key',
+        retry: { maxAttempts: 1, baseDelayMs: 0, maxDelayMs: 0, jitter: () => 0 },
+      });
+      await expect(fetcher.get('/test', TestSchema)).resolves.toMatchObject({ data: { id: 'abc' } });
+      expect(receivers).toHaveLength(1);
+    });
+
+    it('looks up the global fetch per request, not once at construction', async () => {
+      const fetcher = new Fetcher({
+        baseUrl: 'https://rest.api.bible/v1',
+        apiKey: 'test-key',
+        retry: { maxAttempts: 1, baseDelayMs: 0, maxDelayMs: 0, jitter: () => 0 },
+      });
+      const late = vi.fn().mockResolvedValue(mockResponse(200, SUCCESS_BODY));
+      vi.stubGlobal('fetch', late);
+      await fetcher.get('/test', TestSchema);
+      expect(late).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('request construction', () => {
     it('sends the api-key header on every request', async () => {
       const fetchFn = vi.fn().mockResolvedValue(mockResponse(200, SUCCESS_BODY));
