@@ -263,12 +263,15 @@ when the data should be in the initial HTML.
 
 Every resource hook returns the same `AsyncResource<T>`:
 
-- **`data`** — the payload (`T`), or `undefined` until the first success.
+- **`data`** — the payload (`T`) for the current inputs, or `undefined` until it
+  loads. Changing an input (an id, `params`) resets it to `undefined`, so one
+  input's result is never shown for another; only `refetch()` keeps it.
 - **`error`** — a typed SDK error (a `BibleError` subclass such as `NotFoundError`
   or `RateLimitError`; narrow with `instanceof`), or `undefined`. Cancellations are
   never surfaced here.
 - **`status`** — `'idle' | 'loading' | 'success' | 'error'`.
-- **`isLoading`** — `true` only on the first load, while there is no `data` yet. A
+- **`isLoading`** — `true` only on the first load for the current inputs (including
+  after an input change), while there is no `data` yet. A
   background `refetch` keeps the previous `data` and leaves this `false`, so an
   `if (isLoading)` spinner never flashes over content already on screen.
 - **`isFetching`** — `true` whenever a request is in flight, including a background
