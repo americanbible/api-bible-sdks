@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 First public release. Requires `react` 18 or 19 and `@americanbible/api-bible-sdk`
-`^2.0.0` as peer dependencies; ships no runtime dependencies of its own.
+`^2.0.1` as peer dependencies (2.0.1 fixes browser requests failing with
+`Illegal invocation` in every earlier core release); ships no runtime
+dependencies of its own.
 Licensed under the Apache License 2.0.
 
 ### Added
