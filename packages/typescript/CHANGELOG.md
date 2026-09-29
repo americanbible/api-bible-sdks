@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-09-29
+
 ### Fixed
 
 - Requests no longer fail in browsers with `TypeError: Illegal invocation`
@@ -15,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   check, so Node tests never caught it. The default `fetch` is now resolved from
   `globalThis` on every request, so a polyfill or interceptor installed after the
   client is created is also picked up. A caller-supplied `fetch` is unchanged.
+  Every earlier release (1.0.0 through 2.0.0) is affected in browsers; Node is
+  not. On an affected version, pass `fetch: (input, init) => globalThis.fetch(input, init)`
+  in the client config as a workaround.
 
 ## [2.0.0] - 2026-08-26
 
@@ -139,6 +144,8 @@ Initial public release.
 - `onResponse` / `onRetry` observability hooks.
 - Dual ESM + CJS builds with type declarations for each; requires Node 20+.
 
-[Unreleased]: https://github.com/americanbible/api-bible-sdks/compare/ts-v1.1.0...HEAD
+[Unreleased]: https://github.com/americanbible/api-bible-sdks/compare/ts-v2.0.1...HEAD
+[2.0.1]: https://github.com/americanbible/api-bible-sdks/compare/ts-v2.0.0...ts-v2.0.1
+[2.0.0]: https://github.com/americanbible/api-bible-sdks/releases/tag/ts-v2.0.0
 [1.1.0]: https://github.com/americanbible/api-bible-sdks/compare/ts-v1.0.0...ts-v1.1.0
 [1.0.0]: https://github.com/americanbible/api-bible-sdks/releases/tag/ts-v1.0.0
