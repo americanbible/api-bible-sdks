@@ -18,7 +18,10 @@ package stands alone with its own `pyproject.toml`.
 - **Node.js 20.19+** and **npm 10+** for the TS and React packages. A `.nvmrc` /
   `.node-version` pins the major — `nvm use` (or `fnm use` / `nodenv`) picks it up.
   The dev toolchain (vitest's vite, jsdom) needs 20.19 or later; the published
-  packages themselves still run on any Node 20.
+  packages themselves still run on any Node 20. On Node below 22.18, `npm ci`
+  prints `EBADENGINE` warnings from tsdown's Babel 8 dependencies (they declare
+  `^22.18 || >=24.11`); they're harmless and the build works. Use Node 22.18+ or
+  24.11+ for a warning-free install (`nvm install 22` picks up the latest 22.x).
 - **Python 3.10+** for the Python package.
 
 ## Setup

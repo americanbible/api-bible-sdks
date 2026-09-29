@@ -10,9 +10,9 @@ import type { AsyncResource, SettledEvent } from './types.js';
 // window where two independent `useState` values disagree.
 type State<T> =
   | { status: 'idle'; data: undefined; error: undefined }
-  | { status: 'loading'; data: T | undefined; error: undefined } // keeps last data during refetch
+  | { status: 'loading'; data: T | undefined; error: undefined } // keeps last data during a refetch of the same inputs
   | { status: 'success'; data: T; error: undefined }
-  | { status: 'error'; data: T | undefined; error: BibleError }; // keeps last-good data through a failed refetch
+  | { status: 'error'; data: T | undefined; error: BibleError }; // keeps last-good data through a failed refetch of the same inputs
 
 export interface UseAsyncResourceOptions {
   /** When false, the hook stays idle and issues no request. Default: `true`. */
@@ -186,7 +186,8 @@ function acquire(
  * The single place fetching lifecycle lives; every resource hook wraps this.
  *
  * Responsibilities (implemented once, inherited by every resource hook):
- *  - run the request on mount and whenever `deps` change
+ *  - run the request on mount and whenever `deps` change (new inputs start from
+ *    `data: undefined`; only `refetch` of the same inputs keeps previous data)
  *  - expose `{ data, error, status, isLoading, isFetching, refetch }`
  *  - de-duplicate concurrent identical requests (opt in with `resourceKey`)
  *  - cancel the in-flight request on unmount / deps change (AbortController),
@@ -241,6 +242,12 @@ export function useAsyncResource<T>(
   // already-running request (which would make refetch a no-op network-wise).
   const lastRunNonce = useRef(nonce);
 
+  // What the effect last fetched: the client plus `resourceKey` + serialized
+  // `deps`. Only a refetch of these same inputs may keep the previous `data` on
+  // screen; any input change starts from `data: undefined` so one input's result
+  // is never shown (or paired with an error) for another.
+  const lastInputs = useRef<{ client: BibleClient; key: string } | undefined>(undefined);
+
   useEffect(() => {
     // A refetch() bumped `nonce` since the last run → force a fresh network call
     // (bypass de-dup below). A deps/client change is not "forced": it should still
@@ -248,6 +255,14 @@ export function useAsyncResource<T>(
     // disabled branch, so a refetch fired while disabled doesn't force a later fetch.
     const forced = lastRunNonce.current !== nonce;
     lastRunNonce.current = nonce;
+
+    // Keyed on the request's identity, not on which effect dep changed: a refetch()
+    // in the same render as an input change still resets, and a change that
+    // doesn't alter the request (e.g. `debounceMs`) doesn't discard good data.
+    const inputsKey = `${resourceKey ?? ''}:${stableStringify(deps)}`;
+    const prevInputs = lastInputs.current;
+    const keepData = prevInputs?.client === client && prevInputs.key === inputsKey;
+    lastInputs.current = { client, key: inputsKey };
 
     if (!enabled) {
       // Return `prev` when already idle so React bails out of the update instead of
@@ -268,8 +283,15 @@ export function useAsyncResource<T>(
     // final value in a burst survives, because each intervening effect clears the
     // timer in its cleanup before it fires.
     const fire = () => {
-      // Functional update so a refetch keeps the previously-loaded data visible.
-      setState((prev) => ({ status: 'loading', data: prev.data, error: undefined }));
+      // A re-run for the same inputs (a refetch) keeps the previously-loaded data
+      // visible; new inputs start empty (so `isLoading` is true again). Under
+      // `debounceMs` the previous result stays up until the debounced request
+      // fires — deliberate, so typing doesn't blank results on every keystroke.
+      setState((prev) => ({
+        status: 'loading',
+        data: keepData ? prev.data : undefined,
+        error: undefined,
+      }));
 
       // Share one in-flight request across identical (resourceKey + deps) callers.
       // A forced refetch opts out (undefined key → private request) so it always
@@ -288,7 +310,8 @@ export function useAsyncResource<T>(
           // Cancellation is expected on unmount / deps change — swallow it.
           if (!active || acquired.isAborted()) return;
           const error = toBibleError(err);
-          // Keep the last-good `data` visible through a failed refetch.
+          // Keep the last-good `data` visible through a failed refetch. `prev.data`
+          // is already undefined after an input change (reset in `fire` above).
           setState((prev) => ({ status: 'error', data: prev.data, error }));
         }
       })();
@@ -317,9 +340,9 @@ export function useAsyncResource<T>(
     data: state.data,
     error: state.error,
     status: state.status,
-    // First-load only: a refetch keeps prior `data`, so it reports `isFetching`
-    // (below) but NOT `isLoading` — a `if (isLoading) …` spinner won't flash
-    // over content that's already on screen.
+    // First load for the current inputs only: a refetch keeps prior `data`, so it
+    // reports `isFetching` (below) but NOT `isLoading` — a `if (isLoading) …`
+    // spinner won't flash over content that's already on screen.
     isLoading: state.status === 'loading' && state.data === undefined,
     // Any request in flight, including a background refetch.
     isFetching: state.status === 'loading',

@@ -8,7 +8,11 @@ import type { BibleClientConfig, BibleError } from '@americanbible/api-bible-sdk
  * public contract does not change.
  */
 export interface AsyncResource<T> {
-  /** The unwrapped response payload, or `undefined` until it resolves. */
+  /**
+   * The unwrapped response payload for the current inputs, or `undefined` until
+   * it resolves. Resets to `undefined` when the inputs (ids, params, client)
+   * change; only a `refetch` of the same inputs keeps the previous value.
+   */
   data: T | undefined;
   /** A typed SDK error, or `undefined`. Cancellations are never surfaced here. */
   error: BibleError | undefined;
@@ -21,8 +25,9 @@ export interface AsyncResource<T> {
    */
   status: 'idle' | 'loading' | 'success' | 'error';
   /**
-   * True only on the FIRST load, while there is no `data` yet. A background
-   * `refetch` (when `data` is already present) leaves this `false`, so
+   * True only on the FIRST load for the current inputs, while there is no `data`
+   * yet — including again after the inputs change. A background `refetch` (when
+   * `data` is already present) leaves this `false`, so
    * `if (isLoading) return <Spinner/>` never flashes over already-rendered
    * content. Equivalent to `status === 'loading' && data === undefined`.
    */

@@ -21,7 +21,8 @@ Licensed under the Apache License 2.0.
   (`'/api/bible'`) is resolved against the page origin. In development, the
   provider warns when a real key is used in a browser against api.bible
   (default or explicit `*.api.bible` URL), and when neither `apiKey` nor
-  `baseUrl` is set (every request would fail with an `AuthError`).
+  `baseUrl` is set (every request would fail with an `AuthError`). Each warning
+  logs once per provider, including under StrictMode.
 - Resource hooks, each a thin wrapper over the matching core method:
   - Bibles: `useBibles(params?)`, `useBible(bibleId)`
   - Books and chapters: `useBooks(bibleId, params?)`,
@@ -43,9 +44,11 @@ Licensed under the Apache License 2.0.
     `useAudioChapter(audioBibleId, chapterId)` (presigned, expiring
     `resourceUrl`; call `refetch()` for a fresh one).
 - A uniform `AsyncResource<T>` result on every hook: `data`, `error` (a typed
-  `BibleError` subclass), `status`, `isLoading` (first load only), `isFetching`
-  (includes background refetches), and `refetch()`. The last successful `data`
-  is kept through a refetch and through a failed refetch.
+  `BibleError` subclass), `status`, `isLoading` (first load for the current
+  inputs), `isFetching` (includes background refetches), and `refetch()`. The
+  last successful `data` is kept through a refetch and through a failed refetch;
+  changing an input (an id, params) resets `data` to `undefined`, so one input's
+  result is never shown, or paired with an error, for another.
 - Request cancellation on unmount and on input change, and in-flight
   de-duplication: components requesting the same endpoint and params at the same
   time share one network call, cancelled only when the last one unmounts.

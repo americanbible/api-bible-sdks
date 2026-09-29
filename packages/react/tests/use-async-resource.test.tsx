@@ -209,6 +209,85 @@ describe('useAsyncResource', () => {
   });
 });
 
+describe('useAsyncResource input changes', () => {
+  function controlledRun() {
+    const controls: Array<{ resolve: (v: string) => void; reject: (e: unknown) => void }> = [];
+    const run = vi.fn<Run<string>>(
+      () => new Promise<string>((resolve, reject) => controls.push({ resolve, reject })),
+    );
+    return { run, controls };
+  }
+
+  it('drops the previous input\'s data and reports isLoading while the new input loads', async () => {
+    const { run, controls } = controlledRun();
+    const { result, rerender } = renderHook(({ id }) => useAsyncResource(run, [id]), {
+      wrapper,
+      initialProps: { id: 'a' },
+    });
+    act(() => controls[0].resolve('A'));
+    await waitFor(() => expect(result.current.data).toBe('A'));
+
+    rerender({ id: 'b' });
+    expect(result.current.status).toBe('loading');
+    expect(result.current.data).toBeUndefined();
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.isFetching).toBe(true);
+
+    act(() => controls[1].resolve('B'));
+    await waitFor(() => expect(result.current.data).toBe('B'));
+  });
+
+  it('never pairs the new input\'s error with the previous input\'s data', async () => {
+    const { run, controls } = controlledRun();
+    const { result, rerender } = renderHook(({ id }) => useAsyncResource(run, [id]), {
+      wrapper,
+      initialProps: { id: 'good' },
+    });
+    act(() => controls[0].resolve('GOOD'));
+    await waitFor(() => expect(result.current.data).toBe('GOOD'));
+
+    rerender({ id: 'not-a-real-bible' });
+    act(() => controls[1].reject(new AuthError('not authorized', 403, '')));
+    await waitFor(() => expect(result.current.status).toBe('error'));
+    expect(result.current.error).toBeInstanceOf(AuthError);
+    expect(result.current.data).toBeUndefined();
+  });
+
+  it('resets when refetch() and an input change land in the same render', async () => {
+    const { run, controls } = controlledRun();
+    const { result, rerender } = renderHook(({ id }) => useAsyncResource(run, [id]), {
+      wrapper,
+      initialProps: { id: 'a' },
+    });
+    act(() => controls[0].resolve('A'));
+    await waitFor(() => expect(result.current.data).toBe('A'));
+
+    act(() => {
+      result.current.refetch();
+      rerender({ id: 'b' });
+    });
+    expect(result.current.status).toBe('loading');
+    expect(result.current.data).toBeUndefined();
+    expect(result.current.isLoading).toBe(true);
+  });
+
+  it('keeps data when an option that does not change the request (debounceMs) changes', async () => {
+    const { run, controls } = controlledRun();
+    const { result, rerender } = renderHook(
+      ({ debounceMs }) => useAsyncResource(run, ['k'], { debounceMs }),
+      { wrapper, initialProps: { debounceMs: 0 } },
+    );
+    act(() => controls[0].resolve('A'));
+    await waitFor(() => expect(result.current.data).toBe('A'));
+
+    rerender({ debounceMs: 1 });
+    await waitFor(() => expect(run).toHaveBeenCalledTimes(2));
+    expect(result.current.status).toBe('loading');
+    expect(result.current.data).toBe('A');
+    expect(result.current.isLoading).toBe(false);
+  });
+});
+
 describe('useAsyncResource de-duplication', () => {
   it('shares one in-flight request across identical resourceKey + deps', async () => {
     const resolvers: Array<(v: string) => void> = [];

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Requests no longer fail in browsers with `TypeError: Illegal invocation`
+  (surfaced as a `NetworkError`). Without a custom `fetch`, the client called the
+  global `fetch` with itself as the receiver, which browsers reject; Node doesn't
+  check, so Node tests never caught it. The default `fetch` is now resolved from
+  `globalThis` on every request, so a polyfill or interceptor installed after the
+  client is created is also picked up. A caller-supplied `fetch` is unchanged.
+
 ## [2.0.0] - 2026-08-26
 
 Bringing the schemas in line with what api.bible actually returns fixed four
