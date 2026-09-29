@@ -6,7 +6,7 @@ published version — fix forward and deprecate the bad one (see
 [SECURITY.md](../../SECURITY.md)).
 
 This package depends on the core SDK (`@americanbible/api-bible-sdk`) as a
-**peer** dependency (`^2.0.0`), ships no runtime dependencies of its own, and is
+**peer** dependency (`^2.0.1`), ships no runtime dependencies of its own, and is
 versioned and released **independently** of the core.
 
 ## Prerequisites
