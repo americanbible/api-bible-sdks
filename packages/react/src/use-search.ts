@@ -8,8 +8,9 @@ export interface UseSearchOptions {
   /**
    * Debounce the query by this many milliseconds — ideal for search-as-you-type.
    * A run of keystrokes collapses to a single request once typing settles;
-   * intermediate queries are cancelled before they fire. Omit (or `0`) to search
-   * on every change.
+   * intermediate queries are cancelled before they fire. The previous query's
+   * result clears as soon as the query changes (`status: 'loading'` while the
+   * wait is pending). Omit (or `0`) to search on every change.
    */
   debounceMs?: number;
 }

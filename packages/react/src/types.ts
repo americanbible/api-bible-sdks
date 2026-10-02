@@ -10,8 +10,9 @@ import type { BibleClientConfig, BibleError } from '@americanbible/api-bible-sdk
 export interface AsyncResource<T> {
   /**
    * The unwrapped response payload for the current inputs, or `undefined` until
-   * it resolves. Resets to `undefined` when the inputs (ids, params, client)
-   * change; only a `refetch` of the same inputs keeps the previous value.
+   * it resolves. Resets to `undefined` as soon as the inputs (ids, params,
+   * client) change, including while a `debounceMs` wait is pending; only a
+   * `refetch` of the same inputs keeps the previous value.
    */
   data: T | undefined;
   /** A typed SDK error, or `undefined`. Cancellations are never surfaced here. */
@@ -19,7 +20,7 @@ export interface AsyncResource<T> {
   /**
    * The request lifecycle state:
    * - `'idle'`    — disabled (`enabled: false`); no request has been issued.
-   * - `'loading'` — a request is in flight.
+   * - `'loading'` — a request is pending (waiting out `debounceMs`) or in flight.
    * - `'success'` — the most recent request resolved; `data` is populated.
    * - `'error'`   — the most recent request rejected; `error` is populated.
    */
@@ -33,8 +34,8 @@ export interface AsyncResource<T> {
    */
   isLoading: boolean;
   /**
-   * True whenever a request is in flight — including a `refetch` refreshing
-   * data already on screen. Pair with `data` for stale-while-revalidate UIs
+   * True whenever a request is pending (waiting out `debounceMs`) or in flight —
+   * including a `refetch` refreshing data already on screen. Pair with `data` for stale-while-revalidate UIs
    * (e.g. dim the current content while `isFetching`). Equivalent to
    * `status === 'loading'`.
    */
@@ -50,7 +51,9 @@ export interface AsyncResource<T> {
 /**
  * Reported to the provider's `onSettled` once per network request a hook
  * issued — not once per component: components sharing a de-duplicated request
- * produce a single event. Cancelled requests are not reported.
+ * produce a single event. Cancelled requests are not reported. Providers handed
+ * the same `client` share requests; the event goes to the provider whose hook
+ * issued the request.
  */
 export interface SettledEvent {
   /** SDK operation, e.g. `'books.list'`. Never ids, params, or URLs — safe to log. */
@@ -58,7 +61,11 @@ export interface SettledEvent {
   outcome: 'success' | 'error';
   /** Wall time of the whole logical request, including the core's retries and backoff. */
   durationMs: number;
-  /** The typed SDK error when `outcome` is `'error'`. */
+  /**
+   * The typed SDK error when `outcome` is `'error'`. Its `message` / `body` are
+   * the API's response and may name the requested resource (an `AuthError`
+   * names the Bible ID), so review before logging them.
+   */
   error?: BibleError;
 }
 
