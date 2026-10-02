@@ -80,9 +80,15 @@ jobs:
         run: |
           file="$(npm pack -w @americanbible/api-bible-sdk-react --json | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8"))[0].filename')"
           echo "tarball=$file" >> "$GITHUB_OUTPUT"
-      - name: Smoke-test the tarball
+      - name: Smoke-test the tarball (React 19)
         env:
           TARBALL: ${{ steps.pack.outputs.tarball }}
+          SMOKE_REACT_VERSION: '19'
+        run: node packages/react/scripts/smoke-test.mjs "$TARBALL"
+      - name: Smoke-test the tarball (React 18)
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+          SMOKE_REACT_VERSION: '18'
         run: node packages/react/scripts/smoke-test.mjs "$TARBALL"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

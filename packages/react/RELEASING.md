@@ -34,6 +34,8 @@ must be published by hand. Do this once, before launch day.
    `next` dist-tag so `latest` stays empty until the real release. You need
    `npm login` with publish rights to `@americanbible` and 2FA enabled.
    `prepublishOnly` runs the full gate first; check the tarball before it does.
+   The README ships in the tarball, so first confirm its Status line reads
+   "Release candidate — published to npm under the `next` dist-tag".
    ```bash
    npm run build -w @americanbible/api-bible-sdk
    npm version <launch-version>-rc.0 --no-git-tag-version -w @americanbible/api-bible-sdk-react
@@ -42,8 +44,13 @@ must be published by hand. Do this once, before launch day.
    npm run smoke -w @americanbible/api-bible-sdk-react
    npm publish -w @americanbible/api-bible-sdk-react --access public --tag next
    ```
-   Discard the local `package.json` version bump afterwards; it is not
-   committed. This one version has no provenance (only CI can attest it).
+   Discard the local version bump afterwards; it is not committed. `npm version
+   -w` rewrites the root lockfile as well as the package manifest (and npm 10
+   also strips the `libc` fields npm 11 wrote), so restore both:
+   ```bash
+   git checkout -- package-lock.json packages/react/package.json
+   ```
+   This one version has no provenance (only CI can attest it).
 2. **Configure the trusted publisher.** On npmjs.com: the package → Settings →
    Trusted publishing → GitHub Actions, with repository
    `americanbible/api-bible-sdks`, workflow `react-release.yml`, and environment
