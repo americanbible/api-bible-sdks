@@ -23,7 +23,7 @@ h11==0.16.0
 httpcore==1.0.9
     # via httpx
 httpx==0.28.1
-    # via api-bible-sdk (pyproject.toml)
+    # via americanbible-api-bible-sdk (pyproject.toml)
 idna==3.19
     # via
     #   anyio
@@ -33,7 +33,7 @@ iniconfig==2.3.0
 librt==0.15.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 mypy==2.3.1
-    # via api-bible-sdk (pyproject.toml)
+    # via americanbible-api-bible-sdk (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
 packaging==26.3
@@ -44,20 +44,20 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-pydantic==2.13.4
-    # via api-bible-sdk (pyproject.toml)
-pydantic-core==2.46.4
+pydantic==2.13.5
+    # via americanbible-api-bible-sdk (pyproject.toml)
+pydantic-core==2.46.5
     # via pydantic
 pygments==2.21.0
     # via pytest
 pytest==9.1.1
     # via
-    #   api-bible-sdk (pyproject.toml)
+    #   americanbible-api-bible-sdk (pyproject.toml)
     #   pytest-cov
 pytest-cov==7.1.0
-    # via api-bible-sdk (pyproject.toml)
-ruff==0.15.19
-    # via api-bible-sdk (pyproject.toml)
+    # via americanbible-api-bible-sdk (pyproject.toml)
+ruff==0.16.10
+    # via americanbible-api-bible-sdk (pyproject.toml)
 tomli==2.4.1 ; python_full_version <= '3.11'
     # via
     #   coverage

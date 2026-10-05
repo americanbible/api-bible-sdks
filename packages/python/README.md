@@ -57,7 +57,7 @@ with BibleClient.from_env() as client:
         client.bibles.get("does-not-exist")
     except NotFoundError:
         print("no such bible")
-    except ApiError as exc:           # catches every HTTP failure
+    except ApiError as exc:  # catches every HTTP failure
         print(exc.status_code, exc)
 ```
 
@@ -100,13 +100,13 @@ from api_bible import BibleClient, RetryConfig
 
 client = BibleClient(
     api_key="...",
-    timeout=10.0,                       # per-attempt seconds
+    timeout=10.0,  # per-attempt seconds
     retry=RetryConfig(
         max_attempts=5,
         base_delay=0.5,
-        max_delay=30.0,                 # ceiling on client-computed backoff
-        max_retry_after=60.0,           # longest server Retry-After we'll honor
-        max_elapsed=60.0,               # total-time budget across retries (None disables)
+        max_delay=30.0,  # ceiling on client-computed backoff
+        max_retry_after=60.0,  # longest server Retry-After we'll honor
+        max_elapsed=60.0,  # total-time budget across retries (None disables)
     ),
 )
 ```
@@ -196,6 +196,7 @@ by `status_code`, track retries via `attempt`, and read the response `headers`
 ```python
 from api_bible import BibleClient, RequestEvent
 
+
 def on_request(event: RequestEvent) -> None:
     # status_code is None when the attempt never got a response (timeout/transport);
     # event.error then holds a short reason ("timeout", "network error", "pool timeout").
@@ -204,6 +205,7 @@ def on_request(event: RequestEvent) -> None:
     # headers is None when no response arrived; keys are lower-cased.
     if event.headers and (remaining := event.headers.get("x-ratelimit-remaining")):
         metrics.gauge("api_bible.rate_limit_remaining", int(remaining))
+
 
 client = BibleClient.from_env(on_request=on_request)
 ```
@@ -218,9 +220,11 @@ build a backoff histogram:
 ```python
 from api_bible import BibleClient, RetryEvent
 
+
 def on_retry(event: RetryEvent) -> None:
     metrics.increment("api_bible.retries", tags={"path": event.path, "reason": event.reason})
     metrics.histogram("api_bible.retry_delay_ms", event.delay_ms)
+
 
 client = BibleClient.from_env(on_retry=on_retry)
 ```
