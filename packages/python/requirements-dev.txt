@@ -2,7 +2,7 @@
 #    uv pip compile pyproject.toml --extra dev --universal --python-version 3.10 -o requirements-dev.txt
 annotated-types==0.8.0
     # via pydantic
-anyio==4.14.2
+anyio==4.15.1
     # via httpx
 ast-serialize==0.8.0
     # via mypy
