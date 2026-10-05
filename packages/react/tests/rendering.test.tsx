@@ -46,13 +46,31 @@ describe('StrictMode', () => {
     expect(result.current.error).toBeUndefined();
     expect(result.current.isFetching).toBe(false);
 
-    // Whether StrictMode fires a second request is React-version/harness specific
-    // (React 18 double-invokes here; React 19 in this harness does not). What must
-    // hold either way: a request was issued, every *superseded* one was aborted,
-    // and the final live one is not aborted.
+    // Defensive regardless of how many requests fired (see the next test): every
+    // *superseded* request was aborted, and the final live one is not.
     expect(list).toHaveBeenCalled();
     for (const superseded of signals.slice(0, -1)) expect(superseded.aborted).toBe(true);
     expect(signals.at(-1)!.aborted).toBe(false);
+  });
+
+  it('issues one request: the dev remount rejoins the in-flight one instead of re-fetching', async () => {
+    const signals: AbortSignal[] = [];
+    const list = vi.fn((_bibleId: string, _params: unknown, signal: AbortSignal) => {
+      signals.push(signal);
+      return new Promise(() => {}); // stays in flight across the double-invoke
+    });
+
+    renderHook(() => useBooks(BIBLE_ID), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <StrictMode>
+          <ApiBibleProvider client={makeClient(list)}>{children}</ApiBibleProvider>
+        </StrictMode>
+      ),
+    });
+
+    await Promise.resolve(); // past the deferred last-subscriber abort
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(signals[0]!.aborted).toBe(false);
   });
 });
 

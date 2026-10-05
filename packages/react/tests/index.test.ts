@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import * as core from '@americanbible/api-bible-sdk';
 import * as reactSdk from '../src/index.js';
 import {
   ApiBibleProvider,
@@ -64,7 +65,17 @@ describe('public entrypoint (src/index.ts)', () => {
     expect('useAsyncResource' in reactSdk).toBe(false);
   });
 
-  it('exposes exactly the expected public runtime surface (guards `export *` drift)', () => {
+  it('re-exports every core runtime value, by identity', () => {
+    // src/index.ts names the core's runtime exports one by one (Next.js rejects
+    // `export *` in a client boundary), so a value the core adds later would be
+    // silently dropped. Compare against the core module itself, not a list.
+    for (const name of Object.keys(core)) {
+      expect(reactSdk, `core export "${name}" is not re-exported`).toHaveProperty(name);
+      expect(reactSdk[name as keyof typeof reactSdk]).toBe(core[name as keyof typeof core]);
+    }
+  });
+
+  it('exposes exactly the expected public runtime surface (guards re-export drift)', () => {
     // The React package's own value exports — provider, client accessor, hooks.
     const ownExports = [
       'ApiBibleProvider',
@@ -89,7 +100,7 @@ describe('public entrypoint (src/index.ts)', () => {
       'useAudioChapter',
     ];
 
-    // Core runtime *values* that arrive via `export * from '@americanbible/api-bible-sdk'`
+    // Core runtime *values* re-exported by name from '@americanbible/api-bible-sdk'
     // (type-only core exports don't exist at runtime). This is the coupling point:
     // if the core adds, removes, or renames a value export, this test fails here —
     // loudly, in this package — instead of silently in a consumer's build. Update

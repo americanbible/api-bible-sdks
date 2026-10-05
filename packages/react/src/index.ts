@@ -31,4 +31,24 @@ export type { AsyncResource, ApiBibleConfig, SettledEvent, SettledObserver } fro
 
 // Re-export the core SDK's types AND error classes so consumers import from a
 // single package and `instanceof NotFoundError` works (one copy of the core).
-export * from '@americanbible/api-bible-sdk';
+// Runtime values are listed by name, not `export *`: the Next.js (webpack)
+// flight loader rejects `export *` in a 'use client' module as soon as a Server
+// Component imports from this package. tests/index.test.ts fails if this list
+// drifts from the core's runtime exports.
+export {
+  ApiError,
+  AuthError,
+  BadRequestError,
+  BibleError,
+  InvalidInputError,
+  MAX_ERROR_BODY_BYTES,
+  NetworkError,
+  NotFoundError,
+  RateLimitError,
+  ServerError,
+  ValidationError,
+  createBibleClient,
+  isKeywordSearchResult,
+  isReferenceSearchResult,
+} from '@americanbible/api-bible-sdk';
+export type * from '@americanbible/api-bible-sdk';

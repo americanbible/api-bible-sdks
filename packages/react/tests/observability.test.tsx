@@ -142,6 +142,26 @@ describe('onSettled: one telemetry event per network request', () => {
     expect(onSettled).not.toHaveBeenCalled();
   });
 
+  it('aborts a de-duplicated request when its last subscriber unmounts mid-flight, with no event', async () => {
+    let signal: AbortSignal | undefined;
+    let resolve!: (v: unknown) => void;
+    const list = vi.fn((_b: string, _p: unknown, s: AbortSignal) => {
+      signal = s;
+      return new Promise((res) => (resolve = res));
+    });
+    const onSettled = vi.fn<SettledObserver>();
+    const { unmount } = renderHook(() => useBooks(BIBLE_ID), {
+      wrapper: wrapperWith({ books: { list } } as unknown as BibleClient, onSettled),
+    });
+
+    unmount();
+    await Promise.resolve(); // the last-subscriber abort runs a microtask later
+    expect(signal?.aborted).toBe(true);
+
+    await act(async () => resolve({ data: [] })); // a late response is still not reported
+    expect(onSettled).not.toHaveBeenCalled();
+  });
+
   it('keeps the hook working when the observer throws', async () => {
     const { client, resolve } = deferredClient();
     const onSettled = vi.fn(() => {

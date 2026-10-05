@@ -123,6 +123,26 @@ describe('useSearch', () => {
     await waitFor(() => expect(search).toHaveBeenCalledTimes(2));
   });
 
+  it('clears the previous query\'s result as soon as the query changes, under debounceMs', async () => {
+    vi.useFakeTimers();
+    try {
+      const search = vi.fn(() => Promise.resolve(okResponse));
+      const wrapper = wrapperFor(makeClient(search));
+      const { result, rerender } = renderHook(
+        ({ q }) => useSearch(BIBLE_ID, { query: q }, { debounceMs: 300 }),
+        { wrapper, initialProps: { q: 'faith' } },
+      );
+      await act(async () => vi.advanceTimersByTimeAsync(300));
+      expect(result.current.data).toEqual(mockResult);
+
+      rerender({ q: 'hope' });
+      expect(search).toHaveBeenCalledTimes(1); // 'hope' still within the window
+      expect(result.current).toMatchObject({ status: 'loading', data: undefined });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('debounces search-as-you-type into a single request for the final query', () => {
     vi.useFakeTimers();
     try {

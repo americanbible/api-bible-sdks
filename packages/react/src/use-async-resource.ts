@@ -43,8 +43,10 @@ export interface UseAsyncResourceOptions {
 //
 // Registry of requests currently in flight, so N components asking for the same
 // thing at the same time issue ONE network call. Scoped per client via a
-// WeakMap: different providers (hence different clients) never share, and the
-// whole table is garbage-collected with the client. IN-FLIGHT ONLY — an entry is
+// WeakMap: different clients never share, and the whole table is
+// garbage-collected with the client. Providers handed the SAME `client` do share,
+// and the `onSettled` event goes only to the provider whose hook started the
+// request (joiners never call `run`, see `instrument`). IN-FLIGHT ONLY — an entry is
 // evicted the moment its request settles, so there is no cache, no staleness
 // window, and no unbounded growth.
 
@@ -172,12 +174,18 @@ function acquire(
     isAborted: () => shared.controller.signal.aborted,
     release: () => {
       shared.refs -= 1;
+      if (shared.refs > 0) return;
       // Cancel the network call only when the last subscriber leaves AND this
-      // entry is still current (guards against aborting a replacement).
-      if (shared.refs <= 0 && map.get(key) === shared) {
-        map.delete(key);
-        shared.controller.abort();
-      }
+      // entry is still current (guards against aborting a replacement). Deferred
+      // by a microtask so an immediate re-acquire rejoins instead: StrictMode's
+      // dev-only unmount/remount runs synchronously, and aborting here would send
+      // a doomed duplicate request to the network on every mount.
+      queueMicrotask(() => {
+        if (shared.refs <= 0 && map.get(key) === shared) {
+          map.delete(key);
+          shared.controller.abort();
+        }
+      });
     },
   };
 }
@@ -191,7 +199,10 @@ function acquire(
  *  - expose `{ data, error, status, isLoading, isFetching, refetch }`
  *  - de-duplicate concurrent identical requests (opt in with `resourceKey`)
  *  - cancel the in-flight request on unmount / deps change (AbortController),
- *    once no other subscriber still needs it
+ *    once no other subscriber still needs it (a microtask later, so StrictMode's
+ *    dev remount rejoins it instead of re-fetching)
+ *  - reset `data` (and report `'loading'`) as soon as the inputs change, even
+ *    while a `debounceMs` wait is still pending
  *  - ignore stale or aborted results (a slow response can't clobber a newer one)
  *  - treat cancellation as a non-event (never surfaced as `error`)
  *  - turn a *synchronous* SDK throw into `error` state, not a render crash
@@ -242,11 +253,14 @@ export function useAsyncResource<T>(
   // already-running request (which would make refetch a no-op network-wise).
   const lastRunNonce = useRef(nonce);
 
-  // What the effect last fetched: the client plus `resourceKey` + serialized
-  // `deps`. Only a refetch of these same inputs may keep the previous `data` on
-  // screen; any input change starts from `data: undefined` so one input's result
-  // is never shown (or paired with an error) for another.
-  const lastInputs = useRef<{ client: BibleClient; key: string } | undefined>(undefined);
+  // The inputs of the last request that actually FIRED: the client plus
+  // `resourceKey` + serialized `deps`. Only a refetch of these same inputs may
+  // keep the previous `data` on screen; any input change starts from
+  // `data: undefined` so one input's result is never shown (or paired with an
+  // error) for another. Keyed on the fired request, not the last effect run: under
+  // `debounceMs` an effect can run for new inputs whose request hasn't fired yet,
+  // and what's on screen still belongs to the earlier request.
+  const lastFired = useRef<{ client: BibleClient; key: string } | undefined>(undefined);
 
   useEffect(() => {
     // A refetch() bumped `nonce` since the last run → force a fresh network call
@@ -260,9 +274,8 @@ export function useAsyncResource<T>(
     // in the same render as an input change still resets, and a change that
     // doesn't alter the request (e.g. `debounceMs`) doesn't discard good data.
     const inputsKey = `${resourceKey ?? ''}:${stableStringify(deps)}`;
-    const prevInputs = lastInputs.current;
-    const keepData = prevInputs?.client === client && prevInputs.key === inputsKey;
-    lastInputs.current = { client, key: inputsKey };
+    const prevFired = lastFired.current;
+    const keepData = prevFired?.client === client && prevFired.key === inputsKey;
 
     if (!enabled) {
       // Return `prev` when already idle so React bails out of the update instead of
@@ -278,20 +291,24 @@ export function useAsyncResource<T>(
     let active = true; // stale-guard: cleanup flips this before the promise settles
     let sub: Subscription | undefined;
 
-    // Issue the request and flip to loading. Deferred behind `debounceMs` when
-    // set, so we don't flash `loading` (or fetch) on every keystroke — only the
-    // final value in a burst survives, because each intervening effect clears the
+    // Flip to loading now, even when the request itself is debounced: a re-run for
+    // the same inputs (a refetch) keeps the previously-loaded data visible; new
+    // inputs start empty (so `isLoading` is true again). So under `debounceMs`
+    // `'loading'` means "pending or in flight", and the previous input's result is
+    // never shown while the new one waits. Return `prev` when nothing would change
+    // so a burst of keystrokes doesn't re-render once more per keystroke.
+    setState((prev) => {
+      const data = keepData ? prev.data : undefined;
+      return prev.status === 'loading' && prev.data === data
+        ? prev
+        : { status: 'loading', data, error: undefined };
+    });
+
+    // Issue the request. Deferred behind `debounceMs` when set, so only the final
+    // value in a burst reaches the network: each intervening effect clears the
     // timer in its cleanup before it fires.
     const fire = () => {
-      // A re-run for the same inputs (a refetch) keeps the previously-loaded data
-      // visible; new inputs start empty (so `isLoading` is true again). Under
-      // `debounceMs` the previous result stays up until the debounced request
-      // fires — deliberate, so typing doesn't blank results on every keystroke.
-      setState((prev) => ({
-        status: 'loading',
-        data: keepData ? prev.data : undefined,
-        error: undefined,
-      }));
+      lastFired.current = { client, key: inputsKey };
 
       // Share one in-flight request across identical (resourceKey + deps) callers.
       // A forced refetch opts out (undefined key → private request) so it always
@@ -311,7 +328,7 @@ export function useAsyncResource<T>(
           if (!active || acquired.isAborted()) return;
           const error = toBibleError(err);
           // Keep the last-good `data` visible through a failed refetch. `prev.data`
-          // is already undefined after an input change (reset in `fire` above).
+          // is already undefined after an input change (reset in the effect above).
           setState((prev) => ({ status: 'error', data: prev.data, error }));
         }
       })();

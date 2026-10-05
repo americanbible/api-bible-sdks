@@ -338,7 +338,7 @@ describe('useAsyncResource de-duplication', () => {
     await waitFor(() => expect(b.result.current.data).toBe('shared'));
   });
 
-  it('aborts the shared request only once the last subscriber unmounts', () => {
+  it('aborts the shared request only once the last subscriber unmounts', async () => {
     const signals: AbortSignal[] = [];
     const run = vi.fn<Run<string>>((_c, s) => {
       signals.push(s);
@@ -352,7 +352,27 @@ describe('useAsyncResource de-duplication', () => {
     a.unmount();
     expect(signals[0].aborted).toBe(false); // b still needs it
     b.unmount();
+    // The last-subscriber abort is deferred by a microtask, so an immediate
+    // re-acquire (StrictMode's dev remount) can rejoin instead.
+    expect(signals[0].aborted).toBe(false);
+    await Promise.resolve();
     expect(signals[0].aborted).toBe(true); // nobody left → cancel
+  });
+
+  it('rejoins the shared request when a subscriber re-acquires in the same tick', async () => {
+    const signals: AbortSignal[] = [];
+    const run = vi.fn<Run<string>>((_c, s) => {
+      signals.push(s);
+      return new Promise<string>(() => {});
+    });
+
+    const a = renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper });
+    a.unmount(); // last subscriber leaves…
+    renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper }); // …and one is back
+
+    await Promise.resolve();
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(signals[0].aborted).toBe(false);
   });
 
   it('refetch() forces a fresh request instead of rejoining a shared in-flight one', async () => {
@@ -436,6 +456,90 @@ describe('useAsyncResource debounce', () => {
       expect(run).not.toHaveBeenCalled();
       act(() => vi.advanceTimersByTime(1));
       expect(run).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('resets data as soon as the inputs change, before the debounced request fires', async () => {
+    vi.useFakeTimers();
+    try {
+      const run = vi.fn<Run<string>>(() => Promise.resolve('a-data'));
+      const { result, rerender } = renderHook(
+        ({ k }) => useAsyncResource(run, [k], { resourceKey: 'op', debounceMs: 100 }),
+        { wrapper, initialProps: { k: 'a' } },
+      );
+      await act(async () => vi.advanceTimersByTimeAsync(100));
+      expect(result.current).toMatchObject({ status: 'success', data: 'a-data' });
+
+      rerender({ k: 'b' });
+      // `a`'s result is never shown for `b`, even while `b` waits out the debounce.
+      expect(run).toHaveBeenCalledTimes(1);
+      expect(result.current).toMatchObject({ status: 'loading', data: undefined, isLoading: true });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('never pairs the previous input\'s data with the new input\'s error (refetch inside the window)', async () => {
+    vi.useFakeTimers();
+    try {
+      const run = vi.fn<Run<string>>();
+      run.mockResolvedValueOnce('a-data').mockRejectedValue(new BibleError('b failed'));
+      const { result, rerender } = renderHook(
+        ({ k }) => useAsyncResource(run, [k], { resourceKey: 'op', debounceMs: 100 }),
+        { wrapper, initialProps: { k: 'a' } },
+      );
+      await act(async () => vi.advanceTimersByTimeAsync(100));
+      expect(result.current.data).toBe('a-data');
+
+      rerender({ k: 'b' });
+      act(() => result.current.refetch()); // before `b`'s request has fired
+      await act(async () => vi.advanceTimersByTimeAsync(100));
+
+      expect(result.current.status).toBe('error');
+      expect(result.current.error?.message).toBe('b failed');
+      expect(result.current.data).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('reports a pending debounce as loading / isFetching before any request exists', () => {
+    vi.useFakeTimers();
+    try {
+      const run = vi.fn<Run<string>>(() => new Promise<string>(() => {}));
+      const { result } = renderHook(
+        () => useAsyncResource(run, ['k'], { resourceKey: 'op', debounceMs: 100 }),
+        { wrapper },
+      );
+      expect(run).not.toHaveBeenCalled();
+      expect(result.current).toMatchObject({ status: 'loading', isLoading: true, isFetching: true });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps data through a debounced refetch of the same inputs and reports isFetching at once', async () => {
+    vi.useFakeTimers();
+    try {
+      const run = vi.fn<Run<string>>();
+      run.mockResolvedValueOnce('one').mockReturnValue(new Promise<string>(() => {}));
+      const { result } = renderHook(
+        () => useAsyncResource(run, ['k'], { resourceKey: 'op', debounceMs: 100 }),
+        { wrapper },
+      );
+      await act(async () => vi.advanceTimersByTimeAsync(100));
+      expect(result.current.data).toBe('one');
+
+      act(() => result.current.refetch());
+      expect(run).toHaveBeenCalledTimes(1); // still debounced
+      expect(result.current).toMatchObject({
+        status: 'loading',
+        data: 'one',
+        isLoading: false,
+        isFetching: true,
+      });
     } finally {
       vi.useRealTimers();
     }

@@ -49,16 +49,25 @@ Licensed under the Apache License 2.0.
   `BibleError` subclass), `status`, `isLoading` (first load for the current
   inputs), `isFetching` (includes background refetches), and `refetch()`. The
   last successful `data` is kept through a refetch and through a failed refetch;
-  changing an input (an id, params) resets `data` to `undefined`, so one input's
-  result is never shown, or paired with an error, for another.
+  changing an input (an id, params) resets `data` to `undefined` at once, even
+  while a `debounceMs` wait is pending, so one input's result is never shown, or
+  paired with an error, for another. `status: 'loading'` / `isFetching` cover a
+  pending debounce as well as a request in flight.
 - Request cancellation on unmount and on input change, and in-flight
   de-duplication: components requesting the same endpoint and params at the same
   time share one network call, cancelled only when the last one unmounts.
+  StrictMode's dev remount rejoins the in-flight request instead of issuing a
+  second one. Providers handed the same `client` share requests too.
 - `onSettled` provider prop — one telemetry event per network request
   (`{ resourceKey, outcome, durationMs, error? }`), covering retries and
   failures such as `ValidationError` that the core's `onResponse` / `onRetry`
-  never see. Events carry no ids, params, or URLs.
+  never see. `resourceKey` never carries ids, params, or URLs; `error.message` /
+  `error.body` are the API's response and may name the requested resource (an
+  `AuthError` names the Bible ID). An event goes to the provider whose hook
+  issued the request.
 - Re-exports every type and error class from `@americanbible/api-bible-sdk`, so
-  `instanceof NotFoundError` works from a single import.
+  `instanceof NotFoundError` works from a single import. Values are re-exported
+  by name, so a Server Component can import from the package in Next.js webpack
+  builds (Next 15's default `next build`, Next 16's `next build --webpack`).
 - Verified under React 18 and 19, StrictMode, and server-side rendering
   (`renderToString` issues no request and logs no warning).
