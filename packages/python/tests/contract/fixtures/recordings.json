@@ -867,7 +867,7 @@
           "bibleId": "aadc8a2f4bdb467b-01",
           "bookId": "GEN",
           "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God&#39;s Word has been dedicated to the public domain. The Holy Bible, Berean Standard Audio Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, the Berean Bible Translation Committee, and Barry Hays. This audio narration of God&#39;s Word has been dedicated to the public domain.",
-          "expiresAt": "1788247976",
+          "expiresAt": "1790840048",
           "id": "GEN.1",
           "next": {
             "bookId": "GEN",
@@ -4224,6 +4224,51 @@
                 "id": "GB",
                 "name": "United Kingdom of Great Britain and Northern Ireland",
                 "nameLocal": "United Kingdom of Great Britain and Northern Ireland"
+              },
+              {
+                "id": "AS",
+                "name": "American Samoa",
+                "nameLocal": "American Samoa"
+              },
+              {
+                "id": "AU",
+                "name": "Australia",
+                "nameLocal": "Australia"
+              },
+              {
+                "id": "CA",
+                "name": "Canada",
+                "nameLocal": "Canada"
+              },
+              {
+                "id": "NZ",
+                "name": "New Zealand",
+                "nameLocal": "New Zealand"
+              },
+              {
+                "id": "PG",
+                "name": "Papua New Guinea",
+                "nameLocal": "Papua New Guinea"
+              },
+              {
+                "id": "VI",
+                "name": "Virgin Islands, U.S.",
+                "nameLocal": "Virgin Islands, U.S."
+              },
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              },
+              {
+                "id": "UM",
+                "name": "United States Minor Outlying Islands",
+                "nameLocal": "United States Minor Outlying Islands"
+              },
+              {
+                "id": "KE",
+                "name": "Kenya",
+                "nameLocal": "Kenya"
               }
             ],
             "dblId": "de4e12af7f28f599",
@@ -4241,7 +4286,7 @@
             "nameLocal": "King James Version",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2024-06-29T04:03:56.000Z"
+            "updatedAt": "2026-09-18T02:24:33.000Z"
           },
           {
             "abbreviation": "engKJV",
@@ -4252,6 +4297,51 @@
                 "id": "GB",
                 "name": "United Kingdom of Great Britain and Northern Ireland",
                 "nameLocal": "United Kingdom of Great Britain and Northern Ireland"
+              },
+              {
+                "id": "AS",
+                "name": "American Samoa",
+                "nameLocal": "American Samoa"
+              },
+              {
+                "id": "AU",
+                "name": "Australia",
+                "nameLocal": "Australia"
+              },
+              {
+                "id": "CA",
+                "name": "Canada",
+                "nameLocal": "Canada"
+              },
+              {
+                "id": "NZ",
+                "name": "New Zealand",
+                "nameLocal": "New Zealand"
+              },
+              {
+                "id": "PG",
+                "name": "Papua New Guinea",
+                "nameLocal": "Papua New Guinea"
+              },
+              {
+                "id": "VI",
+                "name": "Virgin Islands, U.S.",
+                "nameLocal": "Virgin Islands, U.S."
+              },
+              {
+                "id": "US",
+                "name": "United States of America",
+                "nameLocal": "United States of America"
+              },
+              {
+                "id": "UM",
+                "name": "United States Minor Outlying Islands",
+                "nameLocal": "United States Minor Outlying Islands"
+              },
+              {
+                "id": "KE",
+                "name": "Kenya",
+                "nameLocal": "Kenya"
               }
             ],
             "dblId": "de4e12af7f28f599",
@@ -4269,7 +4359,7 @@
             "nameLocal": "King James Version",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2025-10-01T18:54:59.000Z"
+            "updatedAt": "2026-09-18T02:26:09.000Z"
           },
           {
             "abbreviation": "KJVAIC",
@@ -4378,7 +4468,7 @@
             "nameLocal": "Literal Standard Version",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2025-09-26T17:50:44.000Z"
+            "updatedAt": "2026-09-24T02:15:44.000Z"
           },
           {
             "abbreviation": "NASB1995",
@@ -4943,7 +5033,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-27T02:23:35.000Z"
+            "updatedAt": "2026-09-29T02:18:14.000Z"
           },
           {
             "abbreviation": "engWEBU",
@@ -4971,7 +5061,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-27T02:25:01.000Z"
+            "updatedAt": "2026-09-29T02:19:51.000Z"
           },
           {
             "abbreviation": "engWEBU",
@@ -4999,7 +5089,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-27T02:26:13.000Z"
+            "updatedAt": "2026-09-29T02:21:17.000Z"
           },
           {
             "abbreviation": "engWEBUS",
@@ -5065,7 +5155,7 @@
             "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-27T02:18:30.000Z"
+            "updatedAt": "2026-09-30T02:20:29.000Z"
           },
           {
             "abbreviation": "engWEBUS",
@@ -5098,7 +5188,7 @@
             "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-27T02:19:58.000Z"
+            "updatedAt": "2026-09-30T02:21:58.000Z"
           },
           {
             "abbreviation": "WMB",
@@ -5126,7 +5216,7 @@
             "nameLocal": "World Messianic Bible",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-20T02:35:28.000Z"
+            "updatedAt": "2026-09-29T02:28:32.000Z"
           },
           {
             "abbreviation": "WMBBE",
@@ -5224,7 +5314,7 @@
             "nameLocal": "World Messianic Bible British Edition",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-08-20T02:15:09.000Z"
+            "updatedAt": "2026-09-30T02:15:44.000Z"
           }
         ]
       },
