@@ -3,7 +3,8 @@
 React hooks and a context provider for [api.bible](https://api.bible/),
 built on top of [`@americanbible/api-bible-sdk`](../typescript).
 
-> Status: **Pre-release — not yet published to npm.** A self-contained slice — a provider, a
+> Status: **Release candidate — published to npm under the `next` dist-tag**
+> (`npm install @americanbible/api-bible-sdk-react@next`). A self-contained slice — a provider, a
 > client accessor hook, and resource hooks (`useBibles`, `useBible`, `useBooks`,
 > `useChapters`, `useChapter`, `usePassages`, `useSearch`, `useSectionsForBook`,
 > `useSectionsForChapter`, `useSection`, `useVerses`, `useVerse`,
@@ -57,6 +58,7 @@ directly, or hand the provider a pre-built client:
 
 ```tsx
 import { createBibleClient } from '@americanbible/api-bible-sdk';
+import { ApiBibleProvider } from '@americanbible/api-bible-sdk-react';
 
 const client = createBibleClient({ apiKey: process.env.BIBLE_API_KEY! });
 
@@ -93,7 +95,9 @@ API):
 - **refuses redirects**, so the key is never replayed to another host;
 - **passes back** `Retry-After` and `X-RateLimit-Remaining`, which the SDK's
   backoff and your `onResponse` hook read;
-- **rate-limits per client IP**, so one visitor can't spend your whole quota.
+- **rate-limits per client IP**, read only from a header your own platform or
+  proxy sets, so one visitor can't spend your whole quota. Adjust `clientIp`
+  to your hosting; with no trustworthy IP, all visitors share one limit.
 
 ```ts
 // app/api/bible/[...path]/route.ts — runs on your server only.
@@ -119,16 +123,33 @@ function isRateLimited(ip: string): boolean {
   return ++w.count > MAX_PER_WINDOW;
 }
 
-// Only GET is exported, so Next.js answers every other method with 405.
+// The rate-limit key. Trust only a header YOUR platform or proxy sets; anything
+// else is written by the client, who can then rotate through buckets.
+// - X-Forwarded-For: Vercel overwrites it with the client IP; nginx
+//   (`$proxy_add_x_forwarded_for`) and AWS ALB append to it. Set TRUSTED_PROXIES
+//   to how many such proxies sit in front of this server: the client IP is that
+//   many entries from the RIGHT. Never use the leftmost entry — the client can
+//   put anything there.
+// - Nothing in front of this server sets a client-IP header: use null.
+// Without a trustworthy IP every visitor shares ONE bucket, so the limit caps
+// your whole site rather than each visitor.
+const CLIENT_IP_HEADER: string | null = 'x-forwarded-for';
+const TRUSTED_PROXIES = 1;
+
+function clientIp(req: Request): string {
+  const entries = CLIENT_IP_HEADER ? req.headers.get(CLIENT_IP_HEADER)?.split(',') : undefined;
+  return entries?.[entries.length - TRUSTED_PROXIES]?.trim() || 'shared';
+}
+
+// Only GET is implemented. Next.js answers POST, PUT, DELETE, … with 405,
+// OPTIONS with 204 + `Allow`, and HEAD by running GET without the body.
 export async function GET(req: Request): Promise<Response> {
   // `URL` resolves `.` / `..` segments; encoded slashes survive it, so reject them.
   const { pathname, search } = new URL(req.url);
   const path = pathname.slice(PREFIX.length);
   if (!ALLOWED.test(path) || /%2f|%5c/i.test(path)) return new Response('Not found', { status: 404 });
 
-  // Trust X-Forwarded-For only if your host sets it (Vercel, most load balancers do).
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
-  if (isRateLimited(ip)) {
+  if (isRateLimited(clientIp(req))) {
     return new Response('Too many requests', { status: 429, headers: { 'retry-after': '60' } });
   }
 
@@ -235,7 +256,8 @@ when the data should be in the initial HTML.
   `fuzziness`). Returns a paginated `SearchResult` (`total`, plus `verses` /
   `passages`); the hook stays idle until `query` is non-empty. Pass
   `options.debounceMs` to debounce search-as-you-type — a burst of keystrokes
-  collapses to a single request once typing settles.
+  collapses to a single request once typing settles. The previous query's
+  result clears as soon as the query changes.
 - **`useSectionsForBook(bibleId, bookId)`** — lists a book's section headings
   (`SectionSummary[]`).
 - **`useSectionsForChapter(bibleId, chapterId)`** — lists a chapter's section
@@ -265,20 +287,22 @@ when the data should be in the initial HTML.
 Every resource hook returns the same `AsyncResource<T>`:
 
 - **`data`** — the payload (`T`) for the current inputs, or `undefined` until it
-  loads. Changing an input (an id, `params`) resets it to `undefined`, so one
-  input's result is never shown for another; only `refetch()` keeps it.
+  loads. Changing an input (an id, `params`) resets it to `undefined` at once,
+  even while a `debounceMs` wait is pending, so one input's result is never
+  shown for another; only `refetch()` keeps it.
 - **`error`** — a typed SDK error (a `BibleError` subclass such as `NotFoundError`
   or `RateLimitError`; narrow with `instanceof`), or `undefined`. Cancellations are
   never surfaced here. Note that api.bible answers an unknown Bible ID, or one
   your key isn't licensed for, with an auth error, so it surfaces as `AuthError`
   (not `NotFoundError`); the error message names the Bible.
-- **`status`** — `'idle' | 'loading' | 'success' | 'error'`.
+- **`status`** — `'idle' | 'loading' | 'success' | 'error'`. `'loading'` covers a
+  request waiting out `debounceMs` as well as one in flight.
 - **`isLoading`** — `true` only on the first load for the current inputs (including
   after an input change), while there is no `data` yet. A background `refetch`
   keeps the previous `data` and leaves this `false`, so an `if (isLoading)`
   spinner never flashes over content already on screen.
-- **`isFetching`** — `true` whenever a request is in flight, including a background
-  `refetch`. Pair with `data` for stale-while-revalidate UIs (e.g. dim the current
+- **`isFetching`** — `true` whenever a request is pending (`debounceMs`) or in
+  flight, including a background `refetch`. Pair with `data` for stale-while-revalidate UIs (e.g. dim the current
   content while refetching).
 - **`refetch()`** — imperatively re-run; always issues a fresh network call.
 
@@ -286,11 +310,17 @@ All types and error classes from the core SDK are re-exported, so
 `import { NotFoundError, type Book } from '@americanbible/api-bible-sdk-react'`
 works from a single package.
 
+**Types** exported by this package: `AsyncResource<T>` (every hook's result),
+`ApiBibleConfig` (the provider's `config`), `ApiBibleProviderProps`,
+`SettledEvent` / `SettledObserver` (`onSettled`), and `UseSearchOptions`
+(`useSearch`'s `options`).
+
 ## Caching
 
 These hooks **de-duplicate in-flight requests** — N components asking for the same
-thing at the same moment share one network call — and **cancel** a request when
-its inputs change or the component unmounts. What they do **not** do is cache
+thing at the same moment share one network call, including StrictMode's dev
+remount, which rejoins the request rather than firing a second one — and
+**cancel** a request when its inputs change or the component unmounts. What they do **not** do is cache
 across time: there is no `staleTime`, no cache hit on remount, no background
 revalidation. Every fresh mount issues a request.
 
@@ -342,7 +372,7 @@ request. They can still carry user data, so don't log them wholesale:
 `meta.url` includes the query string (a `useSearch` query is whatever the user
 typed), and `RetryMeta.error` may hold up to 4 KB of the response body. Log
 `new URL(meta.url).pathname` rather than the full URL, or use
-[`onSettled`](#per-request-events-onsettled), whose events carry no user input.
+[`onSettled`](#per-request-events-onsettled), whose `resourceKey` carries no user input.
 The `ResponseMeta` / `RetryMeta` types are re-exported from this package.
 
 ```tsx
@@ -378,11 +408,14 @@ actually wait for — and to catch failures that never produce an HTTP response,
 such as a `ValidationError` when the API's response shape drifts — pass
 `onSettled` to the provider. It fires **once per network request a hook issued**:
 components sharing a de-duplicated request produce one event, retries are folded
-into it, and cancelled requests are not reported.
+into it, and cancelled requests are not reported. Providers handed the same
+`client` share requests too; the event goes to the provider whose hook issued it.
 
 The event is `{ resourceKey, outcome, durationMs, error? }`. `resourceKey` is the
-SDK operation (e.g. `'books.list'`), never ids, params, or URLs, so events carry
-no user input (such as a search query). `durationMs` covers the whole request,
+SDK operation (e.g. `'books.list'`), never ids, params, or URLs, so it is safe to
+log. `error.message` and `error.body` are the API's response, though, and may
+name the requested resource (an `AuthError` names the Bible ID), so review them
+before logging. `durationMs` covers the whole request,
 including the core's retries and backoff. Unlike `config`, `onSettled` may change
 after mount; the latest one is used. Anything it throws is swallowed.
 
@@ -420,6 +453,8 @@ api.bible enforces per-key rate limits. Three layers keep you under them:
   advisory and confirm the exact semantics against a live response.
 
   ```tsx
+  import { ApiBibleProvider } from '@americanbible/api-bible-sdk-react';
+
   <ApiBibleProvider
     config={{
       baseUrl: 'https://your-app.example/api/bible',
