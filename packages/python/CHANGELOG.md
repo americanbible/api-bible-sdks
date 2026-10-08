@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-10-08
+
+### Security
+
+- **The api-key can no longer leak through an invalid-header error.** A key with
+  a trailing newline or surrounding spaces (typical of a key read from a file or
+  a Kubernetes secret) made h11 reject the header with a message quoting its
+  value, which surfaced verbatim in `NetworkError` after three pointless
+  retries. Surrounding whitespace is now stripped from `api_key`, and a key with
+  interior whitespace, control, or non-ASCII characters raises
+  `InvalidInputError` without echoing it. An illegal header value (including a
+  per-request `headers` value) now fails once with a `NetworkError` that names
+  no value, and the key is redacted from any other transport error message.
+
 ## [1.3.0] - 2026-08-26
 
 Closes the parity gap with the TypeScript SDK's 2.0.0 schema fixes. Two of those

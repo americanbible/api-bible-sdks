@@ -20,6 +20,26 @@ def test_blank_api_key_rejected(key: str) -> None:
         BibleClient(key)
 
 
+@pytest.mark.parametrize("raw", ["key\n", "  key  ", "\tkey\r\n"])
+def test_api_key_surrounding_whitespace_is_stripped(raw: str) -> None:
+    # A trailing newline is typical of a key read from a file or k8s secret.
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["api-key"] == "key"
+        return _empty(request)
+
+    http_client = httpx.Client(base_url=BASE_URL, transport=httpx.MockTransport(handler))
+    with BibleClient(raw, http_client=http_client) as client:
+        assert client.bibles.list() == []
+
+
+@pytest.mark.parametrize("raw", ["SECRET KEY", "SECRET\x00KEY", "SECRÉTKEY"])
+def test_api_key_with_illegal_characters_rejected_without_echoing_it(raw: str) -> None:
+    with pytest.raises(InvalidInputError, match="api_key contains") as exc_info:
+        BibleClient(raw)
+
+    assert "SECRET" not in str(exc_info.value)
+
+
 def test_default_base_url_is_https() -> None:
     # The default base URL is HTTPS, so construction succeeds without opting in.
     with BibleClient("k") as client:

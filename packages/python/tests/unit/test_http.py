@@ -283,6 +283,40 @@ def test_pool_timeout_is_not_retried(make_client) -> None:
     assert calls["n"] == 1
 
 
+def test_illegal_header_value_is_not_retried_or_echoed(make_client) -> None:
+    # h11 quotes the offending header value in its message, which may be the
+    # api-key. It's deterministic, so it must fail once and never surface it.
+    calls = {"n": 0}
+    events = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        raise httpx.LocalProtocolError("Illegal header value b'SECRET\\n'")
+
+    with (
+        make_client(handler, on_request=events.append) as client,
+        pytest.raises(NetworkError, match="illegal value") as exc_info,
+    ):
+        client.bibles.list()
+
+    assert calls["n"] == 1
+    assert "SECRET" not in str(exc_info.value)
+    assert exc_info.value.__cause__ is None
+    assert exc_info.value.__suppress_context__
+    assert [event.error for event in events] == ["invalid header"]
+
+
+def test_network_error_message_redacts_the_api_key(make_client) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError(f"refused while sending {request.headers['api-key']}")
+
+    with make_client(handler) as client, pytest.raises(NetworkError) as exc_info:
+        client.bibles.list()
+
+    assert "test-key" not in str(exc_info.value)
+    assert "[redacted]" in str(exc_info.value)
+
+
 def test_non_json_content_type_raises_api_error(make_client) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         # httpx sets Content-Type to text/plain for a `text=` body.
