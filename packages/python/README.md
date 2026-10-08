@@ -14,15 +14,6 @@ A production-quality Python SDK for [api.bible](https://api.bible/).
 
 ## Install
 
-> **Not yet on PyPI.** The package is complete and tested; publishing is waiting
-> on the release account setup. Until then, install from source:
-
-```bash
-pip install "git+https://github.com/americanbible/api-bible-sdks.git#subdirectory=packages/python"
-```
-
-Once published, the install will be:
-
 ```bash
 pip install americanbible-api-bible-sdk
 ```
@@ -275,12 +266,12 @@ known vulnerability via `pip-audit`.
 
 ### Contract tests
 
-Two tiers share one case table ([tests/contract/cases.py](tests/contract/cases.py)):
+Two tiers share one case table ([tests/contract/cases.py](https://github.com/americanbible/api-bible-sdks/blob/main/packages/python/tests/contract/cases.py)):
 
-- **Offline** ([test_contract_fixtures.py](tests/contract/test_contract_fixtures.py)) replays
+- **Offline** ([test_contract_fixtures.py](https://github.com/americanbible/api-bible-sdks/blob/main/packages/python/tests/contract/test_contract_fixtures.py)) replays
   recorded responses through the real client so the Pydantic models validate them exactly as in
   production. Runs in PR CI as part of `pytest`.
-- **Live** ([test_contract_live.py](tests/contract/test_contract_live.py)) hits api.bible to catch
+- **Live** ([test_contract_live.py](https://github.com/americanbible/api-bible-sdks/blob/main/packages/python/tests/contract/test_contract_live.py)) hits api.bible to catch
   schema drift. Self-skips without a key; runs nightly. Run it with
   `API_BIBLE_KEY=... pytest -m live tests/contract/test_contract_live.py`.
 
@@ -291,18 +282,23 @@ Regenerate the fixtures from the live API with
 
 This package is published to PyPI independently of the JavaScript packages in
 this monorepo, via [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/)
-(OIDC — no stored token). See [CHANGELOG.md](CHANGELOG.md) for release history.
+(OIDC — no stored token). See [CHANGELOG.md](https://github.com/americanbible/api-bible-sdks/blob/main/packages/python/CHANGELOG.md) for release history.
 
 To cut a release:
 
-1. Bump `__version__` in [src/api_bible/\_version.py](src/api_bible/_version.py)
+1. Bump `__version__` in [src/api_bible/\_version.py](https://github.com/americanbible/api-bible-sdks/blob/main/packages/python/src/api_bible/_version.py)
    (SemVer) and move the `[Unreleased]` notes in `CHANGELOG.md` under the new
    version.
 2. Merge to `main`, then push a matching tag: `git tag py-v1.2.3 && git push
    origin py-v1.2.3`.
-3. The `Python Release` workflow verifies the tag matches `__version__`, runs the
-   full lint/type/test gate, builds, and publishes to PyPI. The tag will fail the
-   build if it does not match the package version.
+3. The `Python Release` workflow verifies the tag is on `main` and matches
+   `__version__`, runs the full lint/type/test gate, builds, checks the
+   distribution with `twine check`, smoke-tests the wheel in a clean venv, and
+   publishes to PyPI. Any failed check stops the release before upload.
+
+To rehearse a release without publishing, run the workflow by hand (Actions →
+Python Release → Run workflow): it runs every check and build step, and skips
+the publish job.
 
 **Rollback.** PyPI releases are immutable and cannot be deleted or overwritten.
 To roll back a bad release: **yank** it on PyPI (existing pins keep working, but
@@ -314,7 +310,7 @@ attempt to re-publish the same version.
 ## License and terms
 
 Licensed under the Apache License 2.0 — Copyright 2026 American Bible Society.
-See [LICENSE](LICENSE). That covers this SDK's source code, and nothing else.
+See [LICENSE](https://github.com/americanbible/api-bible-sdks/blob/main/packages/python/LICENSE). That covers this SDK's source code, and nothing else.
 
 Your use of the API is governed by api.bible's
 [Terms & Conditions](https://api.bible/terms-and-conditions), and the scripture
