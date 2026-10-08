@@ -366,12 +366,23 @@ class Transport:
             except httpx.TimeoutException as exc:
                 elapsed_ms = (time.monotonic() - start) * 1000.0
                 self._emit(method, path, None, elapsed_ms, attempt, "timeout")
-                last_error = NetworkError(f"request timed out: {exc}")
+                last_error = NetworkError(f"request timed out: {self._redact(exc)}")
                 reason = "request timed out"
+            except httpx.LocalProtocolError:
+                # Raised before any byte is sent, when a request header is not a
+                # legal HTTP value. Deterministic, so not retried. h11's message
+                # quotes the offending value (possibly the api-key), so neither
+                # the message nor the cause is propagated.
+                elapsed_ms = (time.monotonic() - start) * 1000.0
+                self._emit(method, path, None, elapsed_ms, attempt, "invalid header")
+                raise NetworkError(
+                    "request could not be sent: a request header has an illegal value "
+                    "(value not shown to avoid disclosing credentials)"
+                ) from None
             except httpx.HTTPError as exc:
                 elapsed_ms = (time.monotonic() - start) * 1000.0
                 self._emit(method, path, None, elapsed_ms, attempt, "network error")
-                last_error = NetworkError(f"network error: {exc}")
+                last_error = NetworkError(f"network error: {self._redact(exc)}")
                 reason = "network error"
             else:
                 elapsed_ms = (time.monotonic() - start) * 1000.0
@@ -464,6 +475,10 @@ class Transport:
         if last_error is None:  # pragma: no cover - unreachable invariant
             raise RuntimeError("retry loop exited without recording an error")
         raise last_error
+
+    def _redact(self, exc: BaseException) -> str:
+        """Render a transport exception for an error message, minus the api-key."""
+        return str(exc).replace(self._api_key, "[redacted]")
 
     def _emit(
         self,

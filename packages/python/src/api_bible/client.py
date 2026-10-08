@@ -36,6 +36,24 @@ _DEFAULT_ENV_VAR = "API_BIBLE_KEY"
 _FALLBACK_ENV_VAR = "BIBLE_API_KEY"
 
 
+def _normalize_api_key(api_key: str) -> str:
+    """Strip surrounding whitespace and reject keys that can't be sent as a header.
+
+    A trailing newline is the classic artifact of a key read from a file or a
+    Kubernetes secret. Left in, h11 rejects the header with a message that quotes
+    the value — the key itself. These errors must never echo the key.
+    """
+    key = (api_key or "").strip()
+    if not key:
+        raise InvalidInputError("api_key is required")
+    if not key.isascii() or not key.isprintable() or any(ch.isspace() for ch in key):
+        raise InvalidInputError(
+            "api_key contains whitespace, control, or non-ASCII characters; check "
+            "the env var or secret file it came from for stray characters"
+        )
+    return key
+
+
 def _require_secure_base_url(base_url: str, *, allow_insecure_http: bool) -> None:
     """Reject a non-HTTPS ``base_url`` so the api-key is never sent in cleartext.
 
@@ -82,8 +100,7 @@ class BibleClient:
         on_retry: RetryObserver | None = None,
         max_response_bytes: int | None = DEFAULT_MAX_RESPONSE_BYTES,
     ) -> None:
-        if not api_key or not api_key.strip():
-            raise InvalidInputError("api_key is required")
+        api_key = _normalize_api_key(api_key)
         # When the caller supplies their own client, it owns the base URL; we
         # only police the URL we would otherwise build the pool with.
         if http_client is None:
