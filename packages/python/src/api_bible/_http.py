@@ -223,8 +223,7 @@ def parse_retry_after(value: str | None) -> float | None:
         when = parsedate_to_datetime(value)
     except (TypeError, ValueError):
         return None
-    if when is None:
-        return None
+    # A `-0000` zone ("UTC, source unknown") parses to a naive datetime.
     if when.tzinfo is None:
         when = when.replace(tzinfo=timezone.utc)
     return max(0.0, (when - datetime.now(timezone.utc)).total_seconds())

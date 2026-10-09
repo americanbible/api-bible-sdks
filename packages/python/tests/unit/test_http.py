@@ -61,6 +61,13 @@ def test_parse_retry_after_http_date_in_past_is_zero() -> None:
     assert parse_retry_after("Wed, 21 Oct 2015 07:28:00 GMT") == 0.0
 
 
+def test_parse_retry_after_http_date_in_future() -> None:
+    # `-0000` parses to a naive datetime, which is treated as UTC.
+    for header in ("Fri, 01 Jan 2100 00:00:00 GMT", "Fri, 01 Jan 2100 00:00:00 -0000"):
+        seconds = parse_retry_after(header)
+        assert seconds is not None and seconds > 365 * 24 * 3600
+
+
 def test_next_retry_delay_uses_retry_after_as_floor() -> None:
     cfg = RetryConfig(base_delay=1.0, max_delay=100.0, jitter=lambda: 1.0)
     # retry_after (5) + jittered backoff (1) = 6
@@ -972,3 +979,73 @@ def test_api_key_never_sits_in_request_frame_locals(make_client) -> None:
 
     assert captured  # sanity: we found the frame
     assert not any("test-key" in value for value in captured)
+
+
+# --- remaining branch coverage ------------------------------------------------
+
+
+def test_per_request_timeout_is_applied(make_client) -> None:
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["timeout"] = request.extensions["timeout"]
+        return _ok([])
+
+    with make_client(handler) as client:
+        client.bibles.list(timeout=2.5)
+        assert seen["timeout"]["read"] == 2.5
+        client.bibles.list()  # without one, the client default applies
+
+    assert seen["timeout"]["read"] != 2.5
+
+
+def test_retries_without_a_max_elapsed_budget(make_client) -> None:
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return httpx.Response(503, json={"message": "down"})
+        return _ok([])
+
+    retry = RetryConfig(max_attempts=3, base_delay=0.0, max_elapsed=None, jitter=lambda: 0.0)
+    with make_client(handler, retry=retry) as client:
+        assert client.bibles.list() == []
+
+    assert calls["n"] == 3
+
+
+@pytest.mark.parametrize(
+    ("content", "content_type"),
+    [
+        # A CDN's HTML error page in front of the API.
+        (b"<html><body>502 Bad Gateway</body></html>", "text/html"),
+        # JSON, but without a usable message.
+        (b'{"error": "upstream down"}', "application/json"),
+        (b'["not", "an", "object"]', "application/json"),
+    ],
+    ids=["html", "error-not-object", "json-array"],
+)
+def test_error_without_extractable_message_falls_back_to_status(
+    make_client, content: bytes, content_type: str
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(502, content=content, headers={"Content-Type": content_type})
+
+    with make_client(handler) as client, pytest.raises(ServerError) as info:
+        client.bibles.list()
+
+    assert str(info.value) == "HTTP 502"
+    assert info.value.body == content.decode()
+
+
+def test_redirect_to_relative_location_does_not_name_a_host(make_client) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(302, headers={"Location": "/v2/bibles?token=secret"})
+
+    with make_client(handler) as client, pytest.raises(ApiError) as info:
+        client.bibles.list()
+
+    message = str(info.value)
+    assert "an undisclosed host" in message
+    assert "secret" not in message
