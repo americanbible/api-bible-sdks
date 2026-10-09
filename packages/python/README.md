@@ -163,13 +163,15 @@ a request handler:
 
   Passing your own `http_client=httpx.Client(...)` still works and takes full
   control of the pool; in that case the client owns `timeout`/`limits` and the
-  ones above are ignored.
+  ones above are ignored. An `auth=` configured on that client still runs; the
+  SDK sets the `api-key` after it, so the configured key always wins.
 
 - **Share one client.** `BibleClient` and its underlying `httpx.Client` are safe to
   share across threads — reuse a single instance so connection pooling kicks in.
 - **Response bodies are size-capped.** Each response is streamed and read under a
   limit (`max_response_bytes`, default 10 MiB); a body that exceeds it is aborted
-  mid-stream with an `ApiError` rather than being buffered into memory. Raise the
+  mid-stream with an `ApiError` rather than being buffered into memory (the attempt
+  still reaches `on_request`, with `error="response too large"`). Raise the
   limit for unusually large payloads, or pass `max_response_bytes=None` to disable
   the cap entirely:
 
@@ -280,7 +282,8 @@ client.chapters.get(
 ```
 
 Per-request headers override client-level `headers` of the same name, but can
-never override the `api-key` — it is always applied last.
+never override the `api-key`. The SDK applies it last, at send time, through an
+`httpx.Auth`, after client-level, per-request and your `http_client`'s own headers.
 
 ## Development
 

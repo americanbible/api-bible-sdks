@@ -14,7 +14,7 @@ import random
 import threading
 import time
 import uuid
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Generator, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -276,6 +276,44 @@ def _redirect_error(response: httpx.Response, headers: Mapping[str, str]) -> Api
     )
 
 
+class _ApiKeyAuth(httpx.Auth):
+    """Sets the ``api-key`` header at send time, after every other header layer.
+
+    Holding the key here instead of in a headers dict keeps it out of
+    ``Transport.request``'s frame locals, which error trackers such as Sentry
+    capture and may not scrub under a hyphenated name. ``inner`` is the auth of
+    a caller-supplied ``http_client`` (if any); it still runs, and the key is
+    re-applied to every request it yields so the key always wins.
+    """
+
+    def __init__(self, api_key: str, inner: httpx.Auth | None = None) -> None:
+        self._api_key = api_key
+        self._inner = inner
+
+    def __repr__(self) -> str:
+        return "_ApiKeyAuth(api_key='[redacted]')"
+
+    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response, None]:
+        request.headers["api-key"] = self._api_key
+        yield request
+
+    def sync_auth_flow(
+        self, request: httpx.Request
+    ) -> Generator[httpx.Request, httpx.Response, None]:
+        if self._inner is None:
+            yield from self.auth_flow(request)
+            return
+        flow = self._inner.sync_auth_flow(request)
+        try:
+            outgoing = next(flow)
+            while True:
+                outgoing.headers["api-key"] = self._api_key
+                response = yield outgoing
+                outgoing = flow.send(response)
+        except StopIteration:
+            return
+
+
 @dataclass(frozen=True)
 class _Call:
     """Identity of one logical call, shared by every event it emits."""
@@ -323,6 +361,8 @@ class Transport:
             if limits is not None:
                 client_kwargs["limits"] = limits
             self._client = httpx.Client(**client_kwargs)
+        # Wraps any auth the caller's own client carries, so it keeps working.
+        self._auth = _ApiKeyAuth(api_key, inner=self._client.auth)
         # Per-thread storage: httpx.Client is safe to share across threads, so a
         # shared BibleClient is the natural pattern. Keeping `meta` thread-local
         # stops one thread's response metadata from clobbering another's.
@@ -357,9 +397,10 @@ class Transport:
         path = expand_route(route, **(path_params or {}))
         call = _Call(method, path, route, uuid.uuid4().hex)
 
-        # Client headers first, then per-request headers, then `api-key` last so
-        # the key can never be overridden by either layer.
-        headers = {**self._extra_headers, **(extra_headers or {}), "api-key": self._api_key}
+        # Client headers first, then per-request headers. The api-key is not in
+        # here: `_ApiKeyAuth` sets it at send time, after both layers, so it can
+        # never be overridden and never sits in a frame local.
+        headers = {**self._extra_headers, **(extra_headers or {})}
         extra: dict[str, Any] = {}
         if timeout is not None:
             extra["timeout"] = timeout
@@ -393,9 +434,24 @@ class Transport:
                 # follow_redirects=False per request, not just per client: a
                 # caller-supplied http_client may have enabled it, and following
                 # a redirect would resend the api-key to the target host.
-                response = self._client.send(request, stream=True, follow_redirects=False)
+                response = self._client.send(
+                    request, auth=self._auth, stream=True, follow_redirects=False
+                )
                 try:
                     body = self._read_body(response)
+                except ApiError:
+                    # Over max_response_bytes: a response did arrive, so the
+                    # attempt is still observed before the error propagates.
+                    elapsed_ms = (time.monotonic() - start) * 1000.0
+                    self._emit(
+                        call,
+                        response.status_code,
+                        elapsed_ms,
+                        attempt,
+                        "response too large",
+                        dict(response.headers),
+                    )
+                    raise
                 finally:
                     response.close()
             except httpx.PoolTimeout as exc:

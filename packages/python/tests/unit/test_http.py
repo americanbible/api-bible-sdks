@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import inspect
 import logging
 import subprocess
 import sys
+from collections.abc import Generator
 
 import httpx
 import pytest
 
 from api_bible import (
     ApiError,
+    BibleClient,
     InvalidInputError,
     NetworkError,
     NotFoundError,
@@ -18,7 +21,13 @@ from api_bible import (
     ServerError,
     ValidationError,
 )
-from api_bible._http import RetryConfig, backoff_delay, next_retry_delay, parse_retry_after
+from api_bible._http import (
+    RetryConfig,
+    Transport,
+    backoff_delay,
+    next_retry_delay,
+    parse_retry_after,
+)
 
 # --- pure retry math -------------------------------------------------------
 
@@ -695,13 +704,18 @@ def test_oversized_response_is_rejected_and_not_retried(make_client) -> None:
         calls["n"] += 1
         return httpx.Response(200, json={"data": [{"id": "b1", "name": "x" * 1000}]})
 
+    events: list[RequestEvent] = []
+
     with (
-        make_client(handler, max_response_bytes=64) as client,
+        make_client(handler, max_response_bytes=64, on_request=events.append) as client,
         pytest.raises(ApiError, match="max_response_bytes"),
     ):
         client.bibles.list()
 
     assert calls["n"] == 1  # deterministic failure -> not retried
+    # The attempt got a response, so it is still observed.
+    assert [(e.status_code, e.error) for e in events] == [(200, "response too large")]
+    assert events[0].headers is not None
 
 
 def test_max_response_bytes_none_disables_the_cap(make_client) -> None:
@@ -857,3 +871,104 @@ def test_network_error_has_no_headers(make_client) -> None:
         client.bibles.list()
 
     assert info.value.headers is None
+
+
+# --- api-key handling via httpx.Auth -----------------------------------------
+
+
+def _caller_client(handler, **kwargs: object) -> BibleClient:
+    http_client = httpx.Client(
+        base_url="https://rest.api.bible/v1", transport=httpx.MockTransport(handler), **kwargs
+    )
+    return BibleClient("test-key", http_client=http_client)
+
+
+def test_api_key_wins_over_caller_client_headers() -> None:
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["api-key"] = request.headers.get_list("api-key")
+        return _ok([])
+
+    with _caller_client(handler, headers={"api-key": "evil"}) as client:
+        client.bibles.list()
+
+    assert seen["api-key"] == ["test-key"]
+
+
+class _HeaderAuth(httpx.Auth):
+    """A caller's own auth: adds a header and tries to clobber the api-key."""
+
+    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response, None]:
+        request.headers["Authorization"] = "Bearer caller-token"
+        request.headers["api-key"] = "evil"
+        yield request
+
+
+def test_caller_client_auth_still_runs_but_api_key_wins() -> None:
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["authorization"] = request.headers.get("authorization")
+        seen["api-key"] = request.headers.get_list("api-key")
+        return _ok([])
+
+    with _caller_client(handler, auth=_HeaderAuth()) as client:
+        client.bibles.list()
+
+    assert seen == {"authorization": "Bearer caller-token", "api-key": ["test-key"]}
+
+
+def test_caller_client_multi_step_auth_flow_is_driven_to_completion() -> None:
+    # e.g. a challenge/response scheme: the inner flow sees the 401 and retries.
+    sent: list[tuple[str | None, str | None]] = []
+
+    class _ChallengeAuth(httpx.Auth):
+        def auth_flow(
+            self, request: httpx.Request
+        ) -> Generator[httpx.Request, httpx.Response, None]:
+            response = yield request
+            if response.status_code == 401:
+                request.headers["Authorization"] = "answered"
+                yield request
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append((request.headers.get("authorization"), request.headers.get("api-key")))
+        if request.headers.get("authorization") is None:
+            return httpx.Response(401, json={"message": "challenge"})
+        return _ok([])
+
+    with _caller_client(handler, auth=_ChallengeAuth()) as client:
+        client.bibles.list()
+
+    assert sent == [(None, "test-key"), ("answered", "test-key")]
+
+
+def test_api_key_auth_repr_is_redacted() -> None:
+    transport = Transport("test-key")
+    try:
+        assert "test-key" not in repr(transport._auth)
+        assert "redacted" in repr(transport._auth)
+    finally:
+        transport.close()
+
+
+def test_api_key_never_sits_in_request_frame_locals(make_client) -> None:
+    # Error trackers (e.g. Sentry) capture frame locals; the key must not be one.
+    captured: list[str] = []
+
+    def inspect_frames(event: RequestEvent) -> None:
+        frame = inspect.currentframe()
+        while frame is not None:
+            if frame.f_code is Transport.request.__code__:
+                captured.extend(repr(v) for v in frame.f_locals.values())
+            frame = frame.f_back
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return _ok([])
+
+    with make_client(handler, on_request=inspect_frames) as client:
+        client.bibles.list(headers={"traceparent": "t"})
+
+    assert captured  # sanity: we found the frame
+    assert not any("test-key" in value for value in captured)

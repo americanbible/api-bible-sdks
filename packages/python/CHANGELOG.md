@@ -33,6 +33,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `bibles.get("")` silently called the list endpoint (`/bibles/`) and failed
   with a confusing `ValidationError`, and `..` ids were normalized away by httpx
   (`bibles.get("..")` requested `/v1`).
+- **An oversized response now emits a `RequestEvent`** (`error="response too
+  large"`) before the `ApiError` propagates. Previously that attempt was
+  invisible to `on_request`.
+
+### Security
+
+- **The api-key no longer sits in a local variable during a request.** It is
+  applied at send time by an `httpx.Auth` whose `repr` is redacted, instead of
+  living in a `headers` dict inside `Transport.request`. Error trackers that
+  capture frame locals (e.g. Sentry) may not scrub a hyphenated `api-key` name.
+  The key still always wins over client-level, per-request and caller
+  `http_client` headers, redirects are still never followed, and an `auth=` on a
+  caller-supplied `http_client` still runs.
 
 ## [1.3.1] - 2026-10-08
 
