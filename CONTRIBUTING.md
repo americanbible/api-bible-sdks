@@ -22,7 +22,7 @@ package stands alone with its own `pyproject.toml`.
   prints `EBADENGINE` warnings from tsdown's Babel 8 dependencies (they declare
   `^22.18 || >=24.11`); they're harmless and the build works. Use Node 22.18+ or
   24.11+ for a warning-free install (`nvm install 22` picks up the latest 22.x).
-- **Python 3.10+** for the Python package.
+- **Python 3.10+** and [uv](https://docs.astral.sh/uv/) for the Python package.
 
 ## Setup
 
@@ -31,11 +31,13 @@ package stands alone with its own `pyproject.toml`.
 npm install
 ```
 
-For the Python package (separate toolchain, matches CI):
+For the Python package (separate toolchain managed with
+[uv](https://docs.astral.sh/uv/), matches CI):
 
 ```bash
 cd packages/python
-pip install -e ".[dev]" -c requirements-dev.txt
+uv sync                       # .venv with the SDK + locked dev toolchain (uv.lock)
+source .venv/bin/activate
 ```
 
 ## Everyday commands

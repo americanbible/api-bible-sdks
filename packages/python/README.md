@@ -7,7 +7,7 @@ A production-quality Python SDK for [api.bible](https://api.bible/).
 - Automatic retries with full-jitter exponential backoff (honors `Retry-After`), bounded by a total-time budget
 - Typed [Pydantic v2](https://docs.pydantic.dev/) models — full type hints, validated responses
 - A granular exception hierarchy
-- Requires **Python 3.10+**
+- Requires **Python 3.10+** (see [Supported Python versions](#supported-python-versions))
 
 > Runtime dependencies: `httpx` and `pydantic>=2`. Installing this SDK pins your
 > environment to Pydantic v2.
@@ -17,6 +17,20 @@ A production-quality Python SDK for [api.bible](https://api.bible/).
 ```bash
 pip install americanbible-api-bible-sdk
 ```
+
+### Supported Python versions
+
+The SDK supports every CPython version that has not reached
+[end of life](https://devguide.python.org/versions/), and CI tests each one.
+Currently that's **3.10 through 3.14**.
+
+- A new CPython version is added once the SDK's dependencies ship wheels for it.
+- A version that reaches end of life is dropped in the **next minor release**,
+  never in a patch release. `requires-python` is raised at the same time, so pip
+  and uv on the old interpreter keep resolving the last compatible release.
+
+**Python 3.10** reaches end of life in October 2026. 1.4.x is the last release
+line that supports it, and 1.5.0 will require Python 3.11+.
 
 ## Quickstart
 
@@ -287,23 +301,28 @@ never override the `api-key`. The SDK applies it last, at send time, through an
 
 ## Development
 
-```bash
-# Install against the pinned lockfile for a reproducible toolchain (what CI uses).
-pip install -e ".[dev]" -c requirements-dev.txt
-ruff check . && mypy && pytest --cov=api_bible
-```
-
-Runtime dependency ranges live in `pyproject.toml`; `requirements-dev.txt` is a
-fully-pinned lockfile of the dev/CI environment. Regenerate it after changing
-dependencies with [uv](https://docs.astral.sh/uv/):
+The dev environment is managed with [uv](https://docs.astral.sh/uv/)
+([install it](https://docs.astral.sh/uv/getting-started/installation/) once,
+e.g. `brew install uv`). From `packages/python`:
 
 ```bash
-uv pip compile pyproject.toml --extra dev --universal --python-version 3.10 \
-  -o requirements-dev.txt
+# Create .venv with the SDK (editable) and the locked dev toolchain — what CI uses.
+uv sync
+source .venv/bin/activate
+ruff check . && ruff format --check . && mypy && pytest --cov=api_bible
 ```
 
-Dependencies are scanned weekly by Dependabot, and CI fails the build on any
-known vulnerability via `pip-audit`.
+Runtime dependency ranges live in `pyproject.toml`. `uv.lock` pins the whole
+dev, CI and release environment: the `dev` dependency group (pytest, ruff,
+mypy) and the `release` group (build, twine, pip-audit). After editing
+dependencies in `pyproject.toml`, run `uv lock` and commit `uv.lock` with the
+change. To upgrade locked versions, run `uv lock --upgrade-package <name>`, or
+`uv lock --upgrade` for everything. CI runs `uv sync --locked`, which fails if
+`uv.lock` is out of date with `pyproject.toml`.
+
+Dependabot opens a weekly grouped PR that updates `uv.lock` (ruff gets its own
+PR, since it can change formatting), and CI fails the build on any known
+vulnerability via `pip-audit`.
 
 ### Contract tests
 
