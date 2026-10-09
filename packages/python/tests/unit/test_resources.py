@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-import httpx
+from collections.abc import Callable
 
-from api_bible import Bible, Chapter
+import httpx
+import pytest
+
+from api_bible import Bible, BibleClient, Chapter, InvalidInputError
 
 
 def test_bibles_list_maps_aliases(make_client) -> None:
@@ -222,3 +225,23 @@ def test_bible_exposes_copyright_and_info(make_client) -> None:
 
     assert bible.copyright == "Public Domain"
     assert bible.info is None
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda c: c.bibles.get(""),
+        lambda c: c.bibles.get(".."),
+        lambda c: c.chapters.get("..", ".."),
+        lambda c: c.verses.get("b1", ""),
+    ],
+    ids=["bibles-empty", "bibles-dotdot", "chapters-dotdot", "verses-empty"],
+)
+def test_invalid_path_ids_raise_without_request(
+    make_client, call: Callable[[BibleClient], object]
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError(f"no request should be sent, got {request.url}")
+
+    with make_client(handler) as client, pytest.raises(InvalidInputError):
+        call(client)

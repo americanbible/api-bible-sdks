@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from .._serialize import encode_path, to_query
+from .._serialize import to_query
 from ..models import ApiResponse, SearchResult
 from ._base import BaseResource
 
@@ -38,8 +38,9 @@ class SearchResource(BaseResource):
         )
         resp = self._transport.request(
             "GET",
-            encode_path("bibles", bible_id, "search"),
+            "/bibles/{bible_id}/search",
             model=ApiResponse[SearchResult],
+            path_params={"bible_id": bible_id},
             params=params or None,
             timeout=timeout,
             extra_headers=headers,

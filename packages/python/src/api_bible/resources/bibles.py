@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from .._serialize import encode_path, to_query
+from .._serialize import to_query
 from ..models import ApiResponse, Bible
 from ._base import BaseResource
 
@@ -49,8 +49,9 @@ class BiblesResource(BaseResource):
         """Return a single bible by id."""
         resp = self._transport.request(
             "GET",
-            encode_path("bibles", bible_id),
+            "/bibles/{bible_id}",
             model=ApiResponse[Bible],
+            path_params={"bible_id": bible_id},
             timeout=timeout,
             extra_headers=headers,
         )

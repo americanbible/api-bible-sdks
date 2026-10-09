@@ -1,8 +1,8 @@
 """URL serialization helpers. Private, pure, and heavily unit-tested.
 
 ``to_query`` maps Python keyword arguments to the query-string format api.bible
-expects (replacing the TypeScript SDK's per-method query builders). ``encode_path``
-builds a request path from segments, percent-encoding each one.
+expects (replacing the TypeScript SDK's per-method query builders). ``expand_route``
+fills a route template with percent-encoded ids to build the request path.
 """
 
 from __future__ import annotations
@@ -13,17 +13,30 @@ from urllib.parse import quote
 
 from .errors import InvalidInputError
 
-__all__ = ["encode_path", "to_query"]
+__all__ = ["expand_route", "to_query"]
 
 
-def encode_path(*segments: str) -> str:
-    """Build a request path from segments, percent-encoding each one.
+def expand_route(route: str, **ids: str) -> str:
+    """Fill a route template's ``{placeholders}`` with percent-encoded ids.
 
-    Path parameters (bible/book/chapter/verse ids) are interpolated into the
-    request path. Encoding each segment stops a stray ``/``, ``?``, ``#`` or
-    space in an id from corrupting the URL or injecting a query string.
+    ``expand_route("/bibles/{bible_id}", bible_id="a/b")`` returns
+    ``"/bibles/a%2Fb"``. The template doubles as the low-cardinality ``route``
+    reported to observers. Encoding each id stops a stray ``/``, ``?``, ``#`` or
+    space from corrupting the URL or injecting a query string.
+
+    Empty, whitespace-only, ``.`` and ``..`` ids are rejected with
+    :class:`InvalidInputError`: percent-encoding leaves them intact, so they
+    would collapse into a different endpoint (``/bibles/`` is the list route)
+    or be normalized away by the HTTP client.
     """
-    return "/" + "/".join(quote(segment, safe="") for segment in segments)
+    encoded: dict[str, str] = {}
+    for name, value in ids.items():
+        if not value.strip() or value in (".", ".."):
+            raise InvalidInputError(
+                f"invalid {name} {value!r}: ids must be non-empty and must not be '.' or '..'"
+            )
+        encoded[name] = quote(value, safe="")
+    return route.format(**encoded)
 
 
 def to_query(**kwargs: Any) -> dict[str, str]:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from .._serialize import encode_path
 from ..models import ApiResponse, Passage, Result
 from ._base import BaseResource
 
@@ -61,8 +60,9 @@ class PassagesResource(BaseResource):
         response rather than via the thread-local ``last_meta``.
         """
         resp = self._content_get(
-            encode_path("bibles", bible_id, "passages", passage_id),
+            "/bibles/{bible_id}/passages/{passage_id}",
             ApiResponse[Passage],
+            path_params={"bible_id": bible_id, "passage_id": passage_id},
             content_type=content_type,
             include_notes=include_notes,
             include_titles=include_titles,

@@ -1,22 +1,33 @@
 from __future__ import annotations
 
+import inspect
 import logging
 import subprocess
 import sys
+from collections.abc import Generator
 
 import httpx
 import pytest
 
 from api_bible import (
     ApiError,
+    BibleClient,
     InvalidInputError,
     NetworkError,
     NotFoundError,
     RateLimitError,
+    RequestEvent,
+    RetryEvent,
     ServerError,
     ValidationError,
 )
-from api_bible._http import RetryConfig, backoff_delay, next_retry_delay, parse_retry_after
+from api_bible._http import (
+    RetryConfig,
+    Transport,
+    backoff_delay,
+    next_retry_delay,
+    parse_retry_after,
+)
 
 # --- pure retry math -------------------------------------------------------
 
@@ -48,6 +59,13 @@ def test_parse_retry_after(header: str | None, expected: float | None) -> None:
 
 def test_parse_retry_after_http_date_in_past_is_zero() -> None:
     assert parse_retry_after("Wed, 21 Oct 2015 07:28:00 GMT") == 0.0
+
+
+def test_parse_retry_after_http_date_in_future() -> None:
+    # `-0000` parses to a naive datetime, which is treated as UTC.
+    for header in ("Fri, 01 Jan 2100 00:00:00 GMT", "Fri, 01 Jan 2100 00:00:00 -0000"):
+        seconds = parse_retry_after(header)
+        assert seconds is not None and seconds > 365 * 24 * 3600
 
 
 def test_next_retry_delay_uses_retry_after_as_floor() -> None:
@@ -376,7 +394,7 @@ def test_retry_logs_warning_and_giveup(make_client, caplog) -> None:
     assert "HTTP 503" in messages  # the failure reason is included
 
 
-def test_logs_never_include_the_api_key(make_client, caplog) -> None:
+def test_logs_never_include_the_api_key_or_query(make_client, caplog) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(503, json={"message": "down"})
 
@@ -385,10 +403,51 @@ def test_logs_never_include_the_api_key(make_client, caplog) -> None:
         make_client(handler) as client,
         pytest.raises(ServerError),
     ):
-        client.bibles.list()
+        client.bibles.list(language="zzq")
 
     assert caplog.records  # sanity: we did log something
-    assert all("test-key" not in record.getMessage() for record in caplog.records)
+    for record in caplog.records:
+        fields = {k: v for k, v in vars(record).items() if k.startswith("api_bible_")}
+        assert fields  # every record carries structured fields
+        rendered = record.getMessage() + repr(fields)
+        assert "test-key" not in rendered
+        assert "zzq" not in rendered  # query-string values stay out of logs
+
+
+def test_log_records_carry_structured_fields(make_client, caplog) -> None:
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return httpx.Response(503, json={"message": "down"})
+        return httpx.Response(
+            200, json={"data": {"id": "GEN.1", "bibleId": "b1", "bookId": "GEN", "number": "1"}}
+        )
+
+    with caplog.at_level(logging.DEBUG, logger="api_bible"), make_client(handler) as client:
+        client.chapters.get("b1", "GEN.1")
+
+    records = caplog.records
+    call_ids = {r.api_bible_call_id for r in records}
+    assert len(call_ids) == 1 and "" not in call_ids
+    for r in records:
+        assert r.api_bible_method == "GET"
+        assert r.api_bible_route == "/bibles/{bible_id}/chapters/{chapter_id}"
+        assert r.api_bible_path == "/bibles/b1/chapters/GEN.1"
+        assert r.api_bible_max_attempts == 3
+
+    [retry] = [r for r in records if r.levelno == logging.WARNING]
+    assert retry.api_bible_attempt == 1  # the attempt that failed
+    assert retry.api_bible_status_code == 503
+    assert retry.api_bible_reason == "HTTP 503"
+    assert retry.api_bible_delay_ms == 0.0
+
+    responses = [r for r in records if hasattr(r, "api_bible_elapsed_ms")]
+    assert [(r.api_bible_attempt, r.api_bible_status_code) for r in responses] == [
+        (1, 503),
+        (2, 200),
+    ]
 
 
 # --- observability hook ----------------------------------------------------
@@ -517,6 +576,56 @@ def test_on_retry_observer_fires_once_per_retry(make_client) -> None:
     assert all(e.retry_after_ms is None for e in events)
 
 
+def test_observers_report_route_template_and_concrete_path(make_client) -> None:
+    requests: list[RequestEvent] = []
+    retries: list[RetryEvent] = []
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return httpx.Response(503, json={"message": "down"})
+        return httpx.Response(
+            200, json={"data": {"id": "GEN.1", "bibleId": "b1", "bookId": "GEN", "number": "1"}}
+        )
+
+    with make_client(handler, on_request=requests.append, on_retry=retries.append) as client:
+        client.chapters.get("b1", "GEN.1")
+
+    # route is the low-cardinality template; path keeps the concrete ids.
+    route = "/bibles/{bible_id}/chapters/{chapter_id}"
+    assert [e.route for e in requests] == [route, route]
+    assert [e.path for e in requests] == ["/bibles/b1/chapters/GEN.1"] * 2
+    assert len(retries) == 1
+    assert retries[0].route == route
+    assert retries[0].path == "/bibles/b1/chapters/GEN.1"
+
+
+def test_call_id_is_shared_within_a_call_and_unique_across_calls(make_client) -> None:
+    requests: list[RequestEvent] = []
+    retries: list[RetryEvent] = []
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return httpx.Response(503, json={"message": "down"})
+        return _ok([])
+
+    with make_client(handler, on_request=requests.append, on_retry=retries.append) as client:
+        client.bibles.list()  # 503, 503, 200
+        client.bibles.list()  # 200
+
+    first, second = requests[:3], requests[3:]
+    call_id = first[0].call_id
+    assert call_id
+    # Every attempt and retry of one call shares an id, so they can be grouped.
+    assert {e.call_id for e in first} == {call_id}
+    assert {e.call_id for e in retries} == {call_id}
+    assert len(second) == 1
+    assert second[0].call_id not in ("", call_id)
+
+
 def test_on_retry_observer_reports_retry_after(make_client) -> None:
     events = []
     calls = {"n": 0}
@@ -602,13 +711,18 @@ def test_oversized_response_is_rejected_and_not_retried(make_client) -> None:
         calls["n"] += 1
         return httpx.Response(200, json={"data": [{"id": "b1", "name": "x" * 1000}]})
 
+    events: list[RequestEvent] = []
+
     with (
-        make_client(handler, max_response_bytes=64) as client,
+        make_client(handler, max_response_bytes=64, on_request=events.append) as client,
         pytest.raises(ApiError, match="max_response_bytes"),
     ):
         client.bibles.list()
 
     assert calls["n"] == 1  # deterministic failure -> not retried
+    # The attempt got a response, so it is still observed.
+    assert [(e.status_code, e.error) for e in events] == [(200, "response too large")]
+    assert events[0].headers is not None
 
 
 def test_max_response_bytes_none_disables_the_cap(make_client) -> None:
@@ -712,3 +826,226 @@ def test_retry_exhaustion_raises_real_error_under_optimized_mode() -> None:
     )
     result = subprocess.run([sys.executable, "-O", "-c", script], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
+
+
+# --- response headers on ApiError -------------------------------------------
+
+_ERROR_RESPONSE_HEADERS = {
+    "X-Request-ID": "req-123",
+    "Set-Cookie": "session=abc",
+    "Location": "https://elsewhere.example/?token=secret",
+    "Content-Location": "/v1/x?token=secret",
+    "X-Echo": "api-key: test-key",  # a proxy echoing the request back
+}
+
+
+@pytest.mark.parametrize(
+    ("status", "content", "content_type", "client_kwargs"),
+    [
+        (404, b'{"message": "nope"}', "application/json", {}),
+        (302, b"", "text/plain", {}),
+        (200, b"", "application/json", {}),
+        (200, b"<html>cdn</html>", "text/html", {}),
+        (200, b"{not json", "application/json", {}),
+        (200, b'{"data": []}', "application/json", {"max_response_bytes": 4}),
+    ],
+    ids=["status", "redirect", "empty", "non-json-type", "bad-json", "oversize"],
+)
+def test_api_error_keeps_safe_response_headers(
+    make_client, status: int, content: bytes, content_type: str, client_kwargs: dict
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        headers = {**_ERROR_RESPONSE_HEADERS, "Content-Type": content_type}
+        return httpx.Response(status, content=content, headers=headers)
+
+    with make_client(handler, **client_kwargs) as client, pytest.raises(ApiError) as info:
+        client.bibles.list()
+
+    headers = info.value.headers
+    assert headers is not None
+    assert headers["x-request-id"] == "req-123"
+    # Session cookies, URLs that may carry tokens, and anything echoing the key
+    # never ride along on an exception that may be logged or sent to a tracker.
+    assert not {"set-cookie", "location", "content-location", "x-echo"} & headers.keys()
+    assert "test-key" not in repr(headers)
+
+
+def test_network_error_has_no_headers(make_client) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused")
+
+    with make_client(handler) as client, pytest.raises(NetworkError) as info:
+        client.bibles.list()
+
+    assert info.value.headers is None
+
+
+# --- api-key handling via httpx.Auth -----------------------------------------
+
+
+def _caller_client(handler, **kwargs: object) -> BibleClient:
+    http_client = httpx.Client(
+        base_url="https://rest.api.bible/v1", transport=httpx.MockTransport(handler), **kwargs
+    )
+    return BibleClient("test-key", http_client=http_client)
+
+
+def test_api_key_wins_over_caller_client_headers() -> None:
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["api-key"] = request.headers.get_list("api-key")
+        return _ok([])
+
+    with _caller_client(handler, headers={"api-key": "evil"}) as client:
+        client.bibles.list()
+
+    assert seen["api-key"] == ["test-key"]
+
+
+class _HeaderAuth(httpx.Auth):
+    """A caller's own auth: adds a header and tries to clobber the api-key."""
+
+    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response, None]:
+        request.headers["Authorization"] = "Bearer caller-token"
+        request.headers["api-key"] = "evil"
+        yield request
+
+
+def test_caller_client_auth_still_runs_but_api_key_wins() -> None:
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["authorization"] = request.headers.get("authorization")
+        seen["api-key"] = request.headers.get_list("api-key")
+        return _ok([])
+
+    with _caller_client(handler, auth=_HeaderAuth()) as client:
+        client.bibles.list()
+
+    assert seen == {"authorization": "Bearer caller-token", "api-key": ["test-key"]}
+
+
+def test_caller_client_multi_step_auth_flow_is_driven_to_completion() -> None:
+    # e.g. a challenge/response scheme: the inner flow sees the 401 and retries.
+    sent: list[tuple[str | None, str | None]] = []
+
+    class _ChallengeAuth(httpx.Auth):
+        def auth_flow(
+            self, request: httpx.Request
+        ) -> Generator[httpx.Request, httpx.Response, None]:
+            response = yield request
+            if response.status_code == 401:
+                request.headers["Authorization"] = "answered"
+                yield request
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append((request.headers.get("authorization"), request.headers.get("api-key")))
+        if request.headers.get("authorization") is None:
+            return httpx.Response(401, json={"message": "challenge"})
+        return _ok([])
+
+    with _caller_client(handler, auth=_ChallengeAuth()) as client:
+        client.bibles.list()
+
+    assert sent == [(None, "test-key"), ("answered", "test-key")]
+
+
+def test_api_key_auth_repr_is_redacted() -> None:
+    transport = Transport("test-key")
+    try:
+        assert "test-key" not in repr(transport._auth)
+        assert "redacted" in repr(transport._auth)
+    finally:
+        transport.close()
+
+
+def test_api_key_never_sits_in_request_frame_locals(make_client) -> None:
+    # Error trackers (e.g. Sentry) capture frame locals; the key must not be one.
+    captured: list[str] = []
+
+    def inspect_frames(event: RequestEvent) -> None:
+        frame = inspect.currentframe()
+        while frame is not None:
+            if frame.f_code is Transport.request.__code__:
+                captured.extend(repr(v) for v in frame.f_locals.values())
+            frame = frame.f_back
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return _ok([])
+
+    with make_client(handler, on_request=inspect_frames) as client:
+        client.bibles.list(headers={"traceparent": "t"})
+
+    assert captured  # sanity: we found the frame
+    assert not any("test-key" in value for value in captured)
+
+
+# --- remaining branch coverage ------------------------------------------------
+
+
+def test_per_request_timeout_is_applied(make_client) -> None:
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["timeout"] = request.extensions["timeout"]
+        return _ok([])
+
+    with make_client(handler) as client:
+        client.bibles.list(timeout=2.5)
+        assert seen["timeout"]["read"] == 2.5
+        client.bibles.list()  # without one, the client default applies
+
+    assert seen["timeout"]["read"] != 2.5
+
+
+def test_retries_without_a_max_elapsed_budget(make_client) -> None:
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return httpx.Response(503, json={"message": "down"})
+        return _ok([])
+
+    retry = RetryConfig(max_attempts=3, base_delay=0.0, max_elapsed=None, jitter=lambda: 0.0)
+    with make_client(handler, retry=retry) as client:
+        assert client.bibles.list() == []
+
+    assert calls["n"] == 3
+
+
+@pytest.mark.parametrize(
+    ("content", "content_type"),
+    [
+        # A CDN's HTML error page in front of the API.
+        (b"<html><body>502 Bad Gateway</body></html>", "text/html"),
+        # JSON, but without a usable message.
+        (b'{"error": "upstream down"}', "application/json"),
+        (b'["not", "an", "object"]', "application/json"),
+    ],
+    ids=["html", "error-not-object", "json-array"],
+)
+def test_error_without_extractable_message_falls_back_to_status(
+    make_client, content: bytes, content_type: str
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(502, content=content, headers={"Content-Type": content_type})
+
+    with make_client(handler) as client, pytest.raises(ServerError) as info:
+        client.bibles.list()
+
+    assert str(info.value) == "HTTP 502"
+    assert info.value.body == content.decode()
+
+
+def test_redirect_to_relative_location_does_not_name_a_host(make_client) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(302, headers={"Location": "/v2/bibles?token=secret"})
+
+    with make_client(handler) as client, pytest.raises(ApiError) as info:
+        client.bibles.list()
+
+    message = str(info.value)
+    assert "an undisclosed host" in message
+    assert "secret" not in message

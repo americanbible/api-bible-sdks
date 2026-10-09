@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins  # `list` method below shadows the builtin in later annotations
 from collections.abc import Mapping
 
-from .._serialize import encode_path, to_query
+from .._serialize import to_query
 from ..models import ApiResponse, AudioBible, AudioBibleSummary, AudioBook, AudioChapter
 from ._base import BaseResource
 
@@ -50,8 +50,9 @@ class AudioBiblesResource(BaseResource):
         """Return a single audio bible by id."""
         resp = self._transport.request(
             "GET",
-            encode_path("audio-bibles", audio_bible_id),
+            "/audio-bibles/{audio_bible_id}",
             model=ApiResponse[AudioBible],
+            path_params={"audio_bible_id": audio_bible_id},
             timeout=timeout,
             extra_headers=headers,
         )
@@ -69,8 +70,9 @@ class AudioBiblesResource(BaseResource):
         params = to_query(include_chapters=include_chapters)
         resp = self._transport.request(
             "GET",
-            encode_path("audio-bibles", audio_bible_id, "books"),
+            "/audio-bibles/{audio_bible_id}/books",
             model=ApiResponse[list[AudioBook]],
+            path_params={"audio_bible_id": audio_bible_id},
             params=params or None,
             timeout=timeout,
             extra_headers=headers,
@@ -90,8 +92,9 @@ class AudioBiblesResource(BaseResource):
         params = to_query(include_chapters=include_chapters)
         resp = self._transport.request(
             "GET",
-            encode_path("audio-bibles", audio_bible_id, "books", book_id),
+            "/audio-bibles/{audio_bible_id}/books/{book_id}",
             model=ApiResponse[AudioBook],
+            path_params={"audio_bible_id": audio_bible_id, "book_id": book_id},
             params=params or None,
             timeout=timeout,
             extra_headers=headers,
@@ -109,8 +112,9 @@ class AudioBiblesResource(BaseResource):
         """Return the chapters of a book in an audio bible."""
         resp = self._transport.request(
             "GET",
-            encode_path("audio-bibles", audio_bible_id, "books", book_id, "chapters"),
+            "/audio-bibles/{audio_bible_id}/books/{book_id}/chapters",
             model=ApiResponse[list[AudioChapter]],
+            path_params={"audio_bible_id": audio_bible_id, "book_id": book_id},
             timeout=timeout,
             extra_headers=headers,
         )
@@ -127,8 +131,9 @@ class AudioBiblesResource(BaseResource):
         """Return a single chapter of an audio bible."""
         resp = self._transport.request(
             "GET",
-            encode_path("audio-bibles", audio_bible_id, "chapters", chapter_id),
+            "/audio-bibles/{audio_bible_id}/chapters/{chapter_id}",
             model=ApiResponse[AudioChapter],
+            path_params={"audio_bible_id": audio_bible_id, "chapter_id": chapter_id},
             timeout=timeout,
             extra_headers=headers,
         )

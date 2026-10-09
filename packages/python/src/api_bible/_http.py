@@ -13,7 +13,8 @@ import logging
 import random
 import threading
 import time
-from collections.abc import Callable, Mapping
+import uuid
+from collections.abc import Callable, Generator, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -23,6 +24,7 @@ import httpx
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
 
+from ._serialize import expand_route
 from ._version import __version__
 from .errors import (
     ApiError,
@@ -59,10 +61,17 @@ DEFAULT_TIMEOUT = 10.0
 # headroom for the largest legitimate response.
 DEFAULT_MAX_RESPONSE_BYTES = 10 * 1024 * 1024
 _BODY_PREVIEW_LIMIT = 4096
+# Response headers kept off ApiError.headers. Errors travel further than observer
+# events (logs, error trackers), so headers that can carry a session cookie or a
+# URL with credentials in its query string are dropped.
+_ERROR_HEADER_DENYLIST = frozenset({"set-cookie", "set-cookie2", "location", "content-location"})
 _USER_AGENT = f"api-bible-sdk-python/{__version__}"
 
 # Library logger. The package installs a NullHandler so it stays silent unless
-# the application opts in. It never logs the api-key or response bodies.
+# the application opts in. It never logs the api-key, the query string or
+# response bodies. Records carry `api_bible_*` fields (see `Transport._log_extra`)
+# for structured/JSON handlers; the prefix keeps them from clashing with fields
+# an application's own log filters add (e.g. the inbound request's `path`).
 logger = logging.getLogger("api_bible")
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
@@ -76,12 +85,18 @@ class RequestEvent:
     Emitted once per attempt, so a call that retries emits several events. The
     consuming application turns these into telemetry: build a latency histogram
     (and read P99) from ``elapsed_ms``, count outcomes by ``status_code``, and
-    track retries via ``attempt``. ``status_code`` is ``None`` when the attempt
-    never received a response (timeout or transport failure); ``error`` then
-    holds a short reason. ``headers`` carries the response headers when one
-    arrived (``None`` otherwise), so an app can read rate-limit headers such as
-    ``X-RateLimit-Remaining`` to throttle proactively. The SDK never measures
-    latency itself — this is the seam through which an app instruments it.
+    track retries via ``attempt``. Tag metrics by ``route``, the path template
+    (``"/bibles/{bible_id}/verses/{verse_id}"``), not by ``path``: ``path`` holds
+    the concrete ids, so as a metric label it creates one series per id.
+    ``status_code`` is ``None`` when the attempt never received a response
+    (timeout or transport failure); ``error`` then holds a short reason.
+    ``headers`` carries the response headers when one arrived (``None``
+    otherwise), so an app can read rate-limit headers such as
+    ``X-RateLimit-Remaining`` to throttle proactively. ``call_id`` is shared by
+    every event (request and retry) of one logical call, so grouping by it
+    yields end-to-end latency including retries and backoff. The SDK never
+    measures latency itself — this is the seam through which an app
+    instruments it.
     """
 
     method: str
@@ -91,6 +106,8 @@ class RequestEvent:
     attempt: int  # 1-based
     error: str | None = None
     headers: Mapping[str, str] | None = None
+    route: str = ""  # path template; always set by the SDK
+    call_id: str = ""  # same for every event of one call; always set by the SDK
 
 
 # Observer invoked once per HTTP attempt. May be called concurrently when a
@@ -110,9 +127,12 @@ class RetryEvent:
     histogram from ``delay_ms``. ``reason`` is a short label for the failure that
     triggered the retry (``"HTTP 503"``, ``"request timed out"``,
     ``"network error"``); ``retry_after_ms`` is the server's ``Retry-After`` hint
-    in milliseconds when one was sent, else ``None``. A give-up (attempts
-    exhausted, budget spent, or ``Retry-After`` past the ceiling) emits no event —
-    it surfaces as the raised exception and the final :class:`RequestEvent`.
+    in milliseconds when one was sent, else ``None``. As with
+    :class:`RequestEvent`, tag metrics by ``route`` rather than ``path``;
+    ``call_id`` equals that of the same call's request events. A give-up
+    (attempts exhausted, budget spent, or ``Retry-After`` past the ceiling) emits
+    no event — it surfaces as the raised exception and the final
+    :class:`RequestEvent`.
     """
 
     method: str
@@ -121,6 +141,8 @@ class RetryEvent:
     delay_ms: float  # wait scheduled before the next attempt
     reason: str
     retry_after_ms: float | None = None
+    route: str = ""  # path template; always set by the SDK
+    call_id: str = ""  # same for every event of one call; always set by the SDK
 
 
 # Observer invoked once per retry, just before the backoff sleep. Same threading
@@ -201,8 +223,7 @@ def parse_retry_after(value: str | None) -> float | None:
         when = parsedate_to_datetime(value)
     except (TypeError, ValueError):
         return None
-    if when is None:
-        return None
+    # A `-0000` zone ("UTC, source unknown") parses to a naive datetime.
     if when.tzinfo is None:
         when = when.replace(tzinfo=timezone.utc)
     return max(0.0, (when - datetime.now(timezone.utc)).total_seconds())
@@ -229,7 +250,7 @@ def _is_redirect(status_code: int) -> bool:
     return 300 <= status_code < 400
 
 
-def _redirect_error(response: httpx.Response) -> ApiError:
+def _redirect_error(response: httpx.Response, headers: Mapping[str, str]) -> ApiError:
     """Turn a suppressed redirect into a self-explanatory error.
 
     httpx already defaults ``follow_redirects=False``, and we keep it that way:
@@ -250,7 +271,56 @@ def _redirect_error(response: httpx.Response) -> ApiError:
         "The SDK does not follow redirects: the api-key header would be resent to the "
         "redirect target, disclosing your key.",
         status_code=response.status_code,
+        headers=headers,
     )
+
+
+class _ApiKeyAuth(httpx.Auth):
+    """Sets the ``api-key`` header at send time, after every other header layer.
+
+    Holding the key here instead of in a headers dict keeps it out of
+    ``Transport.request``'s frame locals, which error trackers such as Sentry
+    capture and may not scrub under a hyphenated name. ``inner`` is the auth of
+    a caller-supplied ``http_client`` (if any); it still runs, and the key is
+    re-applied to every request it yields so the key always wins.
+    """
+
+    def __init__(self, api_key: str, inner: httpx.Auth | None = None) -> None:
+        self._api_key = api_key
+        self._inner = inner
+
+    def __repr__(self) -> str:
+        return "_ApiKeyAuth(api_key='[redacted]')"
+
+    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response, None]:
+        request.headers["api-key"] = self._api_key
+        yield request
+
+    def sync_auth_flow(
+        self, request: httpx.Request
+    ) -> Generator[httpx.Request, httpx.Response, None]:
+        if self._inner is None:
+            yield from self.auth_flow(request)
+            return
+        flow = self._inner.sync_auth_flow(request)
+        try:
+            outgoing = next(flow)
+            while True:
+                outgoing.headers["api-key"] = self._api_key
+                response = yield outgoing
+                outgoing = flow.send(response)
+        except StopIteration:
+            return
+
+
+@dataclass(frozen=True)
+class _Call:
+    """Identity of one logical call, shared by every event it emits."""
+
+    method: str
+    path: str
+    route: str
+    call_id: str
 
 
 class Transport:
@@ -290,6 +360,8 @@ class Transport:
             if limits is not None:
                 client_kwargs["limits"] = limits
             self._client = httpx.Client(**client_kwargs)
+        # Wraps any auth the caller's own client carries, so it keeps working.
+        self._auth = _ApiKeyAuth(api_key, inner=self._client.auth)
         # Per-thread storage: httpx.Client is safe to share across threads, so a
         # shared BibleClient is the natural pattern. Keeping `meta` thread-local
         # stops one thread's response metadata from clobbering another's.
@@ -308,9 +380,10 @@ class Transport:
     def request(
         self,
         method: str,
-        path: str,
+        route: str,
         *,
         model: type[ModelT],
+        path_params: Mapping[str, str] | None = None,
         params: dict[str, str] | None = None,
         timeout: float | None = None,
         extra_headers: Mapping[str, str] | None = None,
@@ -318,10 +391,15 @@ class Transport:
         # Clear any prior call's metadata up front so a failure (which never
         # reaches `_parse`) can't leave a stale `last_meta` from an earlier call.
         self._local.meta = None
+        # `route` is the template reported to observers; `path` is what's sent.
+        # Expansion validates the ids, so a bad one fails before any I/O.
+        path = expand_route(route, **(path_params or {}))
+        call = _Call(method, path, route, uuid.uuid4().hex)
 
-        # Client headers first, then per-request headers, then `api-key` last so
-        # the key can never be overridden by either layer.
-        headers = {**self._extra_headers, **(extra_headers or {}), "api-key": self._api_key}
+        # Client headers first, then per-request headers. The api-key is not in
+        # here: `_ApiKeyAuth` sets it at send time, after both layers, so it can
+        # never be overridden and never sits in a frame local.
+        headers = {**self._extra_headers, **(extra_headers or {})}
         extra: dict[str, Any] = {}
         if timeout is not None:
             extra["timeout"] = timeout
@@ -334,8 +412,16 @@ class Transport:
         last_error: ApiError | None = None
         for attempt in range(attempts):
             retry_after: float | None = None
+            status_code: int | None = None
             reason: str
-            logger.debug("%s %s (attempt %d/%d)", method, path, attempt + 1, attempts)
+            logger.debug(
+                "%s %s (attempt %d/%d)",
+                method,
+                path,
+                attempt + 1,
+                attempts,
+                extra=self._log_extra(call, attempt + 1),
+            )
             start = time.monotonic()
             try:
                 # Stream the response so the body is read under our own size cap
@@ -347,9 +433,24 @@ class Transport:
                 # follow_redirects=False per request, not just per client: a
                 # caller-supplied http_client may have enabled it, and following
                 # a redirect would resend the api-key to the target host.
-                response = self._client.send(request, stream=True, follow_redirects=False)
+                response = self._client.send(
+                    request, auth=self._auth, stream=True, follow_redirects=False
+                )
                 try:
                     body = self._read_body(response)
+                except ApiError:
+                    # Over max_response_bytes: a response did arrive, so the
+                    # attempt is still observed before the error propagates.
+                    elapsed_ms = (time.monotonic() - start) * 1000.0
+                    self._emit(
+                        call,
+                        response.status_code,
+                        elapsed_ms,
+                        attempt,
+                        "response too large",
+                        dict(response.headers),
+                    )
+                    raise
                 finally:
                     response.close()
             except httpx.PoolTimeout as exc:
@@ -357,7 +458,7 @@ class Transport:
                 # upstream blip: retrying just adds more pending requests and
                 # deepens the starvation. Fail fast so load sheds instead.
                 elapsed_ms = (time.monotonic() - start) * 1000.0
-                self._emit(method, path, None, elapsed_ms, attempt, "pool timeout")
+                self._emit(call, None, elapsed_ms, attempt, "pool timeout")
                 raise NetworkError(
                     f"connection pool timed out waiting for a free connection: {exc}. "
                     "Too many concurrent requests for the pool; raise httpx.Limits "
@@ -365,7 +466,7 @@ class Transport:
                 ) from exc
             except httpx.TimeoutException as exc:
                 elapsed_ms = (time.monotonic() - start) * 1000.0
-                self._emit(method, path, None, elapsed_ms, attempt, "timeout")
+                self._emit(call, None, elapsed_ms, attempt, "timeout")
                 last_error = NetworkError(f"request timed out: {self._redact(exc)}")
                 reason = "request timed out"
             except httpx.LocalProtocolError:
@@ -374,30 +475,33 @@ class Transport:
                 # quotes the offending value (possibly the api-key), so neither
                 # the message nor the cause is propagated.
                 elapsed_ms = (time.monotonic() - start) * 1000.0
-                self._emit(method, path, None, elapsed_ms, attempt, "invalid header")
+                self._emit(call, None, elapsed_ms, attempt, "invalid header")
                 raise NetworkError(
                     "request could not be sent: a request header has an illegal value "
                     "(value not shown to avoid disclosing credentials)"
                 ) from None
             except httpx.HTTPError as exc:
                 elapsed_ms = (time.monotonic() - start) * 1000.0
-                self._emit(method, path, None, elapsed_ms, attempt, "network error")
+                self._emit(call, None, elapsed_ms, attempt, "network error")
                 last_error = NetworkError(f"network error: {self._redact(exc)}")
                 reason = "network error"
             else:
                 elapsed_ms = (time.monotonic() - start) * 1000.0
+                status_code = response.status_code
                 logger.debug(
                     "%s %s -> %d in %.1fms (attempt %d/%d)",
                     method,
                     path,
-                    response.status_code,
+                    status_code,
                     elapsed_ms,
                     attempt + 1,
                     attempts,
+                    extra=self._log_extra(
+                        call, attempt + 1, status_code=status_code, elapsed_ms=elapsed_ms
+                    ),
                 )
                 self._emit(
-                    method,
-                    path,
+                    call,
                     response.status_code,
                     elapsed_ms,
                     attempt,
@@ -407,12 +511,12 @@ class Transport:
                 # Terminal by design: a redirect is a configuration change, not a
                 # transient fault, so retrying it would just resend the key.
                 if _is_redirect(response.status_code):
-                    raise _redirect_error(response)
+                    raise _redirect_error(response, self._error_headers(response))
 
                 if response.status_code < 400:
                     return self._parse(response, body, model)
 
-                error = _error_for_status(response, body)
+                error = _error_for_status(response, body, self._error_headers(response))
                 if not _is_retryable(response.status_code):
                     raise error
                 retry_after = error.retry_after
@@ -425,6 +529,12 @@ class Transport:
                         path,
                         retry_after,
                         self._retry.max_retry_after,
+                        extra=self._log_extra(
+                            call,
+                            attempt + 1,
+                            status_code=status_code,
+                            retry_after_ms=retry_after * 1000.0,
+                        ),
                     )
                     raise error
                 last_error = error
@@ -437,6 +547,9 @@ class Transport:
                     path,
                     reason,
                     attempts,
+                    extra=self._log_extra(
+                        call, attempt + 1, status_code=status_code, reason=reason
+                    ),
                 )
                 break
             delay = next_retry_delay(attempt, retry_after, self._retry)
@@ -447,11 +560,13 @@ class Transport:
                     method,
                     path,
                     reason,
+                    extra=self._log_extra(
+                        call, attempt + 1, status_code=status_code, reason=reason
+                    ),
                 )
                 break
             self._emit_retry(
-                method,
-                path,
+                call,
                 attempt + 1,
                 delay * 1000.0,
                 reason,
@@ -465,6 +580,13 @@ class Transport:
                 delay,
                 attempt + 2,
                 attempts,
+                extra=self._log_extra(
+                    call,
+                    attempt + 1,
+                    status_code=status_code,
+                    reason=reason,
+                    delay_ms=delay * 1000.0,
+                ),
             )
             if delay > 0:
                 time.sleep(delay)
@@ -476,14 +598,43 @@ class Transport:
             raise RuntimeError("retry loop exited without recording an error")
         raise last_error
 
+    def _log_extra(self, call: _Call, attempt: int, **fields: Any) -> dict[str, Any]:
+        """Structured fields for a log record's ``extra=``, all ``api_bible_``-prefixed.
+
+        ``attempt`` is 1-based: the attempt the record is about (for a retry,
+        the one that just failed, matching :class:`RetryEvent`). Only request
+        metadata goes here — never the api-key, query string or a body.
+        """
+        base: dict[str, Any] = {
+            "method": call.method,
+            "path": call.path,
+            "route": call.route,
+            "call_id": call.call_id,
+            "attempt": attempt,
+            "max_attempts": self._retry.max_attempts,
+            **fields,
+        }
+        return {f"api_bible_{name}": value for name, value in base.items()}
+
+    def _error_headers(self, response: httpx.Response) -> dict[str, str]:
+        """Response headers safe to keep on an :class:`ApiError`.
+
+        Drops :data:`_ERROR_HEADER_DENYLIST` and, defensively, any header whose
+        value contains the api-key (e.g. a proxy echoing request headers back).
+        """
+        return {
+            name: value
+            for name, value in response.headers.items()
+            if name not in _ERROR_HEADER_DENYLIST and self._api_key not in value
+        }
+
     def _redact(self, exc: BaseException) -> str:
         """Render a transport exception for an error message, minus the api-key."""
         return str(exc).replace(self._api_key, "[redacted]")
 
     def _emit(
         self,
-        method: str,
-        path: str,
+        call: _Call,
         status_code: int | None,
         elapsed_ms: float,
         attempt: int,
@@ -498,23 +649,26 @@ class Transport:
         if self._on_request is None:
             return
         event = RequestEvent(
-            method=method,
-            path=path,
+            method=call.method,
+            path=call.path,
             status_code=status_code,
             elapsed_ms=elapsed_ms,
             attempt=attempt + 1,
             error=error,
             headers=headers,
+            route=call.route,
+            call_id=call.call_id,
         )
         try:
             self._on_request(event)
         except Exception:
-            logger.exception("on_request observer raised; ignoring")
+            logger.exception(
+                "on_request observer raised; ignoring", extra=self._log_extra(call, attempt + 1)
+            )
 
     def _emit_retry(
         self,
-        method: str,
-        path: str,
+        call: _Call,
         attempt: int,
         delay_ms: float,
         reason: str,
@@ -527,17 +681,21 @@ class Transport:
         if self._on_retry is None:
             return
         event = RetryEvent(
-            method=method,
-            path=path,
+            method=call.method,
+            path=call.path,
             attempt=attempt,
             delay_ms=delay_ms,
             reason=reason,
             retry_after_ms=retry_after_ms,
+            route=call.route,
+            call_id=call.call_id,
         )
         try:
             self._on_retry(event)
         except Exception:
-            logger.exception("on_retry observer raised; ignoring")
+            logger.exception(
+                "on_retry observer raised; ignoring", extra=self._log_extra(call, attempt)
+            )
 
     def _read_body(self, response: httpx.Response) -> bytes:
         """Read the response body into memory, bounded by ``max_response_bytes``.
@@ -555,6 +713,7 @@ class Transport:
                 raise ApiError(
                     f"response exceeded max_response_bytes ({cap} bytes)",
                     status_code=response.status_code,
+                    headers=self._error_headers(response),
                 )
             chunks.append(chunk)
         return b"".join(chunks)
@@ -568,6 +727,7 @@ class Transport:
             raise ApiError(
                 "server returned an empty response body",
                 status_code=response.status_code,
+                headers=self._error_headers(response),
             )
         content_type = response.headers.get("content-type", "")
         if content_type and "json" not in content_type.lower():
@@ -577,6 +737,7 @@ class Transport:
                 status_code=response.status_code,
                 body=text[:_BODY_PREVIEW_LIMIT],
                 body_truncated=len(text) > _BODY_PREVIEW_LIMIT,
+                headers=self._error_headers(response),
             )
         try:
             payload = json.loads(body)
@@ -587,6 +748,7 @@ class Transport:
                 status_code=response.status_code,
                 body=text[:_BODY_PREVIEW_LIMIT],
                 body_truncated=len(text) > _BODY_PREVIEW_LIMIT,
+                headers=self._error_headers(response),
             ) from exc
 
         try:
@@ -604,7 +766,9 @@ class Transport:
         self._client.close()
 
 
-def _error_for_status(response: httpx.Response, body: bytes) -> ApiError:
+def _error_for_status(
+    response: httpx.Response, body: bytes, headers: Mapping[str, str]
+) -> ApiError:
     status = response.status_code
     text = body.decode("utf-8", errors="replace")
     preview = text[:_BODY_PREVIEW_LIMIT]
@@ -636,6 +800,7 @@ def _error_for_status(response: httpx.Response, body: bytes) -> ApiError:
         body=preview,
         body_truncated=truncated,
         retry_after=retry_after,
+        headers=headers,
     )
 
 

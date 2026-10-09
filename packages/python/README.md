@@ -84,6 +84,13 @@ except RateLimitError as exc:
     print(exc.retry_after)  # seconds the server asked us to wait, or None
 ```
 
+Every `ApiError` raised from a response also carries that response's `headers`
+(lower-cased names), e.g. to quote a request-id header when contacting support.
+It is `None` for a `NetworkError`, where no response arrived. Headers that can
+carry a session or a credential (`Set-Cookie`, `Location`, `Content-Location`,
+and any value containing your api-key) are left out, because exceptions tend to
+end up in logs and error trackers.
+
 ## Configuration
 
 ```python
@@ -156,13 +163,15 @@ a request handler:
 
   Passing your own `http_client=httpx.Client(...)` still works and takes full
   control of the pool; in that case the client owns `timeout`/`limits` and the
-  ones above are ignored.
+  ones above are ignored. An `auth=` configured on that client still runs; the
+  SDK sets the `api-key` after it, so the configured key always wins.
 
 - **Share one client.** `BibleClient` and its underlying `httpx.Client` are safe to
   share across threads — reuse a single instance so connection pooling kicks in.
 - **Response bodies are size-capped.** Each response is streamed and read under a
   limit (`max_response_bytes`, default 10 MiB); a body that exceeds it is aborted
-  mid-stream with an `ApiError` rather than being buffered into memory. Raise the
+  mid-stream with an `ApiError` rather than being buffered into memory (the attempt
+  still reaches `on_request`, with `error="response too large"`). Raise the
   limit for unusually large payloads, or pass `max_response_bytes=None` to disable
   the cap entirely:
 
@@ -176,13 +185,35 @@ a request handler:
 
 The SDK logs to the `api_bible` logger (silent by default via a `NullHandler` —
 configure a handler to see retry/give-up warnings and per-attempt debug lines).
-It never logs the api-key or response bodies.
+It never logs the api-key, the query string or response bodies.
+
+Every record also carries structured fields that JSON log handlers (e.g.
+`python-json-logger`, structlog's stdlib bridge) emit as top-level keys:
+
+| Field | On | Value |
+|---|---|---|
+| `api_bible_method`, `api_bible_path`, `api_bible_route` | all | HTTP method, concrete path, path template |
+| `api_bible_call_id` | all | same for every record of one call (see `call_id` below) |
+| `api_bible_attempt`, `api_bible_max_attempts` | all | 1-based attempt the record is about |
+| `api_bible_status_code`, `api_bible_elapsed_ms` | per-response debug | |
+| `api_bible_status_code`, `api_bible_reason` | retry / give-up warnings | status is `None` for a timeout or network error |
+| `api_bible_delay_ms` | retry warning | scheduled backoff |
+| `api_bible_retry_after_ms` | `Retry-After` give-up | server-requested wait |
+
+The `api_bible_` prefix keeps them from colliding with fields your own log
+filters add.
 
 For metrics, pass an `on_request` observer. It's called once per HTTP attempt
 (so a retried call fires several times) with a `RequestEvent` you can feed into
 Prometheus/OpenTelemetry/StatsD — derive P99 from `elapsed_ms`, count outcomes
 by `status_code`, track retries via `attempt`, and read the response `headers`
-(e.g. rate-limit headers) to throttle proactively:
+(e.g. rate-limit headers) to throttle proactively.
+
+Tag metrics by `event.route`, the endpoint's path template
+(`/bibles/{bible_id}/chapters/{chapter_id}`), not by `event.path`. `path` holds
+the concrete ids, so using it as a Prometheus or OpenTelemetry label creates a
+new time series for every bible, chapter and verse. Keep `path` for logs and
+debugging.
 
 ```python
 from api_bible import BibleClient, RequestEvent
@@ -191,8 +222,10 @@ from api_bible import BibleClient, RequestEvent
 def on_request(event: RequestEvent) -> None:
     # status_code is None when the attempt never got a response (timeout/transport);
     # event.error then holds a short reason ("timeout", "network error", "pool timeout").
-    metrics.histogram("api_bible.latency_ms", event.elapsed_ms, tags={"path": event.path})
-    metrics.increment("api_bible.requests", tags={"status": event.status_code})
+    metrics.histogram("api_bible.latency_ms", event.elapsed_ms, tags={"route": event.route})
+    metrics.increment(
+        "api_bible.requests", tags={"route": event.route, "status": event.status_code}
+    )
     # headers is None when no response arrived; keys are lower-cased.
     if event.headers and (remaining := event.headers.get("x-ratelimit-remaining")):
         metrics.gauge("api_bible.rate_limit_remaining", int(remaining))
@@ -213,7 +246,7 @@ from api_bible import BibleClient, RetryEvent
 
 
 def on_retry(event: RetryEvent) -> None:
-    metrics.increment("api_bible.retries", tags={"path": event.path, "reason": event.reason})
+    metrics.increment("api_bible.retries", tags={"route": event.route, "reason": event.reason})
     metrics.histogram("api_bible.retry_delay_ms", event.delay_ms)
 
 
@@ -223,6 +256,13 @@ client = BibleClient.from_env(on_retry=on_retry)
 A give-up (attempts exhausted, `max_elapsed` spent, or `Retry-After` past the
 ceiling) emits no retry event — it surfaces as the raised exception and the final
 `RequestEvent`.
+
+Every event from one call, across all its attempts and retries, carries the
+same `call_id`. Group by it to measure what your caller actually waited:
+summing the call's `RequestEvent.elapsed_ms` and `RetryEvent.delay_ms` gives the
+end-to-end latency including backoff. `elapsed_ms` alone is per-attempt latency,
+which understates the true P99 when retries happen. Like `path`, `call_id` is
+unique per call, so put it in logs or traces, not in metric labels.
 
 Both observers must be thread-safe if you share the client across threads. Any
 exception either raises is caught and logged — it can never break a request.
@@ -242,7 +282,8 @@ client.chapters.get(
 ```
 
 Per-request headers override client-level `headers` of the same name, but can
-never override the `api-key` — it is always applied last.
+never override the `api-key`. The SDK applies it last, at send time, through an
+`httpx.Auth`, after client-level, per-request and your `http_client`'s own headers.
 
 ## Development
 

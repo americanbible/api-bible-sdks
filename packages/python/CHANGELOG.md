@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-09
+
+### Added
+
+- **`RequestEvent.route` and `RetryEvent.route`** carry the endpoint's path
+  template (e.g. `/bibles/{bible_id}/chapters/{chapter_id}`), a low-cardinality
+  label for metrics. `path` still holds the concrete ids. The README
+  Observability example now tags by `route`; tagging by `path` created one
+  time series per id.
+- **`RequestEvent.call_id` and `RetryEvent.call_id`** are shared by every
+  event from one logical call, so retried attempts can be grouped to measure
+  end-to-end latency including retries.
+- **Structured log fields.** Every `api_bible` log record now carries
+  `api_bible_*` attributes (method, path, route, call_id, attempt, status_code,
+  reason, …) via `extra=`, so JSON log handlers can facet on them. Logs still
+  never include the api-key, query string or response bodies.
+- **`ApiError.headers`** keeps the response headers (lower-cased names) for
+  support and debugging, e.g. a request-id header. `Set-Cookie`, `Location`,
+  `Content-Location` and any header whose value contains the api-key are
+  dropped. `None` for `NetworkError`.
+
+### Fixed
+
+- **Empty, whitespace-only, `.` and `..` ids now raise `InvalidInputError`**
+  naming the offending parameter, without sending a request. Previously
+  `bibles.get("")` silently called the list endpoint (`/bibles/`) and failed
+  with a confusing `ValidationError`, and `..` ids were normalized away by httpx
+  (`bibles.get("..")` requested `/v1`).
+- **An oversized response now emits a `RequestEvent`** (`error="response too
+  large"`) before the `ApiError` propagates. Previously that attempt was
+  invisible to `on_request`.
+
+### Security
+
+- **The api-key no longer sits in a local variable during a request.** It is
+  applied at send time by an `httpx.Auth` whose `repr` is redacted, instead of
+  living in a `headers` dict inside `Transport.request`. Error trackers that
+  capture frame locals (e.g. Sentry) may not scrub a hyphenated `api-key` name.
+  The key still always wins over client-level, per-request and caller
+  `http_client` headers, redirects are still never followed, and an `auth=` on a
+  caller-supplied `http_client` still runs.
+
 ## [1.3.1] - 2026-10-08
 
 ### Security

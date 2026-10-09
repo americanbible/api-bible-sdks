@@ -63,9 +63,10 @@ branch = true
 
 [tool.coverage.report]
 show_missing = true
-# Regression ratchet set at the measured baseline (~98.5%). Raise it as coverage
-# climbs; never lower it to make a change pass — add the missing test instead.
-fail_under = 98
+# Regression ratchet at the measured baseline (100% line + branch). Never lower
+# it to make a change pass — add the missing test instead; a genuinely
+# unreachable line gets `# pragma: no cover` with a reason.
+fail_under = 100
 
 [tool.ruff]
 target-version = "py310"

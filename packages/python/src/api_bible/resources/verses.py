@@ -3,7 +3,6 @@ from __future__ import annotations
 import builtins  # `list` method below shadows the builtin in later annotations
 from collections.abc import Mapping
 
-from .._serialize import encode_path
 from ..models import ApiResponse, Result, Verse, VerseSummary
 from ._base import BaseResource
 
@@ -22,8 +21,9 @@ class VersesResource(BaseResource):
         """Return the verses of a chapter."""
         resp = self._transport.request(
             "GET",
-            encode_path("bibles", bible_id, "chapters", chapter_id, "verses"),
+            "/bibles/{bible_id}/chapters/{chapter_id}/verses",
             model=ApiResponse[builtins.list[VerseSummary]],
+            path_params={"bible_id": bible_id, "chapter_id": chapter_id},
             timeout=timeout,
             extra_headers=headers,
         )
@@ -80,8 +80,9 @@ class VersesResource(BaseResource):
         response rather than via the thread-local ``last_meta``.
         """
         resp = self._content_get(
-            encode_path("bibles", bible_id, "verses", verse_id),
+            "/bibles/{bible_id}/verses/{verse_id}",
             ApiResponse[Verse],
+            path_params={"bible_id": bible_id, "verse_id": verse_id},
             content_type=content_type,
             include_notes=include_notes,
             include_titles=include_titles,
