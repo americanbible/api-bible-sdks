@@ -7,7 +7,7 @@ A production-quality Python SDK for [api.bible](https://api.bible/).
 - Automatic retries with full-jitter exponential backoff (honors `Retry-After`), bounded by a total-time budget
 - Typed [Pydantic v2](https://docs.pydantic.dev/) models — full type hints, validated responses
 - A granular exception hierarchy
-- Requires **Python 3.10+**
+- Requires **Python 3.10+** (see [Supported Python versions](#supported-python-versions))
 
 > Runtime dependencies: `httpx` and `pydantic>=2`. Installing this SDK pins your
 > environment to Pydantic v2.
@@ -17,6 +17,20 @@ A production-quality Python SDK for [api.bible](https://api.bible/).
 ```bash
 pip install americanbible-api-bible-sdk
 ```
+
+### Supported Python versions
+
+The SDK supports every CPython version that has not reached
+[end of life](https://devguide.python.org/versions/), and CI tests each one.
+Currently that's **3.10 through 3.14**.
+
+- A new CPython version is added once the SDK's dependencies ship wheels for it.
+- A version that reaches end of life is dropped in the **next minor release**,
+  never in a patch release. `requires-python` is raised at the same time, so pip
+  and uv on the old interpreter keep resolving the last compatible release.
+
+**Python 3.10** reaches end of life in October 2026. 1.4.x is the last release
+line that supports it, and 1.5.0 will require Python 3.11+.
 
 ## Quickstart
 
