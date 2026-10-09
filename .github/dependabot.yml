@@ -1,12 +1,21 @@
 version: 2
 updates:
-  # Python SDK runtime + dev dependencies (pyproject.toml and the pinned
-  # requirements-dev.txt lockfile).
-  - package-ecosystem: "pip"
+  # Python SDK: runtime ranges (pyproject.toml) and the locked dev/CI/release
+  # toolchain (uv.lock). The `uv` ecosystem re-resolves uv.lock on each update,
+  # so coupled pins (pydantic and its exact pydantic-core, mypy and its deps)
+  # move together instead of as uninstallable single-line bumps.
+  - package-ecosystem: "uv"
     directory: "/packages/python"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    groups:
+      # One weekly PR for everything except ruff.
+      python:
+        patterns: ["*"]
+        exclude-patterns: ["ruff"]
+    # ruff stays ungrouped: a new release often changes formatting, so its PR
+    # may need a `ruff format` commit, and that shouldn't hold up the others.
 
   # TypeScript/JS SDK runtime + dev dependencies. The npm workspaces monorepo
   # uses a single root package-lock.json, so the npm ecosystem is registered at

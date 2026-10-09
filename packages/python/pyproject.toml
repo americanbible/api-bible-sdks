@@ -23,6 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Typing :: Typed",
 ]
 dynamic = ["version"]
@@ -31,12 +32,21 @@ dependencies = [
     "pydantic>=2,<3",
 ]
 
-[project.optional-dependencies]
+# Dev toolchain (PEP 735). Not published as an extra; `uv sync` installs it, and
+# uv.lock pins it for CI and Dependabot.
+[dependency-groups]
 dev = [
     "pytest>=8",
     "pytest-cov",
     "ruff",
     "mypy",
+]
+# Release tooling (python-release.yml, plus pip-audit in python.yml). Locked here
+# rather than pinned inline in the workflows so Dependabot keeps it current.
+release = [
+    "build",
+    "twine",
+    "pip-audit",
 ]
 
 [project.urls]
