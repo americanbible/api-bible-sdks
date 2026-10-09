@@ -23,6 +23,7 @@ import httpx
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
 
+from ._serialize import expand_route
 from ._version import __version__
 from .errors import (
     ApiError,
@@ -76,10 +77,13 @@ class RequestEvent:
     Emitted once per attempt, so a call that retries emits several events. The
     consuming application turns these into telemetry: build a latency histogram
     (and read P99) from ``elapsed_ms``, count outcomes by ``status_code``, and
-    track retries via ``attempt``. ``status_code`` is ``None`` when the attempt
-    never received a response (timeout or transport failure); ``error`` then
-    holds a short reason. ``headers`` carries the response headers when one
-    arrived (``None`` otherwise), so an app can read rate-limit headers such as
+    track retries via ``attempt``. Tag metrics by ``route``, the path template
+    (``"/bibles/{bible_id}/verses/{verse_id}"``), not by ``path``: ``path`` holds
+    the concrete ids, so as a metric label it creates one series per id.
+    ``status_code`` is ``None`` when the attempt never received a response
+    (timeout or transport failure); ``error`` then holds a short reason.
+    ``headers`` carries the response headers when one arrived (``None``
+    otherwise), so an app can read rate-limit headers such as
     ``X-RateLimit-Remaining`` to throttle proactively. The SDK never measures
     latency itself — this is the seam through which an app instruments it.
     """
@@ -91,6 +95,7 @@ class RequestEvent:
     attempt: int  # 1-based
     error: str | None = None
     headers: Mapping[str, str] | None = None
+    route: str = ""  # path template; always set by the SDK
 
 
 # Observer invoked once per HTTP attempt. May be called concurrently when a
@@ -110,7 +115,8 @@ class RetryEvent:
     histogram from ``delay_ms``. ``reason`` is a short label for the failure that
     triggered the retry (``"HTTP 503"``, ``"request timed out"``,
     ``"network error"``); ``retry_after_ms`` is the server's ``Retry-After`` hint
-    in milliseconds when one was sent, else ``None``. A give-up (attempts
+    in milliseconds when one was sent, else ``None``. As with
+    :class:`RequestEvent`, tag metrics by ``route`` rather than ``path``. A give-up (attempts
     exhausted, budget spent, or ``Retry-After`` past the ceiling) emits no event —
     it surfaces as the raised exception and the final :class:`RequestEvent`.
     """
@@ -121,6 +127,7 @@ class RetryEvent:
     delay_ms: float  # wait scheduled before the next attempt
     reason: str
     retry_after_ms: float | None = None
+    route: str = ""  # path template; always set by the SDK
 
 
 # Observer invoked once per retry, just before the backoff sleep. Same threading
@@ -308,9 +315,10 @@ class Transport:
     def request(
         self,
         method: str,
-        path: str,
+        route: str,
         *,
         model: type[ModelT],
+        path_params: Mapping[str, str] | None = None,
         params: dict[str, str] | None = None,
         timeout: float | None = None,
         extra_headers: Mapping[str, str] | None = None,
@@ -318,6 +326,9 @@ class Transport:
         # Clear any prior call's metadata up front so a failure (which never
         # reaches `_parse`) can't leave a stale `last_meta` from an earlier call.
         self._local.meta = None
+        # `route` is the template reported to observers; `path` is what's sent.
+        # Expansion validates the ids, so a bad one fails before any I/O.
+        path = expand_route(route, **(path_params or {}))
 
         # Client headers first, then per-request headers, then `api-key` last so
         # the key can never be overridden by either layer.
@@ -357,7 +368,7 @@ class Transport:
                 # upstream blip: retrying just adds more pending requests and
                 # deepens the starvation. Fail fast so load sheds instead.
                 elapsed_ms = (time.monotonic() - start) * 1000.0
-                self._emit(method, path, None, elapsed_ms, attempt, "pool timeout")
+                self._emit(method, path, route, None, elapsed_ms, attempt, "pool timeout")
                 raise NetworkError(
                     f"connection pool timed out waiting for a free connection: {exc}. "
                     "Too many concurrent requests for the pool; raise httpx.Limits "
@@ -365,7 +376,7 @@ class Transport:
                 ) from exc
             except httpx.TimeoutException as exc:
                 elapsed_ms = (time.monotonic() - start) * 1000.0
-                self._emit(method, path, None, elapsed_ms, attempt, "timeout")
+                self._emit(method, path, route, None, elapsed_ms, attempt, "timeout")
                 last_error = NetworkError(f"request timed out: {self._redact(exc)}")
                 reason = "request timed out"
             except httpx.LocalProtocolError:
@@ -374,14 +385,14 @@ class Transport:
                 # quotes the offending value (possibly the api-key), so neither
                 # the message nor the cause is propagated.
                 elapsed_ms = (time.monotonic() - start) * 1000.0
-                self._emit(method, path, None, elapsed_ms, attempt, "invalid header")
+                self._emit(method, path, route, None, elapsed_ms, attempt, "invalid header")
                 raise NetworkError(
                     "request could not be sent: a request header has an illegal value "
                     "(value not shown to avoid disclosing credentials)"
                 ) from None
             except httpx.HTTPError as exc:
                 elapsed_ms = (time.monotonic() - start) * 1000.0
-                self._emit(method, path, None, elapsed_ms, attempt, "network error")
+                self._emit(method, path, route, None, elapsed_ms, attempt, "network error")
                 last_error = NetworkError(f"network error: {self._redact(exc)}")
                 reason = "network error"
             else:
@@ -398,6 +409,7 @@ class Transport:
                 self._emit(
                     method,
                     path,
+                    route,
                     response.status_code,
                     elapsed_ms,
                     attempt,
@@ -452,6 +464,7 @@ class Transport:
             self._emit_retry(
                 method,
                 path,
+                route,
                 attempt + 1,
                 delay * 1000.0,
                 reason,
@@ -484,6 +497,7 @@ class Transport:
         self,
         method: str,
         path: str,
+        route: str,
         status_code: int | None,
         elapsed_ms: float,
         attempt: int,
@@ -505,6 +519,7 @@ class Transport:
             attempt=attempt + 1,
             error=error,
             headers=headers,
+            route=route,
         )
         try:
             self._on_request(event)
@@ -515,6 +530,7 @@ class Transport:
         self,
         method: str,
         path: str,
+        route: str,
         attempt: int,
         delay_ms: float,
         reason: str,
@@ -533,6 +549,7 @@ class Transport:
             delay_ms=delay_ms,
             reason=reason,
             retry_after_ms=retry_after_ms,
+            route=route,
         )
         try:
             self._on_retry(event)

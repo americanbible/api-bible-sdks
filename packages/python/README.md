@@ -182,7 +182,13 @@ For metrics, pass an `on_request` observer. It's called once per HTTP attempt
 (so a retried call fires several times) with a `RequestEvent` you can feed into
 Prometheus/OpenTelemetry/StatsD — derive P99 from `elapsed_ms`, count outcomes
 by `status_code`, track retries via `attempt`, and read the response `headers`
-(e.g. rate-limit headers) to throttle proactively:
+(e.g. rate-limit headers) to throttle proactively.
+
+Tag metrics by `event.route`, the endpoint's path template
+(`/bibles/{bible_id}/chapters/{chapter_id}`), not by `event.path`. `path` holds
+the concrete ids, so using it as a Prometheus or OpenTelemetry label creates a
+new time series for every bible, chapter and verse. Keep `path` for logs and
+debugging.
 
 ```python
 from api_bible import BibleClient, RequestEvent
@@ -191,8 +197,10 @@ from api_bible import BibleClient, RequestEvent
 def on_request(event: RequestEvent) -> None:
     # status_code is None when the attempt never got a response (timeout/transport);
     # event.error then holds a short reason ("timeout", "network error", "pool timeout").
-    metrics.histogram("api_bible.latency_ms", event.elapsed_ms, tags={"path": event.path})
-    metrics.increment("api_bible.requests", tags={"status": event.status_code})
+    metrics.histogram("api_bible.latency_ms", event.elapsed_ms, tags={"route": event.route})
+    metrics.increment(
+        "api_bible.requests", tags={"route": event.route, "status": event.status_code}
+    )
     # headers is None when no response arrived; keys are lower-cased.
     if event.headers and (remaining := event.headers.get("x-ratelimit-remaining")):
         metrics.gauge("api_bible.rate_limit_remaining", int(remaining))
@@ -213,7 +221,7 @@ from api_bible import BibleClient, RetryEvent
 
 
 def on_retry(event: RetryEvent) -> None:
-    metrics.increment("api_bible.retries", tags={"path": event.path, "reason": event.reason})
+    metrics.increment("api_bible.retries", tags={"route": event.route, "reason": event.reason})
     metrics.histogram("api_bible.retry_delay_ms", event.delay_ms)
 
 

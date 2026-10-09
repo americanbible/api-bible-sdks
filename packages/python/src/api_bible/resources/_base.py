@@ -19,9 +19,10 @@ class BaseResource:
 
     def _content_get(
         self,
-        path: str,
+        route: str,
         model: type[EnvelopeT],
         *,
+        path_params: Mapping[str, str],
         content_type: str | None = None,
         include_notes: bool | None = None,
         include_titles: bool | None = None,
@@ -48,5 +49,11 @@ class BaseResource:
             parallels=parallels,
         )
         return self._transport.request(
-            "GET", path, model=model, params=params or None, timeout=timeout, extra_headers=headers
+            "GET",
+            route,
+            model=model,
+            path_params=path_params,
+            params=params or None,
+            timeout=timeout,
+            extra_headers=headers,
         )

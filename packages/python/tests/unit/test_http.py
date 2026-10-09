@@ -13,6 +13,8 @@ from api_bible import (
     NetworkError,
     NotFoundError,
     RateLimitError,
+    RequestEvent,
+    RetryEvent,
     ServerError,
     ValidationError,
 )
@@ -515,6 +517,31 @@ def test_on_retry_observer_fires_once_per_retry(make_client) -> None:
     assert all(e.method == "GET" and "bibles" in e.path for e in events)
     assert all(e.delay_ms == 0.0 for e in events)  # base_delay=0, jitter=0 in tests
     assert all(e.retry_after_ms is None for e in events)
+
+
+def test_observers_report_route_template_and_concrete_path(make_client) -> None:
+    requests: list[RequestEvent] = []
+    retries: list[RetryEvent] = []
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return httpx.Response(503, json={"message": "down"})
+        return httpx.Response(
+            200, json={"data": {"id": "GEN.1", "bibleId": "b1", "bookId": "GEN", "number": "1"}}
+        )
+
+    with make_client(handler, on_request=requests.append, on_retry=retries.append) as client:
+        client.chapters.get("b1", "GEN.1")
+
+    # route is the low-cardinality template; path keeps the concrete ids.
+    route = "/bibles/{bible_id}/chapters/{chapter_id}"
+    assert [e.route for e in requests] == [route, route]
+    assert [e.path for e in requests] == ["/bibles/b1/chapters/GEN.1"] * 2
+    assert len(retries) == 1
+    assert retries[0].route == route
+    assert retries[0].path == "/bibles/b1/chapters/GEN.1"
 
 
 def test_on_retry_observer_reports_retry_after(make_client) -> None:

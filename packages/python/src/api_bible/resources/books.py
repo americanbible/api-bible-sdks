@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from .._serialize import encode_path, to_query
+from .._serialize import to_query
 from ..models import ApiResponse, Book
 from ._base import BaseResource
 
@@ -26,8 +26,9 @@ class BooksResource(BaseResource):
         )
         resp = self._transport.request(
             "GET",
-            encode_path("bibles", bible_id, "books"),
+            "/bibles/{bible_id}/books",
             model=ApiResponse[list[Book]],
+            path_params={"bible_id": bible_id},
             params=params or None,
             timeout=timeout,
             extra_headers=headers,
@@ -47,8 +48,9 @@ class BooksResource(BaseResource):
         params = to_query(include_chapters=include_chapters)
         resp = self._transport.request(
             "GET",
-            encode_path("bibles", bible_id, "books", book_id),
+            "/bibles/{bible_id}/books/{book_id}",
             model=ApiResponse[Book],
+            path_params={"bible_id": bible_id, "book_id": book_id},
             params=params or None,
             timeout=timeout,
             extra_headers=headers,

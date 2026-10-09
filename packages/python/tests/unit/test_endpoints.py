@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Callable
 from typing import Any
 
 import httpx
 import pytest
 
-from api_bible import BibleClient
+from api_bible import BibleClient, RequestEvent, ValidationError
 
 # (id, call, expected path, response `data` payload)
 CASES: list[tuple[str, Callable[[BibleClient], Any], str, Any]] = [
@@ -141,3 +142,99 @@ def test_path_ids_are_percent_encoded(make_client) -> None:
         client.books.get("a/b?c d", "GEN")
 
     assert seen["raw_path"] == "/v1/bibles/a%2Fb%3Fc%20d/books/GEN"
+
+
+# (call, route template reported to observers) for every resource method.
+ROUTE_CASES: list[tuple[str, Callable[[BibleClient], Any], str]] = [
+    ("bibles.list", lambda c: c.bibles.list(), "/bibles"),
+    ("bibles.get", lambda c: c.bibles.get("b1"), "/bibles/{bible_id}"),
+    ("books.list", lambda c: c.books.list("b1"), "/bibles/{bible_id}/books"),
+    ("books.get", lambda c: c.books.get("b1", "GEN"), "/bibles/{bible_id}/books/{book_id}"),
+    (
+        "chapters.list",
+        lambda c: c.chapters.list("b1", "GEN"),
+        "/bibles/{bible_id}/books/{book_id}/chapters",
+    ),
+    (
+        "chapters.get",
+        lambda c: c.chapters.get("b1", "GEN.1"),
+        "/bibles/{bible_id}/chapters/{chapter_id}",
+    ),
+    (
+        "verses.list",
+        lambda c: c.verses.list("b1", "GEN.1"),
+        "/bibles/{bible_id}/chapters/{chapter_id}/verses",
+    ),
+    (
+        "verses.get",
+        lambda c: c.verses.get("b1", "GEN.1.1"),
+        "/bibles/{bible_id}/verses/{verse_id}",
+    ),
+    (
+        "passages.get",
+        lambda c: c.passages.get("b1", "GEN.1.1-GEN.1.3"),
+        "/bibles/{bible_id}/passages/{passage_id}",
+    ),
+    (
+        "sections.list_for_book",
+        lambda c: c.sections.list_for_book("b1", "GEN"),
+        "/bibles/{bible_id}/books/{book_id}/sections",
+    ),
+    (
+        "sections.list_for_chapter",
+        lambda c: c.sections.list_for_chapter("b1", "GEN.1"),
+        "/bibles/{bible_id}/chapters/{chapter_id}/sections",
+    ),
+    (
+        "sections.get",
+        lambda c: c.sections.get("b1", "s1"),
+        "/bibles/{bible_id}/sections/{section_id}",
+    ),
+    ("search", lambda c: c.search.search("b1", "love"), "/bibles/{bible_id}/search"),
+    ("audio_bibles.list", lambda c: c.audio_bibles.list(), "/audio-bibles"),
+    ("audio_bibles.get", lambda c: c.audio_bibles.get("a1"), "/audio-bibles/{audio_bible_id}"),
+    (
+        "audio_bibles.list_books",
+        lambda c: c.audio_bibles.list_books("a1"),
+        "/audio-bibles/{audio_bible_id}/books",
+    ),
+    (
+        "audio_bibles.get_book",
+        lambda c: c.audio_bibles.get_book("a1", "GEN"),
+        "/audio-bibles/{audio_bible_id}/books/{book_id}",
+    ),
+    (
+        "audio_bibles.list_chapters",
+        lambda c: c.audio_bibles.list_chapters("a1", "GEN"),
+        "/audio-bibles/{audio_bible_id}/books/{book_id}/chapters",
+    ),
+    (
+        "audio_bibles.get_chapter",
+        lambda c: c.audio_bibles.get_chapter("a1", "GEN.1"),
+        "/audio-bibles/{audio_bible_id}/chapters/{chapter_id}",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("call", "route"),
+    [(c[1], c[2]) for c in ROUTE_CASES],
+    ids=[c[0] for c in ROUTE_CASES],
+)
+def test_endpoint_reports_route_template(
+    make_client, call: Callable[[BibleClient], Any], route: str
+) -> None:
+    events: list[RequestEvent] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"data": {}})
+
+    # Only the reported route matters here; the empty payload may not validate.
+    with (
+        make_client(handler, on_request=events.append) as client,
+        contextlib.suppress(ValidationError),
+    ):
+        call(client)
+
+    assert len(events) == 1
+    assert events[0].route == route

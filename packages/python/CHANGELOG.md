@@ -7,12 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`RequestEvent.route` and `RetryEvent.route`** carry the endpoint's path
+  template (e.g. `/bibles/{bible_id}/chapters/{chapter_id}`), a low-cardinality
+  label for metrics. `path` still holds the concrete ids. The README
+  Observability example now tags by `route`; tagging by `path` created one
+  time series per id.
+
 ### Fixed
 
 - **Empty, whitespace-only, `.` and `..` ids now raise `InvalidInputError`**
-  without sending a request. Previously `bibles.get("")` silently called the
-  list endpoint (`/bibles/`) and failed with a confusing `ValidationError`, and
-  `..` ids were normalized away by httpx (`bibles.get("..")` requested `/v1`).
+  naming the offending parameter, without sending a request. Previously
+  `bibles.get("")` silently called the list endpoint (`/bibles/`) and failed
+  with a confusing `ValidationError`, and `..` ids were normalized away by httpx
+  (`bibles.get("..")` requested `/v1`).
 
 ## [1.3.1] - 2026-10-08
 

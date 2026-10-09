@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from .._serialize import encode_path
 from ..models import ApiResponse, Result, Section, SectionSummary
 from ._base import BaseResource
 
@@ -26,8 +25,9 @@ class SectionsResource(BaseResource):
         """
         resp = self._transport.request(
             "GET",
-            encode_path("bibles", bible_id, "books", book_id, "sections"),
+            "/bibles/{bible_id}/books/{book_id}/sections",
             model=ApiResponse[list[SectionSummary]],
+            path_params={"bible_id": bible_id, "book_id": book_id},
             timeout=timeout,
             extra_headers=headers,
         )
@@ -48,8 +48,9 @@ class SectionsResource(BaseResource):
         """
         resp = self._transport.request(
             "GET",
-            encode_path("bibles", bible_id, "chapters", chapter_id, "sections"),
+            "/bibles/{bible_id}/chapters/{chapter_id}/sections",
             model=ApiResponse[list[SectionSummary]],
+            path_params={"bible_id": bible_id, "chapter_id": chapter_id},
             timeout=timeout,
             extra_headers=headers,
         )
@@ -106,8 +107,9 @@ class SectionsResource(BaseResource):
         response rather than via the thread-local ``last_meta``.
         """
         resp = self._content_get(
-            encode_path("bibles", bible_id, "sections", section_id),
+            "/bibles/{bible_id}/sections/{section_id}",
             ApiResponse[Section],
+            path_params={"bible_id": bible_id, "section_id": section_id},
             content_type=content_type,
             include_notes=include_notes,
             include_titles=include_titles,
