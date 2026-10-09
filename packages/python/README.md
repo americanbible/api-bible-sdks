@@ -346,6 +346,9 @@ To roll back a bad release: **yank** it on PyPI (existing pins keep working, but
 new installs skip it), then fix forward by publishing a patched `X.Y.Z+1`. Never
 attempt to re-publish the same version.
 
+For incidents (yanking, failed contract checks, security advisories, and
+compromised publishing credentials), see [RUNBOOK.md](https://github.com/americanbible/api-bible-sdks/blob/main/packages/python/RUNBOOK.md).
+
 ---
 
 ## License and terms
