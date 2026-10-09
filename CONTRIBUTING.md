@@ -93,9 +93,10 @@ workflow, and runbook:
 
 - TypeScript core: [`packages/typescript/RELEASING.md`](./packages/typescript/RELEASING.md) (`ts-v*` tags)
 - React: [`packages/react/RELEASING.md`](./packages/react/RELEASING.md) (`react-v*` tags)
+- Python: the [README's Releasing section](./packages/python/README.md#releasing) and [`packages/python/RUNBOOK.md`](./packages/python/RUNBOOK.md) for incidents (`py-v*` tags)
 
-Both publish via npm Trusted Publishing (OIDC) with provenance — no tokens are
-stored in the repo.
+The JavaScript packages publish via npm Trusted Publishing (OIDC) with provenance,
+and Python via PyPI Trusted Publishing — no tokens are stored in the repo.
 
 ## Code of Conduct
 
