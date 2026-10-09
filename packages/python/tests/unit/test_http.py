@@ -805,3 +805,55 @@ def test_retry_exhaustion_raises_real_error_under_optimized_mode() -> None:
     )
     result = subprocess.run([sys.executable, "-O", "-c", script], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
+
+
+# --- response headers on ApiError -------------------------------------------
+
+_ERROR_RESPONSE_HEADERS = {
+    "X-Request-ID": "req-123",
+    "Set-Cookie": "session=abc",
+    "Location": "https://elsewhere.example/?token=secret",
+    "Content-Location": "/v1/x?token=secret",
+    "X-Echo": "api-key: test-key",  # a proxy echoing the request back
+}
+
+
+@pytest.mark.parametrize(
+    ("status", "content", "content_type", "client_kwargs"),
+    [
+        (404, b'{"message": "nope"}', "application/json", {}),
+        (302, b"", "text/plain", {}),
+        (200, b"", "application/json", {}),
+        (200, b"<html>cdn</html>", "text/html", {}),
+        (200, b"{not json", "application/json", {}),
+        (200, b'{"data": []}', "application/json", {"max_response_bytes": 4}),
+    ],
+    ids=["status", "redirect", "empty", "non-json-type", "bad-json", "oversize"],
+)
+def test_api_error_keeps_safe_response_headers(
+    make_client, status: int, content: bytes, content_type: str, client_kwargs: dict
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        headers = {**_ERROR_RESPONSE_HEADERS, "Content-Type": content_type}
+        return httpx.Response(status, content=content, headers=headers)
+
+    with make_client(handler, **client_kwargs) as client, pytest.raises(ApiError) as info:
+        client.bibles.list()
+
+    headers = info.value.headers
+    assert headers is not None
+    assert headers["x-request-id"] == "req-123"
+    # Session cookies, URLs that may carry tokens, and anything echoing the key
+    # never ride along on an exception that may be logged or sent to a tracker.
+    assert not {"set-cookie", "location", "content-location", "x-echo"} & headers.keys()
+    assert "test-key" not in repr(headers)
+
+
+def test_network_error_has_no_headers(make_client) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused")
+
+    with make_client(handler) as client, pytest.raises(NetworkError) as info:
+        client.bibles.list()
+
+    assert info.value.headers is None

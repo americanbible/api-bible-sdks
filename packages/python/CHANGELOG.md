@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `api_bible_*` attributes (method, path, route, call_id, attempt, status_code,
   reason, …) via `extra=`, so JSON log handlers can facet on them. Logs still
   never include the api-key, query string or response bodies.
+- **`ApiError.headers`** keeps the response headers (lower-cased names) for
+  support and debugging, e.g. a request-id header. `Set-Cookie`, `Location`,
+  `Content-Location` and any header whose value contains the api-key are
+  dropped. `None` for `NetworkError`.
 
 ### Fixed
 

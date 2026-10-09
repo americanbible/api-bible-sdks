@@ -20,6 +20,7 @@ languages::
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 __all__ = [
@@ -78,6 +79,7 @@ class ApiError(BibleError):
         body: str = "",
         body_truncated: bool = False,
         retry_after: float | None = None,
+        headers: Mapping[str, str] | None = None,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
@@ -88,6 +90,12 @@ class ApiError(BibleError):
         # their own backoff after a give-up — most usefully on ``RateLimitError``
         # — can honor the server's hint instead of guessing.
         self.retry_after = retry_after
+        # Response headers (lower-cased names), for support and debugging, e.g.
+        # a request-id header to quote to api.bible. ``None`` when no response
+        # arrived (``NetworkError``). Headers that can carry a session or a
+        # credential (``Set-Cookie``, ``Location``, …) are dropped, since errors
+        # tend to end up in logs and error trackers.
+        self.headers: dict[str, str] | None = dict(headers) if headers is not None else None
 
 
 class AuthError(ApiError):

@@ -84,6 +84,13 @@ except RateLimitError as exc:
     print(exc.retry_after)  # seconds the server asked us to wait, or None
 ```
 
+Every `ApiError` raised from a response also carries that response's `headers`
+(lower-cased names), e.g. to quote a request-id header when contacting support.
+It is `None` for a `NetworkError`, where no response arrived. Headers that can
+carry a session or a credential (`Set-Cookie`, `Location`, `Content-Location`,
+and any value containing your api-key) are left out, because exceptions tend to
+end up in logs and error trackers.
+
 ## Configuration
 
 ```python

@@ -61,6 +61,10 @@ DEFAULT_TIMEOUT = 10.0
 # headroom for the largest legitimate response.
 DEFAULT_MAX_RESPONSE_BYTES = 10 * 1024 * 1024
 _BODY_PREVIEW_LIMIT = 4096
+# Response headers kept off ApiError.headers. Errors travel further than observer
+# events (logs, error trackers), so headers that can carry a session cookie or a
+# URL with credentials in its query string are dropped.
+_ERROR_HEADER_DENYLIST = frozenset({"set-cookie", "set-cookie2", "location", "content-location"})
 _USER_AGENT = f"api-bible-sdk-python/{__version__}"
 
 # Library logger. The package installs a NullHandler so it stays silent unless
@@ -247,7 +251,7 @@ def _is_redirect(status_code: int) -> bool:
     return 300 <= status_code < 400
 
 
-def _redirect_error(response: httpx.Response) -> ApiError:
+def _redirect_error(response: httpx.Response, headers: Mapping[str, str]) -> ApiError:
     """Turn a suppressed redirect into a self-explanatory error.
 
     httpx already defaults ``follow_redirects=False``, and we keep it that way:
@@ -268,6 +272,7 @@ def _redirect_error(response: httpx.Response) -> ApiError:
         "The SDK does not follow redirects: the api-key header would be resent to the "
         "redirect target, disclosing your key.",
         status_code=response.status_code,
+        headers=headers,
     )
 
 
@@ -451,12 +456,12 @@ class Transport:
                 # Terminal by design: a redirect is a configuration change, not a
                 # transient fault, so retrying it would just resend the key.
                 if _is_redirect(response.status_code):
-                    raise _redirect_error(response)
+                    raise _redirect_error(response, self._error_headers(response))
 
                 if response.status_code < 400:
                     return self._parse(response, body, model)
 
-                error = _error_for_status(response, body)
+                error = _error_for_status(response, body, self._error_headers(response))
                 if not _is_retryable(response.status_code):
                     raise error
                 retry_after = error.retry_after
@@ -556,6 +561,18 @@ class Transport:
         }
         return {f"api_bible_{name}": value for name, value in base.items()}
 
+    def _error_headers(self, response: httpx.Response) -> dict[str, str]:
+        """Response headers safe to keep on an :class:`ApiError`.
+
+        Drops :data:`_ERROR_HEADER_DENYLIST` and, defensively, any header whose
+        value contains the api-key (e.g. a proxy echoing request headers back).
+        """
+        return {
+            name: value
+            for name, value in response.headers.items()
+            if name not in _ERROR_HEADER_DENYLIST and self._api_key not in value
+        }
+
     def _redact(self, exc: BaseException) -> str:
         """Render a transport exception for an error message, minus the api-key."""
         return str(exc).replace(self._api_key, "[redacted]")
@@ -641,6 +658,7 @@ class Transport:
                 raise ApiError(
                     f"response exceeded max_response_bytes ({cap} bytes)",
                     status_code=response.status_code,
+                    headers=self._error_headers(response),
                 )
             chunks.append(chunk)
         return b"".join(chunks)
@@ -654,6 +672,7 @@ class Transport:
             raise ApiError(
                 "server returned an empty response body",
                 status_code=response.status_code,
+                headers=self._error_headers(response),
             )
         content_type = response.headers.get("content-type", "")
         if content_type and "json" not in content_type.lower():
@@ -663,6 +682,7 @@ class Transport:
                 status_code=response.status_code,
                 body=text[:_BODY_PREVIEW_LIMIT],
                 body_truncated=len(text) > _BODY_PREVIEW_LIMIT,
+                headers=self._error_headers(response),
             )
         try:
             payload = json.loads(body)
@@ -673,6 +693,7 @@ class Transport:
                 status_code=response.status_code,
                 body=text[:_BODY_PREVIEW_LIMIT],
                 body_truncated=len(text) > _BODY_PREVIEW_LIMIT,
+                headers=self._error_headers(response),
             ) from exc
 
         try:
@@ -690,7 +711,9 @@ class Transport:
         self._client.close()
 
 
-def _error_for_status(response: httpx.Response, body: bytes) -> ApiError:
+def _error_for_status(
+    response: httpx.Response, body: bytes, headers: Mapping[str, str]
+) -> ApiError:
     status = response.status_code
     text = body.decode("utf-8", errors="replace")
     preview = text[:_BODY_PREVIEW_LIMIT]
@@ -722,6 +745,7 @@ def _error_for_status(response: httpx.Response, body: bytes) -> ApiError:
         body=preview,
         body_truncated=truncated,
         retry_after=retry_after,
+        headers=headers,
     )
 
 
