@@ -193,7 +193,8 @@ a request handler:
   client = BibleClient(api_key="...", max_response_bytes=50 * 1024 * 1024)
   ```
 
-- An async client is planned for a future release.
+- An async client is planned for a future release; see the
+  [design note](https://github.com/americanbible/api-bible-sdks/blob/main/packages/python/docs/async-client.md).
 
 ## Observability
 
@@ -364,6 +365,9 @@ the publish job.
 To roll back a bad release: **yank** it on PyPI (existing pins keep working, but
 new installs skip it), then fix forward by publishing a patched `X.Y.Z+1`. Never
 attempt to re-publish the same version.
+
+For incidents (yanking, failed contract checks, security advisories, and
+compromised publishing credentials), see [RUNBOOK.md](https://github.com/americanbible/api-bible-sdks/blob/main/packages/python/RUNBOOK.md).
 
 ---
 
