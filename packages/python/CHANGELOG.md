@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`RequestEvent.call_id` and `RetryEvent.call_id`** are shared by every
   event from one logical call, so retried attempts can be grouped to measure
   end-to-end latency including retries.
+- **Structured log fields.** Every `api_bible` log record now carries
+  `api_bible_*` attributes (method, path, route, call_id, attempt, status_code,
+  reason, …) via `extra=`, so JSON log handlers can facet on them. Logs still
+  never include the api-key, query string or response bodies.
 
 ### Fixed
 

@@ -378,7 +378,7 @@ def test_retry_logs_warning_and_giveup(make_client, caplog) -> None:
     assert "HTTP 503" in messages  # the failure reason is included
 
 
-def test_logs_never_include_the_api_key(make_client, caplog) -> None:
+def test_logs_never_include_the_api_key_or_query(make_client, caplog) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(503, json={"message": "down"})
 
@@ -387,10 +387,51 @@ def test_logs_never_include_the_api_key(make_client, caplog) -> None:
         make_client(handler) as client,
         pytest.raises(ServerError),
     ):
-        client.bibles.list()
+        client.bibles.list(language="zzq")
 
     assert caplog.records  # sanity: we did log something
-    assert all("test-key" not in record.getMessage() for record in caplog.records)
+    for record in caplog.records:
+        fields = {k: v for k, v in vars(record).items() if k.startswith("api_bible_")}
+        assert fields  # every record carries structured fields
+        rendered = record.getMessage() + repr(fields)
+        assert "test-key" not in rendered
+        assert "zzq" not in rendered  # query-string values stay out of logs
+
+
+def test_log_records_carry_structured_fields(make_client, caplog) -> None:
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return httpx.Response(503, json={"message": "down"})
+        return httpx.Response(
+            200, json={"data": {"id": "GEN.1", "bibleId": "b1", "bookId": "GEN", "number": "1"}}
+        )
+
+    with caplog.at_level(logging.DEBUG, logger="api_bible"), make_client(handler) as client:
+        client.chapters.get("b1", "GEN.1")
+
+    records = caplog.records
+    call_ids = {r.api_bible_call_id for r in records}
+    assert len(call_ids) == 1 and "" not in call_ids
+    for r in records:
+        assert r.api_bible_method == "GET"
+        assert r.api_bible_route == "/bibles/{bible_id}/chapters/{chapter_id}"
+        assert r.api_bible_path == "/bibles/b1/chapters/GEN.1"
+        assert r.api_bible_max_attempts == 3
+
+    [retry] = [r for r in records if r.levelno == logging.WARNING]
+    assert retry.api_bible_attempt == 1  # the attempt that failed
+    assert retry.api_bible_status_code == 503
+    assert retry.api_bible_reason == "HTTP 503"
+    assert retry.api_bible_delay_ms == 0.0
+
+    responses = [r for r in records if hasattr(r, "api_bible_elapsed_ms")]
+    assert [(r.api_bible_attempt, r.api_bible_status_code) for r in responses] == [
+        (1, 503),
+        (2, 200),
+    ]
 
 
 # --- observability hook ----------------------------------------------------

@@ -176,7 +176,23 @@ a request handler:
 
 The SDK logs to the `api_bible` logger (silent by default via a `NullHandler` —
 configure a handler to see retry/give-up warnings and per-attempt debug lines).
-It never logs the api-key or response bodies.
+It never logs the api-key, the query string or response bodies.
+
+Every record also carries structured fields that JSON log handlers (e.g.
+`python-json-logger`, structlog's stdlib bridge) emit as top-level keys:
+
+| Field | On | Value |
+|---|---|---|
+| `api_bible_method`, `api_bible_path`, `api_bible_route` | all | HTTP method, concrete path, path template |
+| `api_bible_call_id` | all | same for every record of one call (see `call_id` below) |
+| `api_bible_attempt`, `api_bible_max_attempts` | all | 1-based attempt the record is about |
+| `api_bible_status_code`, `api_bible_elapsed_ms` | per-response debug | |
+| `api_bible_status_code`, `api_bible_reason` | retry / give-up warnings | status is `None` for a timeout or network error |
+| `api_bible_delay_ms` | retry warning | scheduled backoff |
+| `api_bible_retry_after_ms` | `Retry-After` give-up | server-requested wait |
+
+The `api_bible_` prefix keeps them from colliding with fields your own log
+filters add.
 
 For metrics, pass an `on_request` observer. It's called once per HTTP attempt
 (so a retried call fires several times) with a `RequestEvent` you can feed into

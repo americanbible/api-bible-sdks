@@ -64,7 +64,10 @@ _BODY_PREVIEW_LIMIT = 4096
 _USER_AGENT = f"api-bible-sdk-python/{__version__}"
 
 # Library logger. The package installs a NullHandler so it stays silent unless
-# the application opts in. It never logs the api-key or response bodies.
+# the application opts in. It never logs the api-key, the query string or
+# response bodies. Records carry `api_bible_*` fields (see `Transport._log_extra`)
+# for structured/JSON handlers; the prefix keeps them from clashing with fields
+# an application's own log filters add (e.g. the inbound request's `path`).
 logger = logging.getLogger("api_bible")
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
@@ -364,8 +367,16 @@ class Transport:
         last_error: ApiError | None = None
         for attempt in range(attempts):
             retry_after: float | None = None
+            status_code: int | None = None
             reason: str
-            logger.debug("%s %s (attempt %d/%d)", method, path, attempt + 1, attempts)
+            logger.debug(
+                "%s %s (attempt %d/%d)",
+                method,
+                path,
+                attempt + 1,
+                attempts,
+                extra=self._log_extra(call, attempt + 1),
+            )
             start = time.monotonic()
             try:
                 # Stream the response so the body is read under our own size cap
@@ -416,14 +427,18 @@ class Transport:
                 reason = "network error"
             else:
                 elapsed_ms = (time.monotonic() - start) * 1000.0
+                status_code = response.status_code
                 logger.debug(
                     "%s %s -> %d in %.1fms (attempt %d/%d)",
                     method,
                     path,
-                    response.status_code,
+                    status_code,
                     elapsed_ms,
                     attempt + 1,
                     attempts,
+                    extra=self._log_extra(
+                        call, attempt + 1, status_code=status_code, elapsed_ms=elapsed_ms
+                    ),
                 )
                 self._emit(
                     call,
@@ -454,6 +469,12 @@ class Transport:
                         path,
                         retry_after,
                         self._retry.max_retry_after,
+                        extra=self._log_extra(
+                            call,
+                            attempt + 1,
+                            status_code=status_code,
+                            retry_after_ms=retry_after * 1000.0,
+                        ),
                     )
                     raise error
                 last_error = error
@@ -466,6 +487,9 @@ class Transport:
                     path,
                     reason,
                     attempts,
+                    extra=self._log_extra(
+                        call, attempt + 1, status_code=status_code, reason=reason
+                    ),
                 )
                 break
             delay = next_retry_delay(attempt, retry_after, self._retry)
@@ -476,6 +500,9 @@ class Transport:
                     method,
                     path,
                     reason,
+                    extra=self._log_extra(
+                        call, attempt + 1, status_code=status_code, reason=reason
+                    ),
                 )
                 break
             self._emit_retry(
@@ -493,6 +520,13 @@ class Transport:
                 delay,
                 attempt + 2,
                 attempts,
+                extra=self._log_extra(
+                    call,
+                    attempt + 1,
+                    status_code=status_code,
+                    reason=reason,
+                    delay_ms=delay * 1000.0,
+                ),
             )
             if delay > 0:
                 time.sleep(delay)
@@ -503,6 +537,24 @@ class Transport:
         if last_error is None:  # pragma: no cover - unreachable invariant
             raise RuntimeError("retry loop exited without recording an error")
         raise last_error
+
+    def _log_extra(self, call: _Call, attempt: int, **fields: Any) -> dict[str, Any]:
+        """Structured fields for a log record's ``extra=``, all ``api_bible_``-prefixed.
+
+        ``attempt`` is 1-based: the attempt the record is about (for a retry,
+        the one that just failed, matching :class:`RetryEvent`). Only request
+        metadata goes here — never the api-key, query string or a body.
+        """
+        base: dict[str, Any] = {
+            "method": call.method,
+            "path": call.path,
+            "route": call.route,
+            "call_id": call.call_id,
+            "attempt": attempt,
+            "max_attempts": self._retry.max_attempts,
+            **fields,
+        }
+        return {f"api_bible_{name}": value for name, value in base.items()}
 
     def _redact(self, exc: BaseException) -> str:
         """Render a transport exception for an error message, minus the api-key."""
@@ -538,7 +590,9 @@ class Transport:
         try:
             self._on_request(event)
         except Exception:
-            logger.exception("on_request observer raised; ignoring")
+            logger.exception(
+                "on_request observer raised; ignoring", extra=self._log_extra(call, attempt + 1)
+            )
 
     def _emit_retry(
         self,
@@ -567,7 +621,9 @@ class Transport:
         try:
             self._on_retry(event)
         except Exception:
-            logger.exception("on_retry observer raised; ignoring")
+            logger.exception(
+                "on_retry observer raised; ignoring", extra=self._log_extra(call, attempt)
+            )
 
     def _read_body(self, response: httpx.Response) -> bytes:
         """Read the response body into memory, bounded by ``max_response_bytes``.
