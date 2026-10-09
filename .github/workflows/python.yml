@@ -38,6 +38,35 @@ jobs:
       - run: mypy
       - run: pytest --cov=api_bible
 
+  # The test matrix runs the lockfile pins. These jobs test the edges of the
+  # ranges pyproject.toml declares instead: the oldest versions a user can
+  # resolve (on the oldest Python) and the newest (on the newest Python). Test
+  # tools stay on their lockfile pins, so a failure here is about httpx or
+  # pydantic, not the toolchain. If `lowest-direct` fails, raise the floor in
+  # pyproject.toml rather than pinning around it.
+  deps:
+    name: deps (${{ matrix.resolution }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - resolution: lowest-direct
+            python: '3.10'
+          - resolution: highest
+            python: '3.13'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install uv==0.12.19
+      - run: >-
+          uv pip install --system --resolution ${{ matrix.resolution }} -e .
+          $(grep -E '^(pytest|pytest-cov)==' requirements-dev.txt)
+      - run: python -c "import httpx, pydantic; print('httpx', httpx.__version__, '| pydantic', pydantic.VERSION)"
+      - run: pytest
+
   # Named `audit-pip`, not `audit`, so the status-check context stays distinct
   # from ci.yml's audit job. See the note there.
   audit-pip:
