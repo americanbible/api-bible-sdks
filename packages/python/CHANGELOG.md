@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Empty, whitespace-only, `.` and `..` ids now raise `InvalidInputError`**
+  without sending a request. Previously `bibles.get("")` silently called the
+  list endpoint (`/bibles/`) and failed with a confusing `ValidationError`, and
+  `..` ids were normalized away by httpx (`bibles.get("..")` requested `/v1`).
+
 ## [1.3.1] - 2026-10-08
 
 ### Security

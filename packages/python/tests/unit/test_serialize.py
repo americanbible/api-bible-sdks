@@ -47,3 +47,15 @@ def test_encode_path_leaves_normal_ids_intact() -> None:
 def test_encode_path_escapes_unsafe_characters() -> None:
     # A stray /, ?, # or space stays confined to its own segment.
     assert encode_path("bibles", "a/b?c#d e") == "/bibles/a%2Fb%3Fc%23d%20e"
+
+
+@pytest.mark.parametrize("segment", ["", " ", "\t", ".", ".."])
+def test_encode_path_rejects_empty_and_dot_segments(segment: str) -> None:
+    # These survive percent-encoding and would hit a different endpoint.
+    with pytest.raises(InvalidInputError, match="invalid path segment"):
+        encode_path("bibles", segment)
+
+
+def test_encode_path_allows_dots_inside_ids() -> None:
+    # Only exact "." / ".." are dot-segments; dotted ids are fine.
+    assert encode_path("bibles", "GEN.1", "...") == "/bibles/GEN.1/..."

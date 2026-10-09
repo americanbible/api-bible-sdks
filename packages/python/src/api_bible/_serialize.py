@@ -22,7 +22,18 @@ def encode_path(*segments: str) -> str:
     Path parameters (bible/book/chapter/verse ids) are interpolated into the
     request path. Encoding each segment stops a stray ``/``, ``?``, ``#`` or
     space in an id from corrupting the URL or injecting a query string.
+
+    Empty, whitespace-only, ``.`` and ``..`` segments are rejected with
+    :class:`InvalidInputError`: percent-encoding leaves them intact, so they
+    would collapse into a different endpoint (``/bibles/`` is the list route)
+    or be normalized away by the HTTP client.
     """
+    for segment in segments:
+        if not segment.strip() or segment in (".", ".."):
+            raise InvalidInputError(
+                f"invalid path segment {segment!r}: ids must be non-empty and "
+                "must not be '.' or '..'"
+            )
     return "/" + "/".join(quote(segment, safe="") for segment in segments)
 
 
