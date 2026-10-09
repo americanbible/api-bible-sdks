@@ -544,6 +544,31 @@ def test_observers_report_route_template_and_concrete_path(make_client) -> None:
     assert retries[0].path == "/bibles/b1/chapters/GEN.1"
 
 
+def test_call_id_is_shared_within_a_call_and_unique_across_calls(make_client) -> None:
+    requests: list[RequestEvent] = []
+    retries: list[RetryEvent] = []
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return httpx.Response(503, json={"message": "down"})
+        return _ok([])
+
+    with make_client(handler, on_request=requests.append, on_retry=retries.append) as client:
+        client.bibles.list()  # 503, 503, 200
+        client.bibles.list()  # 200
+
+    first, second = requests[:3], requests[3:]
+    call_id = first[0].call_id
+    assert call_id
+    # Every attempt and retry of one call shares an id, so they can be grouped.
+    assert {e.call_id for e in first} == {call_id}
+    assert {e.call_id for e in retries} == {call_id}
+    assert len(second) == 1
+    assert second[0].call_id not in ("", call_id)
+
+
 def test_on_retry_observer_reports_retry_after(make_client) -> None:
     events = []
     calls = {"n": 0}

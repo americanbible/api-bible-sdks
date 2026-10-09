@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   label for metrics. `path` still holds the concrete ids. The README
   Observability example now tags by `route`; tagging by `path` created one
   time series per id.
+- **`RequestEvent.call_id` and `RetryEvent.call_id`** are shared by every
+  event from one logical call, so retried attempts can be grouped to measure
+  end-to-end latency including retries.
 
 ### Fixed
 

@@ -232,6 +232,13 @@ A give-up (attempts exhausted, `max_elapsed` spent, or `Retry-After` past the
 ceiling) emits no retry event — it surfaces as the raised exception and the final
 `RequestEvent`.
 
+Every event from one call, across all its attempts and retries, carries the
+same `call_id`. Group by it to measure what your caller actually waited:
+summing the call's `RequestEvent.elapsed_ms` and `RetryEvent.delay_ms` gives the
+end-to-end latency including backoff. `elapsed_ms` alone is per-attempt latency,
+which understates the true P99 when retries happen. Like `path`, `call_id` is
+unique per call, so put it in logs or traces, not in metric labels.
+
 Both observers must be thread-safe if you share the client across threads. Any
 exception either raises is caught and logged — it can never break a request.
 
