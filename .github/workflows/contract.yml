@@ -38,7 +38,12 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - run: pip install -e ".[dev]"
+      - run: python -m pip install uv==0.12.19
+      # The locked dev toolchain (uv.lock), same as the Python CI workflow.
+      - run: uv sync --locked --python 3.12
+        env:
+          UV_PYTHON_DOWNLOADS: never
+      - run: echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - run: pytest -m live tests/contract/test_contract_live.py
         env:
           BIBLE_API_KEY: ${{ secrets.BIBLE_API_KEY }}

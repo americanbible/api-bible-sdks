@@ -301,23 +301,28 @@ never override the `api-key`. The SDK applies it last, at send time, through an
 
 ## Development
 
-```bash
-# Install against the pinned lockfile for a reproducible toolchain (what CI uses).
-pip install -e ".[dev]" -c requirements-dev.txt
-ruff check . && mypy && pytest --cov=api_bible
-```
-
-Runtime dependency ranges live in `pyproject.toml`; `requirements-dev.txt` is a
-fully-pinned lockfile of the dev/CI environment. Regenerate it after changing
-dependencies with [uv](https://docs.astral.sh/uv/):
+The dev environment is managed with [uv](https://docs.astral.sh/uv/)
+([install it](https://docs.astral.sh/uv/getting-started/installation/) once,
+e.g. `brew install uv`). From `packages/python`:
 
 ```bash
-uv pip compile pyproject.toml --extra dev --universal --python-version 3.10 \
-  -o requirements-dev.txt
+# Create .venv with the SDK (editable) and the locked dev toolchain — what CI uses.
+uv sync
+source .venv/bin/activate
+ruff check . && ruff format --check . && mypy && pytest --cov=api_bible
 ```
 
-Dependencies are scanned weekly by Dependabot, and CI fails the build on any
-known vulnerability via `pip-audit`.
+Runtime dependency ranges live in `pyproject.toml`. `uv.lock` pins the whole
+dev, CI and release environment: the `dev` dependency group (pytest, ruff,
+mypy) and the `release` group (build, twine, pip-audit). After editing
+dependencies in `pyproject.toml`, run `uv lock` and commit `uv.lock` with the
+change. To upgrade locked versions, run `uv lock --upgrade-package <name>`, or
+`uv lock --upgrade` for everything. CI runs `uv sync --locked`, which fails if
+`uv.lock` is out of date with `pyproject.toml`.
+
+Dependabot opens a weekly grouped PR that updates `uv.lock` (ruff gets its own
+PR, since it can change formatting), and CI fails the build on any known
+vulnerability via `pip-audit`.
 
 ### Contract tests
 

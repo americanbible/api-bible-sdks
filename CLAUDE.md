@@ -55,9 +55,12 @@ The Python package is not part of the npm workspace — run its tooling from `pa
 
 ```bash
 cd packages/python
-pip install -e ".[dev]" -c requirements-dev.txt   # pinned dev toolchain (matches CI)
-ruff check . && mypy && pytest --cov=api_bible
+uv sync                      # .venv with the SDK + locked dev toolchain from uv.lock (matches CI)
+source .venv/bin/activate
+ruff check . && ruff format --check . && mypy && pytest --cov=api_bible
 ```
+
+After changing dependencies in `pyproject.toml`, run `uv lock` and commit `uv.lock`.
 
 ## Architecture
 

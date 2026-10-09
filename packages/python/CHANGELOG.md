@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every non-end-of-life CPython is supported, and a version is dropped in the
   next minor release after it reaches end of life.
 
+### Changed
+
+- The `dev` extra is no longer published in the package metadata. The dev
+  toolchain is now a PEP 735 dependency group locked in `uv.lock`; contributors
+  run `uv sync` (see README, "Development").
+
 ### Deprecated
 
 - **Python 3.10** reaches end of life in October 2026. 1.4.x is the last
