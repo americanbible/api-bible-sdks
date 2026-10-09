@@ -5,6 +5,11 @@ All notable changes to `americanbible-api-bible-sdk` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+> **Release history.** Versions 1.0.0 through 1.4.0 were developed and dated in
+> this repository but never published to PyPI or tagged. The first release on
+> PyPI is the first version with a `py-v*` tag; entries before it describe changes
+> no installed user ever saw.
+
 ## [Unreleased]
 
 ## [1.4.0] - 2026-10-09
@@ -95,7 +100,8 @@ that neither could be caught — the two missing cases are added below.
 - **`SearchPassage.text`**, which the API never sends — a passage carries
   `content`; it is `SearchVerse` that carries `text`. The attribute was always
   `None`, and the real content was landing in `model_extra`. Read `.content`
-  instead.
+  instead. (A breaking change in a minor release, made only because 1.3.0 was
+  never published; see the note at the top.)
 
 ### Changed
 
@@ -107,8 +113,9 @@ that neither could be caught — the two missing cases are added below.
   and surfaced as a misleading "empty response body" error. Not retried.
 - **License changed from MIT to Apache License 2.0.** Apache 2.0 adds an express
   patent grant and a patent-retaliation clause that MIT does not provide.
-  Copyright remains American Bible Society. Already-published versions keep the
-  license they were released under; this applies from the next release onward.
+  Copyright remains American Bible Society. No earlier version was published to
+  PyPI, so every PyPI release is Apache-2.0. Earlier commits of this repository
+  remain available under MIT.
 
 ## [1.2.0] - 2026-07-08
 
@@ -168,7 +175,4 @@ Initial public release.
 - Typed Pydantic v2 response models and a granular exception hierarchy.
 - FUMS response metadata via `last_meta` and `*_with_meta` methods.
 
-[Unreleased]: https://github.com/americanbible/api-bible-sdks/compare/py-v1.2.0...HEAD
-[1.2.0]: https://github.com/americanbible/api-bible-sdks/compare/py-v1.1.0...py-v1.2.0
-[1.1.0]: https://github.com/americanbible/api-bible-sdks/compare/py-v1.0.0...py-v1.1.0
-[1.0.0]: https://github.com/americanbible/api-bible-sdks/releases/tag/py-v1.0.0
+[Unreleased]: https://github.com/americanbible/api-bible-sdks/commits/main/packages/python
