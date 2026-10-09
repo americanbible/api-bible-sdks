@@ -179,7 +179,8 @@ a request handler:
   client = BibleClient(api_key="...", max_response_bytes=50 * 1024 * 1024)
   ```
 
-- An async client is planned for a future release.
+- An async client is planned for a future release; see the
+  [design note](https://github.com/americanbible/api-bible-sdks/blob/main/packages/python/docs/async-client.md).
 
 ## Observability
 
