@@ -3,8 +3,7 @@
 React hooks and a context provider for [api.bible](https://api.bible/),
 built on top of [`@americanbible/api-bible-sdk`](../typescript).
 
-> Status: **Release candidate — published to npm under the `next` dist-tag**
-> (`npm install @americanbible/api-bible-sdk-react@next`). A self-contained slice — a provider, a
+> Status: **Stable — `1.0.0`.** A self-contained slice — a provider, a
 > client accessor hook, and resource hooks (`useBibles`, `useBible`, `useBooks`,
 > `useChapters`, `useChapter`, `usePassages`, `useSearch`, `useSectionsForBook`,
 > `useSectionsForChapter`, `useSection`, `useVerses`, `useVerse`,
