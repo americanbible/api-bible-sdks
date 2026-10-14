@@ -31,7 +31,8 @@ must be published by hand. Do this once, before launch day.
 
 1. **Publish a bootstrap prerelease by hand** from a clean, up-to-date checkout
    of `main`. Use a prerelease of the launch version (e.g. `1.0.0-rc.0`) and the
-   `next` dist-tag so `latest` stays empty until the real release. You need
+   `next` dist-tag. npm also points `latest` at a package's first version, so a
+   bare install gets the RC until the stable release moves `latest`. You need
    `npm login` with publish rights to `@americanbible` and 2FA enabled.
    `prepublishOnly` runs the full gate first; check the tarball before it does.
    The README ships in the tarball, so first confirm its Status line reads
