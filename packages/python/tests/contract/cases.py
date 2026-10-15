@@ -5,7 +5,8 @@ every method it calls validates its response against the SDK's Pydantic models,
 so a ``run`` that returns means every response it touched matched the schema.
 
 - ``test_contract_fixtures.py`` replays recorded JSON through an injected
-  transport (deterministic, offline, runs in PR CI).
+  transport (deterministic, offline, runs in PR CI), through both
+  ``BibleClient`` (``CASES``) and ``AsyncBibleClient`` (``ASYNC_CASES``).
 - ``test_contract_live.py`` hits real api.bible (key-gated, nightly).
 
 Cases that need an id the API doesn't guarantee (a section id, an audio bible
@@ -15,9 +16,10 @@ fetch, so the live tier never flakes on data availability.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
-from api_bible import BibleClient
+from api_bible import AsyncBibleClient, BibleClient
 
 # The Berean Standard Bible (BSB) — public domain (CC0), stable on api.bible,
 # and the same id used across the README, examples, and both SDKs. Using it for
@@ -25,6 +27,7 @@ from api_bible import BibleClient
 BSB = "bba9f40183526463-01"
 
 ContractCase = tuple[str, Callable[[BibleClient], None]]
+AsyncContractCase = tuple[str, Callable[[AsyncBibleClient], Awaitable[Any]]]
 
 
 def _sections(c: BibleClient) -> None:
@@ -93,4 +96,51 @@ CASES: list[ContractCase] = [
     ("search.reference", lambda c: c.search.search(BSB, "John 3:16-19")),
     ("sections", _sections),
     ("audio", _audio),
+]
+
+
+# The async replay. The single-call lambdas above work unchanged on an
+# AsyncBibleClient (they return the coroutine), so only the multi-step cases need
+# async twins. test_contract_fixtures.py checks the names stay in step with CASES.
+
+
+async def _sections_async(c: AsyncBibleClient) -> None:
+    for_book = await c.sections.list_for_book(BSB, "GEN")
+    await c.sections.list_for_chapter(BSB, "GEN.1")
+    if for_book:
+        await c.sections.get(BSB, for_book[0].id)
+
+
+async def _verses_boundary_async(c: AsyncBibleClient) -> None:
+    await c.verses.get(BSB, "REV.22.21", content_type="text")
+    await c.verses.get(BSB, "GEN.intro.0", content_type="text")
+
+
+async def _audio_async(c: AsyncBibleClient) -> None:
+    audio = await c.audio_bibles.list(language="eng")
+    if not audio:
+        return
+    bible = audio[0]
+    await c.audio_bibles.get(bible.id)
+
+    books = await c.audio_bibles.list_books(bible.id)
+    if not books:
+        return
+
+    chapters = await c.audio_bibles.list_chapters(bible.id, books[0].id)
+    if not chapters:
+        return
+
+    await c.audio_bibles.get_chapter(bible.id, chapters[0].id)
+
+
+_ASYNC_TWINS = {
+    "verses.get.boundary": _verses_boundary_async,
+    "sections": _sections_async,
+    "audio": _audio_async,
+}
+
+ASYNC_CASES: list[AsyncContractCase] = [
+    (name, _ASYNC_TWINS.get(name, run))  # type: ignore[arg-type]
+    for name, run in CASES
 ]

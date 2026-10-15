@@ -5,10 +5,33 @@ from typing import TypeVar
 
 from pydantic import BaseModel
 
-from .._http import Transport
+from .._http import AsyncTransport, Transport
 from .._serialize import to_query
 
 EnvelopeT = TypeVar("EnvelopeT", bound=BaseModel)
+
+
+def _content_params(
+    *,
+    content_type: str | None,
+    include_notes: bool | None,
+    include_titles: bool | None,
+    include_chapter_numbers: bool | None,
+    include_verse_numbers: bool | None,
+    include_verse_spans: bool | None,
+    parallels: list[str] | None,
+) -> dict[str, str] | None:
+    """Query parameters shared by every content endpoint, or ``None`` if unset."""
+    params = to_query(
+        content_type=content_type,
+        include_notes=include_notes,
+        include_titles=include_titles,
+        include_chapter_numbers=include_chapter_numbers,
+        include_verse_numbers=include_verse_numbers,
+        include_verse_spans=include_verse_spans,
+        parallels=parallels,
+    )
+    return params or None
 
 
 class BaseResource:
@@ -39,21 +62,62 @@ class BaseResource:
         ``get``), which all accept the same content-rendering query parameters.
         Callers unwrap ``.data`` (and optionally ``.meta``) themselves.
         """
-        params = to_query(
-            content_type=content_type,
-            include_notes=include_notes,
-            include_titles=include_titles,
-            include_chapter_numbers=include_chapter_numbers,
-            include_verse_numbers=include_verse_numbers,
-            include_verse_spans=include_verse_spans,
-            parallels=parallels,
-        )
         return self._transport.request(
             "GET",
             route,
             model=model,
             path_params=path_params,
-            params=params or None,
+            params=_content_params(
+                content_type=content_type,
+                include_notes=include_notes,
+                include_titles=include_titles,
+                include_chapter_numbers=include_chapter_numbers,
+                include_verse_numbers=include_verse_numbers,
+                include_verse_spans=include_verse_spans,
+                parallels=parallels,
+            ),
+            timeout=timeout,
+            extra_headers=headers,
+        )
+
+
+class _AsyncBaseResource:
+    """Async counterpart of :class:`BaseResource`."""
+
+    def __init__(self, transport: AsyncTransport) -> None:
+        self._transport = transport
+
+    async def _content_get(
+        self,
+        route: str,
+        model: type[EnvelopeT],
+        *,
+        path_params: Mapping[str, str],
+        content_type: str | None = None,
+        include_notes: bool | None = None,
+        include_titles: bool | None = None,
+        include_chapter_numbers: bool | None = None,
+        include_verse_numbers: bool | None = None,
+        include_verse_spans: bool | None = None,
+        parallels: list[str] | None = None,
+        timeout: float | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> EnvelopeT:
+        """Async :meth:`BaseResource._content_get`."""
+        return await self._transport.request(
+            "GET",
+            route,
+            model=model,
+            path_params=path_params,
+            params=_content_params(
+                content_type=content_type,
+                include_notes=include_notes,
+                include_titles=include_titles,
+                include_chapter_numbers=include_chapter_numbers,
+                include_verse_numbers=include_verse_numbers,
+                include_verse_spans=include_verse_spans,
+                parallels=parallels,
+            ),
             timeout=timeout,
             extra_headers=headers,
         )

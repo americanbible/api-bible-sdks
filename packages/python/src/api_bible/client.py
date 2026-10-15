@@ -12,6 +12,7 @@ from ._http import (
     DEFAULT_BASE_URL,
     DEFAULT_MAX_RESPONSE_BYTES,
     DEFAULT_TIMEOUT,
+    AsyncTransport,
     RequestObserver,
     RetryConfig,
     RetryObserver,
@@ -20,6 +21,14 @@ from ._http import (
 from .errors import InvalidInputError
 from .models import Meta
 from .resources import (
+    AsyncAudioBiblesResource,
+    AsyncBiblesResource,
+    AsyncBooksResource,
+    AsyncChaptersResource,
+    AsyncPassagesResource,
+    AsyncSearchResource,
+    AsyncSectionsResource,
+    AsyncVersesResource,
     AudioBiblesResource,
     BiblesResource,
     BooksResource,
@@ -30,7 +39,7 @@ from .resources import (
     VersesResource,
 )
 
-__all__ = ["BibleClient"]
+__all__ = ["AsyncBibleClient", "BibleClient"]
 
 _DEFAULT_ENV_VAR = "API_BIBLE_KEY"
 _FALLBACK_ENV_VAR = "BIBLE_API_KEY"
@@ -70,6 +79,16 @@ def _require_secure_base_url(base_url: str, *, allow_insecure_http: bool) -> Non
         "would be sent in cleartext otherwise. Pass allow_insecure_http=True "
         "only for local testing against a mock server."
     )
+
+
+def _api_key_from_env(var: str | None) -> str:
+    """Read the api-key for ``from_env``; see :meth:`BibleClient.from_env`."""
+    names = [_DEFAULT_ENV_VAR, _FALLBACK_ENV_VAR] if var is None else [var]
+    for name in names:
+        api_key = os.environ.get(name)
+        if api_key:
+            return api_key
+    raise InvalidInputError(f"environment variable {' or '.join(names)} is not set")
 
 
 class BibleClient:
@@ -152,24 +171,19 @@ class BibleClient:
         applied. The remaining keyword arguments mirror :class:`BibleClient` and
         are forwarded to it.
         """
-        names = [_DEFAULT_ENV_VAR, _FALLBACK_ENV_VAR] if var is None else [var]
-        for name in names:
-            api_key = os.environ.get(name)
-            if api_key:
-                return cls(
-                    api_key,
-                    base_url=base_url,
-                    timeout=timeout,
-                    retry=retry,
-                    headers=headers,
-                    http_client=http_client,
-                    limits=limits,
-                    allow_insecure_http=allow_insecure_http,
-                    on_request=on_request,
-                    on_retry=on_retry,
-                    max_response_bytes=max_response_bytes,
-                )
-        raise InvalidInputError(f"environment variable {' or '.join(names)} is not set")
+        return cls(
+            _api_key_from_env(var),
+            base_url=base_url,
+            timeout=timeout,
+            retry=retry,
+            headers=headers,
+            http_client=http_client,
+            limits=limits,
+            allow_insecure_http=allow_insecure_http,
+            on_request=on_request,
+            on_retry=on_retry,
+            max_response_bytes=max_response_bytes,
+        )
 
     @property
     def last_meta(self) -> Meta | None:
@@ -197,3 +211,127 @@ class BibleClient:
         tb: TracebackType | None,
     ) -> None:
         self.close()
+
+
+class AsyncBibleClient:
+    """Asynchronous client for the api.bible REST API (asyncio or trio).
+
+    Example::
+
+        async with AsyncBibleClient.from_env() as client:
+            bibles = await client.bibles.list(language="eng")
+            print(bibles[0].name)
+
+    Takes the same arguments as :class:`BibleClient` and behaves identically
+    (retries, timeouts, redirects, size cap, errors, observer events), except
+    that methods are awaited, backoff sleeps with ``anyio.sleep`` instead of
+    blocking, and ``http_client`` is an :class:`httpx.AsyncClient`. The
+    ``on_request`` / ``on_retry`` observers are plain callables called inline on
+    the event loop, so they must not block. The client owns an
+    :class:`httpx.AsyncClient` connection pool: use it with ``async with`` (shown
+    above) or call :meth:`aclose` when finished.
+    """
+
+    def __init__(
+        self,
+        api_key: str,
+        *,
+        base_url: str = DEFAULT_BASE_URL,
+        timeout: float | httpx.Timeout = DEFAULT_TIMEOUT,
+        retry: RetryConfig | None = None,
+        headers: dict[str, str] | None = None,
+        http_client: httpx.AsyncClient | None = None,
+        limits: httpx.Limits | None = None,
+        allow_insecure_http: bool = False,
+        on_request: RequestObserver | None = None,
+        on_retry: RetryObserver | None = None,
+        max_response_bytes: int | None = DEFAULT_MAX_RESPONSE_BYTES,
+    ) -> None:
+        api_key = _normalize_api_key(api_key)
+        # As in BibleClient: a caller-supplied client owns the base URL.
+        if http_client is None:
+            _require_secure_base_url(base_url, allow_insecure_http=allow_insecure_http)
+
+        self._transport = AsyncTransport(
+            api_key,
+            base_url=base_url,
+            timeout=timeout,
+            retry=retry,
+            headers=headers,
+            client=http_client,
+            limits=limits,
+            on_request=on_request,
+            on_retry=on_retry,
+            max_response_bytes=max_response_bytes,
+        )
+
+        self.bibles = AsyncBiblesResource(self._transport)
+        self.books = AsyncBooksResource(self._transport)
+        self.chapters = AsyncChaptersResource(self._transport)
+        self.verses = AsyncVersesResource(self._transport)
+        self.passages = AsyncPassagesResource(self._transport)
+        self.sections = AsyncSectionsResource(self._transport)
+        self.audio_bibles = AsyncAudioBiblesResource(self._transport)
+        self.search = AsyncSearchResource(self._transport)
+
+    @classmethod
+    def from_env(
+        cls,
+        *,
+        var: str | None = None,
+        base_url: str = DEFAULT_BASE_URL,
+        timeout: float | httpx.Timeout = DEFAULT_TIMEOUT,
+        retry: RetryConfig | None = None,
+        headers: dict[str, str] | None = None,
+        http_client: httpx.AsyncClient | None = None,
+        limits: httpx.Limits | None = None,
+        allow_insecure_http: bool = False,
+        on_request: RequestObserver | None = None,
+        on_retry: RetryObserver | None = None,
+        max_response_bytes: int | None = DEFAULT_MAX_RESPONSE_BYTES,
+    ) -> AsyncBibleClient:
+        """Build a client using the API key from an environment variable.
+
+        Same lookup as :meth:`BibleClient.from_env`: ``API_BIBLE_KEY``, then
+        ``BIBLE_API_KEY``, unless ``var`` names a specific variable.
+        """
+        return cls(
+            _api_key_from_env(var),
+            base_url=base_url,
+            timeout=timeout,
+            retry=retry,
+            headers=headers,
+            http_client=http_client,
+            limits=limits,
+            allow_insecure_http=allow_insecure_http,
+            on_request=on_request,
+            on_retry=on_retry,
+            max_response_bytes=max_response_bytes,
+        )
+
+    @property
+    def last_meta(self) -> Meta | None:
+        """FUMS analytics metadata for the calling task's most recent call.
+
+        ``None`` if that call failed or its response carried no metadata. It is
+        per task: a call made in another task (including a child task in a task
+        group) is not visible here. When you need metadata tied reliably to a
+        specific response, use a ``*_with_meta`` method (e.g.
+        :meth:`chapters.get_with_meta`).
+        """
+        return self._transport.last_meta
+
+    async def aclose(self) -> None:
+        """Close the underlying HTTP connection pool."""
+        await self._transport.aclose()
+
+    async def __aenter__(self) -> AsyncBibleClient:
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        await self.aclose()
