@@ -1,5 +1,15 @@
+"""Transport behaviour.
+
+The pure retry math and ``RetryConfig`` validation are tested directly. Every
+behaviour the two clients share (retries, ``Retry-After``, the ``max_elapsed``
+budget, redirects, size cap, header precedence, api-key handling, log records,
+observer events) runs through the ``api`` fixture, once on ``BibleClient`` and
+once on ``AsyncBibleClient`` under each of asyncio and trio.
+"""
+
 from __future__ import annotations
 
+import contextlib
 import inspect
 import logging
 import subprocess
@@ -8,10 +18,10 @@ from collections.abc import Generator
 
 import httpx
 import pytest
+from harness import Api, backend_for, patch_sleep
 
 from api_bible import (
     ApiError,
-    BibleClient,
     InvalidInputError,
     NetworkError,
     NotFoundError,
@@ -22,12 +32,19 @@ from api_bible import (
     ValidationError,
 )
 from api_bible._http import (
+    AsyncTransport,
     RetryConfig,
     Transport,
     backoff_delay,
     next_retry_delay,
     parse_retry_after,
 )
+
+
+@pytest.fixture
+def anyio_backend(kind: str) -> str:
+    return backend_for(kind)
+
 
 # --- pure retry math -------------------------------------------------------
 
@@ -128,7 +145,8 @@ def _ok(data: object) -> httpx.Response:
     return httpx.Response(200, json={"data": data})
 
 
-def test_retries_5xx_then_succeeds(make_client) -> None:
+@pytest.mark.anyio
+async def test_retries_5xx_then_succeeds(api: Api) -> None:
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -137,54 +155,67 @@ def test_retries_5xx_then_succeeds(make_client) -> None:
             return httpx.Response(503, json={"message": "unavailable"})
         return _ok([{"id": "b1", "name": "Bible One"}])
 
-    with make_client(handler) as client:
-        bibles = client.bibles.list()
+    async with api.client(handler) as client:
+        bibles = await client.bibles.list()
 
     assert calls["n"] == 3
     assert bibles[0].id == "b1"
 
 
-def test_exhausts_attempts_then_raises_server_error(make_client) -> None:
+@pytest.mark.anyio
+async def test_exhausts_attempts_then_raises_server_error(api: Api) -> None:
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
         calls["n"] += 1
         return httpx.Response(500, json={"message": "boom"})
 
-    with make_client(handler) as client, pytest.raises(ServerError) as exc_info:
-        client.bibles.list()
+    async with api.client(handler) as client:
+        with pytest.raises(ServerError) as exc_info:
+            await client.bibles.list()
 
     assert calls["n"] == 3  # max_attempts
     assert exc_info.value.status_code == 500
+    # Raised after the loop, outside any handler: no implicit exception context.
+    assert exc_info.value.__context__ is None
 
 
-def test_4xx_is_not_retried(make_client) -> None:
+@pytest.mark.anyio
+async def test_4xx_is_not_retried(api: Api) -> None:
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
         calls["n"] += 1
         return httpx.Response(404, json={"message": "nope"})
 
-    with make_client(handler) as client, pytest.raises(NotFoundError):
-        client.bibles.get("missing")
+    async with api.client(handler) as client:
+        with pytest.raises(NotFoundError):
+            await client.bibles.get("missing")
 
     assert calls["n"] == 1
 
 
-def test_gives_up_when_retry_after_exceeds_ceiling(make_client) -> None:
+@pytest.mark.anyio
+async def test_gives_up_when_retry_after_exceeds_ceiling(api: Api) -> None:
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
         calls["n"] += 1
         return httpx.Response(429, headers={"retry-after": "9999"}, json={"message": "slow down"})
 
-    with make_client(handler) as client, pytest.raises(RateLimitError):
-        client.bibles.list()
+    async with api.client(handler) as client:
+        with pytest.raises(RateLimitError):
+            await client.bibles.list()
 
     assert calls["n"] == 1  # 9999 > max_retry_after (60), gave up immediately
 
 
-def test_honors_retry_after_beyond_max_delay(make_client) -> None:
+@pytest.mark.anyio
+async def test_honors_retry_after_beyond_max_delay(
+    api: Api, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    slept: list[float] = []
+    patch_sleep(monkeypatch, slept.append)
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -195,14 +226,16 @@ def test_honors_retry_after_beyond_max_delay(make_client) -> None:
             return httpx.Response(429, headers={"retry-after": "45"}, json={"message": "slow"})
         return _ok([{"id": "b1", "name": "Bible One"}])
 
-    with make_client(handler) as client:
-        bibles = client.bibles.list()
+    async with api.client(handler) as client:
+        bibles = await client.bibles.list()
 
     assert calls["n"] == 2
     assert bibles[0].id == "b1"
+    assert slept == [45.0]
 
 
-def test_gives_up_when_retry_after_exceeds_custom_max_retry_after(make_client) -> None:
+@pytest.mark.anyio
+async def test_gives_up_when_retry_after_exceeds_custom_max_retry_after(api: Api) -> None:
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -210,13 +243,15 @@ def test_gives_up_when_retry_after_exceeds_custom_max_retry_after(make_client) -
         return httpx.Response(429, headers={"retry-after": "20"}, json={"message": "slow"})
 
     retry = RetryConfig(max_attempts=3, base_delay=0.0, max_retry_after=10.0, jitter=lambda: 0.0)
-    with make_client(handler, retry=retry) as client, pytest.raises(RateLimitError):
-        client.bibles.list()
+    async with api.client(handler, retry=retry) as client:
+        with pytest.raises(RateLimitError):
+            await client.bibles.list()
 
     assert calls["n"] == 1  # 20 > max_retry_after (10), gave up immediately
 
 
-def test_total_deadline_stops_retrying(make_client, monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.anyio
+async def test_total_deadline_stops_retrying(api: Api, monkeypatch: pytest.MonkeyPatch) -> None:
     # Fake monotonic clock that only advances when we (mock-)sleep, so elapsed
     # time across attempts is deterministic.
     clock = {"t": 0.0}
@@ -225,7 +260,7 @@ def test_total_deadline_stops_retrying(make_client, monkeypatch: pytest.MonkeyPa
         clock["t"] += seconds
 
     monkeypatch.setattr("api_bible._http.time.monotonic", lambda: clock["t"])
-    monkeypatch.setattr("api_bible._http.time.sleep", advance)
+    patch_sleep(monkeypatch, advance)
 
     calls = {"n": 0}
 
@@ -237,14 +272,17 @@ def test_total_deadline_stops_retrying(make_client, monkeypatch: pytest.MonkeyPa
     # (elapsed -> 10s) but not a second (would reach 20s > 15), so we stop early
     # instead of using all 5 attempts.
     retry = RetryConfig(max_attempts=5, base_delay=0.0, max_elapsed=15.0, jitter=lambda: 0.0)
-    with make_client(handler, retry=retry) as client, pytest.raises(ServerError):
-        client.bibles.list()
+    async with api.client(handler, retry=retry) as client:
+        with pytest.raises(ServerError):
+            await client.bibles.list()
 
     assert calls["n"] == 2
+    assert clock["t"] == 10.0
 
 
-def test_default_max_elapsed_bounds_sustained_rate_limit(
-    make_client, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.anyio
+async def test_default_max_elapsed_bounds_sustained_rate_limit(
+    api: Api, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # Fake clock that advances only when we (mock-)sleep, so elapsed time is
     # deterministic and we exercise the *default* 60s budget, not an override.
@@ -254,7 +292,7 @@ def test_default_max_elapsed_bounds_sustained_rate_limit(
         clock["t"] += seconds
 
     monkeypatch.setattr("api_bible._http.time.monotonic", lambda: clock["t"])
-    monkeypatch.setattr("api_bible._http.time.sleep", advance)
+    patch_sleep(monkeypatch, advance)
 
     calls = {"n": 0}
 
@@ -266,28 +304,32 @@ def test_default_max_elapsed_bounds_sustained_rate_limit(
     # first honored 60s wait exhausts the budget, so we give up after 2 attempts
     # instead of sleeping a second time toward the ~120s unbounded worst case.
     retry = RetryConfig(jitter=lambda: 0.0)
-    with make_client(handler, retry=retry) as client, pytest.raises(RateLimitError) as exc_info:
-        client.bibles.list()
+    async with api.client(handler, retry=retry) as client:
+        with pytest.raises(RateLimitError) as exc_info:
+            await client.bibles.list()
 
     assert calls["n"] == 2
     assert exc_info.value.retry_after == 60.0
 
 
-def test_network_errors_are_retried_and_wrapped(make_client) -> None:
+@pytest.mark.anyio
+async def test_network_errors_are_retried_and_wrapped(api: Api) -> None:
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
         calls["n"] += 1
         raise httpx.ConnectError("connection refused")
 
-    with make_client(handler) as client, pytest.raises(NetworkError) as exc_info:
-        client.bibles.list()
+    async with api.client(handler) as client:
+        with pytest.raises(NetworkError) as exc_info:
+            await client.bibles.list()
 
     assert calls["n"] == 3
     assert exc_info.value.status_code == 0
 
 
-def test_pool_timeout_is_not_retried(make_client) -> None:
+@pytest.mark.anyio
+async def test_pool_timeout_is_not_retried(api: Api) -> None:
     # Pool exhaustion must fail fast: retrying would add load and worsen it.
     calls = {"n": 0}
 
@@ -295,27 +337,28 @@ def test_pool_timeout_is_not_retried(make_client) -> None:
         calls["n"] += 1
         raise httpx.PoolTimeout("pool exhausted")
 
-    with make_client(handler) as client, pytest.raises(NetworkError, match="connection pool"):
-        client.bibles.list()
+    async with api.client(handler) as client:
+        with pytest.raises(NetworkError, match="connection pool") as exc_info:
+            await client.bibles.list()
 
     assert calls["n"] == 1
+    assert isinstance(exc_info.value.__cause__, httpx.PoolTimeout)
 
 
-def test_illegal_header_value_is_not_retried_or_echoed(make_client) -> None:
+@pytest.mark.anyio
+async def test_illegal_header_value_is_not_retried_or_echoed(api: Api) -> None:
     # h11 quotes the offending header value in its message, which may be the
     # api-key. It's deterministic, so it must fail once and never surface it.
     calls = {"n": 0}
-    events = []
+    events: list[RequestEvent] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         calls["n"] += 1
         raise httpx.LocalProtocolError("Illegal header value b'SECRET\\n'")
 
-    with (
-        make_client(handler, on_request=events.append) as client,
-        pytest.raises(NetworkError, match="illegal value") as exc_info,
-    ):
-        client.bibles.list()
+    async with api.client(handler, on_request=events.append) as client:
+        with pytest.raises(NetworkError, match="illegal value") as exc_info:
+            await client.bibles.list()
 
     assert calls["n"] == 1
     assert "SECRET" not in str(exc_info.value)
@@ -324,69 +367,90 @@ def test_illegal_header_value_is_not_retried_or_echoed(make_client) -> None:
     assert [event.error for event in events] == ["invalid header"]
 
 
-def test_network_error_message_redacts_the_api_key(make_client) -> None:
+@pytest.mark.anyio
+async def test_network_error_message_redacts_the_api_key(api: Api) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError(f"refused while sending {request.headers['api-key']}")
 
-    with make_client(handler) as client, pytest.raises(NetworkError) as exc_info:
-        client.bibles.list()
+    async with api.client(handler) as client:
+        with pytest.raises(NetworkError) as exc_info:
+            await client.bibles.list()
 
     assert "test-key" not in str(exc_info.value)
     assert "[redacted]" in str(exc_info.value)
 
 
-def test_non_json_content_type_raises_api_error(make_client) -> None:
+@pytest.mark.anyio
+async def test_timeout_message_redacts_the_api_key(api: Api) -> None:
+    events: list[RetryEvent] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout(f"timed out sending {request.headers['api-key']}")
+
+    async with api.client(handler, on_retry=events.append) as client:
+        with pytest.raises(NetworkError, match="request timed out") as exc_info:
+            await client.bibles.list()
+
+    assert "test-key" not in str(exc_info.value)
+    assert [e.reason for e in events] == ["request timed out"] * 2
+
+
+@pytest.mark.anyio
+async def test_non_json_content_type_raises_api_error(api: Api) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         # httpx sets Content-Type to text/plain for a `text=` body.
         return httpx.Response(200, text="<html>not json</html>")
 
-    with make_client(handler) as client, pytest.raises(ApiError, match="Content-Type"):
-        client.bibles.list()
+    async with api.client(handler) as client:
+        with pytest.raises(ApiError, match="Content-Type"):
+            await client.bibles.list()
 
 
-def test_empty_2xx_body_raises_api_error(make_client) -> None:
+@pytest.mark.anyio
+async def test_empty_2xx_body_raises_api_error(api: Api) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, content=b"")
 
-    with make_client(handler) as client, pytest.raises(ApiError, match="empty response body"):
-        client.bibles.list()
+    async with api.client(handler) as client:
+        with pytest.raises(ApiError, match="empty response body"):
+            await client.bibles.list()
 
 
-def test_malformed_json_body_raises_api_error(make_client) -> None:
+@pytest.mark.anyio
+async def test_malformed_json_body_raises_api_error(api: Api) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         # Correct content type, but the body is not valid JSON.
         return httpx.Response(
             200, headers={"content-type": "application/json"}, content=b"{not valid json"
         )
 
-    with (
-        make_client(handler) as client,
-        pytest.raises(ApiError, match="expected a JSON response body"),
-    ):
-        client.bibles.list()
+    async with api.client(handler) as client:
+        with pytest.raises(ApiError, match="expected a JSON response body"):
+            await client.bibles.list()
 
 
-def test_schema_mismatch_raises_validation_error(make_client) -> None:
+@pytest.mark.anyio
+async def test_schema_mismatch_raises_validation_error(api: Api) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"unexpected": "shape"})  # missing `data`
 
-    with make_client(handler) as client, pytest.raises(ValidationError) as exc_info:
-        client.bibles.list()
+    async with api.client(handler) as client:
+        with pytest.raises(ValidationError) as exc_info:
+            await client.bibles.list()
 
     assert exc_info.value.errors
     assert "schema" in exc_info.value.format()
 
 
-def test_retry_logs_warning_and_giveup(make_client, caplog) -> None:
+@pytest.mark.anyio
+async def test_retry_logs_warning_and_giveup(api: Api, caplog: pytest.LogCaptureFixture) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(503, json={"message": "down"})
 
-    with (
-        caplog.at_level(logging.WARNING, logger="api_bible"),
-        make_client(handler) as client,
-        pytest.raises(ServerError),
-    ):
-        client.bibles.list()
+    with caplog.at_level(logging.WARNING, logger="api_bible"):
+        async with api.client(handler) as client:
+            with pytest.raises(ServerError):
+                await client.bibles.list()
 
     messages = "\n".join(record.getMessage() for record in caplog.records)
     assert "retrying in" in messages  # warned before each backoff
@@ -394,16 +458,17 @@ def test_retry_logs_warning_and_giveup(make_client, caplog) -> None:
     assert "HTTP 503" in messages  # the failure reason is included
 
 
-def test_logs_never_include_the_api_key_or_query(make_client, caplog) -> None:
+@pytest.mark.anyio
+async def test_logs_never_include_the_api_key_or_query(
+    api: Api, caplog: pytest.LogCaptureFixture
+) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(503, json={"message": "down"})
 
-    with (
-        caplog.at_level(logging.DEBUG, logger="api_bible"),
-        make_client(handler) as client,
-        pytest.raises(ServerError),
-    ):
-        client.bibles.list(language="zzq")
+    with caplog.at_level(logging.DEBUG, logger="api_bible"):
+        async with api.client(handler) as client:
+            with pytest.raises(ServerError):
+                await client.bibles.list(language="zzq")
 
     assert caplog.records  # sanity: we did log something
     for record in caplog.records:
@@ -414,7 +479,10 @@ def test_logs_never_include_the_api_key_or_query(make_client, caplog) -> None:
         assert "zzq" not in rendered  # query-string values stay out of logs
 
 
-def test_log_records_carry_structured_fields(make_client, caplog) -> None:
+@pytest.mark.anyio
+async def test_log_records_carry_structured_fields(
+    api: Api, caplog: pytest.LogCaptureFixture
+) -> None:
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -425,8 +493,9 @@ def test_log_records_carry_structured_fields(make_client, caplog) -> None:
             200, json={"data": {"id": "GEN.1", "bibleId": "b1", "bookId": "GEN", "number": "1"}}
         )
 
-    with caplog.at_level(logging.DEBUG, logger="api_bible"), make_client(handler) as client:
-        client.chapters.get("b1", "GEN.1")
+    with caplog.at_level(logging.DEBUG, logger="api_bible"):
+        async with api.client(handler) as client:
+            await client.chapters.get("b1", "GEN.1")
 
     records = caplog.records
     call_ids = {r.api_bible_call_id for r in records}
@@ -450,17 +519,79 @@ def test_log_records_carry_structured_fields(make_client, caplog) -> None:
     ]
 
 
+_NO_JITTER = RetryConfig(base_delay=0.0, jitter=lambda: 0.0)
+
+
+def _log_shape(records: list[logging.LogRecord]) -> list[tuple[object, ...]]:
+    """Every record's level, message and ``api_bible_*`` field names, in order."""
+    return [
+        (
+            r.levelname,
+            r.getMessage(),
+            [k for k in vars(r) if k.startswith("api_bible_")],
+        )
+        for r in records
+    ]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("responses", "retry"),
+    [
+        ([503, 200], _NO_JITTER),
+        ([503, 503, 503], _NO_JITTER),
+        ([429], RetryConfig(max_retry_after=1.0, jitter=lambda: 0.0)),
+        ([503, 503], RetryConfig(base_delay=100.0, max_elapsed=1.0, jitter=lambda: 1.0)),
+    ],
+    ids=["retry-then-ok", "attempts-exhausted", "retry-after-ceiling", "budget"],
+)
+async def test_log_records_match_the_sync_client(
+    api: Api,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    responses: list[int],
+    retry: RetryConfig,
+) -> None:
+    # The same call must log the same records, field for field and in order, on
+    # both clients: run it on the sync client as the reference, then on `api`.
+    # A frozen clock keeps the elapsed time in the messages identical.
+    monkeypatch.setattr("api_bible._http.time.monotonic", lambda: 0.0)
+
+    def run_handler() -> object:
+        it = iter(responses)
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            status = next(it)
+            headers = {"retry-after": "5"} if status == 429 else {}
+            return httpx.Response(status, headers=headers, json={"data": [], "message": "m"})
+
+        return handler
+
+    shapes = []
+    for runner in (Api("sync"), api):
+        caplog.clear()
+        with caplog.at_level(logging.DEBUG, logger="api_bible"):
+            async with runner.client(run_handler(), retry=retry) as client:
+                with contextlib.suppress(ApiError):
+                    await client.bibles.list()
+        shapes.append(_log_shape(caplog.records))
+
+    assert shapes[0] == shapes[1]
+    assert shapes[0]  # sanity: something was logged
+
+
 # --- observability hook ----------------------------------------------------
 
 
-def test_on_request_observer_receives_event_on_success(make_client) -> None:
-    events = []
+@pytest.mark.anyio
+async def test_on_request_observer_receives_event_on_success(api: Api) -> None:
+    events: list[RequestEvent] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         return _ok([])
 
-    with make_client(handler, on_request=events.append) as client:
-        client.bibles.list()
+    async with api.client(handler, on_request=events.append) as client:
+        await client.bibles.list()
 
     assert len(events) == 1
     event = events[0]
@@ -472,14 +603,15 @@ def test_on_request_observer_receives_event_on_success(make_client) -> None:
     assert event.elapsed_ms >= 0.0
 
 
-def test_on_request_observer_receives_response_headers(make_client) -> None:
-    events = []
+@pytest.mark.anyio
+async def test_on_request_observer_receives_response_headers(api: Api) -> None:
+    events: list[RequestEvent] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, headers={"X-RateLimit-Remaining": "42"}, json={"data": []})
 
-    with make_client(handler, on_request=events.append) as client:
-        client.bibles.list()
+    async with api.client(handler, on_request=events.append) as client:
+        await client.bibles.list()
 
     assert len(events) == 1
     assert events[0].headers is not None
@@ -487,8 +619,9 @@ def test_on_request_observer_receives_response_headers(make_client) -> None:
     assert events[0].headers["x-ratelimit-remaining"] == "42"
 
 
-def test_on_request_observer_fires_once_per_attempt(make_client) -> None:
-    events = []
+@pytest.mark.anyio
+async def test_on_request_observer_fires_once_per_attempt(api: Api) -> None:
+    events: list[RequestEvent] = []
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -497,20 +630,22 @@ def test_on_request_observer_fires_once_per_attempt(make_client) -> None:
             return httpx.Response(503, json={"message": "down"})
         return _ok([])
 
-    with make_client(handler, on_request=events.append) as client:
-        client.bibles.list()
+    async with api.client(handler, on_request=events.append) as client:
+        await client.bibles.list()
 
     assert [(e.status_code, e.attempt) for e in events] == [(503, 1), (200, 2)]
 
 
-def test_on_request_observer_records_transport_failures(make_client) -> None:
-    events = []
+@pytest.mark.anyio
+async def test_on_request_observer_records_transport_failures(api: Api) -> None:
+    events: list[RequestEvent] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("connection refused")
 
-    with make_client(handler, on_request=events.append) as client, pytest.raises(NetworkError):
-        client.bibles.list()
+    async with api.client(handler, on_request=events.append) as client:
+        with pytest.raises(NetworkError):
+            await client.bibles.list()
 
     assert len(events) == 3  # one per attempt
     assert all(e.status_code is None for e in events)
@@ -518,21 +653,26 @@ def test_on_request_observer_records_transport_failures(make_client) -> None:
     assert all(e.headers is None for e in events)  # no response, so no headers
 
 
-def test_on_request_observer_records_pool_timeout(make_client) -> None:
-    events = []
+@pytest.mark.anyio
+async def test_on_request_observer_records_pool_timeout(api: Api) -> None:
+    events: list[RequestEvent] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.PoolTimeout("pool exhausted")
 
-    with make_client(handler, on_request=events.append) as client, pytest.raises(NetworkError):
-        client.bibles.list()
+    async with api.client(handler, on_request=events.append) as client:
+        with pytest.raises(NetworkError):
+            await client.bibles.list()
 
     assert len(events) == 1  # pool timeout is not retried
     assert events[0].status_code is None
     assert events[0].error == "pool timeout"
 
 
-def test_on_request_observer_exception_never_breaks_the_call(make_client, caplog) -> None:
+@pytest.mark.anyio
+async def test_on_request_observer_exception_never_breaks_the_call(
+    api: Api, caplog: pytest.LogCaptureFixture
+) -> None:
     calls = {"n": 0}
 
     def observer(event: object) -> None:
@@ -542,11 +682,9 @@ def test_on_request_observer_exception_never_breaks_the_call(make_client, caplog
     def handler(request: httpx.Request) -> httpx.Response:
         return _ok([{"id": "b1", "name": "Bible One"}])
 
-    with (
-        caplog.at_level(logging.ERROR, logger="api_bible"),
-        make_client(handler, on_request=observer) as client,
-    ):
-        bibles = client.bibles.list()
+    with caplog.at_level(logging.ERROR, logger="api_bible"):
+        async with api.client(handler, on_request=observer) as client:
+            bibles = await client.bibles.list()
 
     assert bibles[0].id == "b1"  # the request still succeeded
     assert calls["n"] == 1  # the observer was invoked
@@ -556,8 +694,9 @@ def test_on_request_observer_exception_never_breaks_the_call(make_client, caplog
 # --- retry observability hook ----------------------------------------------
 
 
-def test_on_retry_observer_fires_once_per_retry(make_client) -> None:
-    events = []
+@pytest.mark.anyio
+async def test_on_retry_observer_fires_once_per_retry(api: Api) -> None:
+    events: list[RetryEvent] = []
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -566,8 +705,8 @@ def test_on_retry_observer_fires_once_per_retry(make_client) -> None:
             return httpx.Response(503, json={"message": "down"})
         return _ok([])
 
-    with make_client(handler, on_retry=events.append) as client:
-        client.bibles.list()
+    async with api.client(handler, on_retry=events.append) as client:
+        await client.bibles.list()
 
     # Three attempts -> two retries, each labelled with the failing attempt.
     assert [(e.attempt, e.reason) for e in events] == [(1, "HTTP 503"), (2, "HTTP 503")]
@@ -576,7 +715,8 @@ def test_on_retry_observer_fires_once_per_retry(make_client) -> None:
     assert all(e.retry_after_ms is None for e in events)
 
 
-def test_observers_report_route_template_and_concrete_path(make_client) -> None:
+@pytest.mark.anyio
+async def test_observers_report_route_template_and_concrete_path(api: Api) -> None:
     requests: list[RequestEvent] = []
     retries: list[RetryEvent] = []
     calls = {"n": 0}
@@ -589,8 +729,8 @@ def test_observers_report_route_template_and_concrete_path(make_client) -> None:
             200, json={"data": {"id": "GEN.1", "bibleId": "b1", "bookId": "GEN", "number": "1"}}
         )
 
-    with make_client(handler, on_request=requests.append, on_retry=retries.append) as client:
-        client.chapters.get("b1", "GEN.1")
+    async with api.client(handler, on_request=requests.append, on_retry=retries.append) as client:
+        await client.chapters.get("b1", "GEN.1")
 
     # route is the low-cardinality template; path keeps the concrete ids.
     route = "/bibles/{bible_id}/chapters/{chapter_id}"
@@ -601,7 +741,8 @@ def test_observers_report_route_template_and_concrete_path(make_client) -> None:
     assert retries[0].path == "/bibles/b1/chapters/GEN.1"
 
 
-def test_call_id_is_shared_within_a_call_and_unique_across_calls(make_client) -> None:
+@pytest.mark.anyio
+async def test_call_id_is_shared_within_a_call_and_unique_across_calls(api: Api) -> None:
     requests: list[RequestEvent] = []
     retries: list[RetryEvent] = []
     calls = {"n": 0}
@@ -612,9 +753,9 @@ def test_call_id_is_shared_within_a_call_and_unique_across_calls(make_client) ->
             return httpx.Response(503, json={"message": "down"})
         return _ok([])
 
-    with make_client(handler, on_request=requests.append, on_retry=retries.append) as client:
-        client.bibles.list()  # 503, 503, 200
-        client.bibles.list()  # 200
+    async with api.client(handler, on_request=requests.append, on_retry=retries.append) as client:
+        await client.bibles.list()  # 503, 503, 200
+        await client.bibles.list()  # 200
 
     first, second = requests[:3], requests[3:]
     call_id = first[0].call_id
@@ -626,8 +767,9 @@ def test_call_id_is_shared_within_a_call_and_unique_across_calls(make_client) ->
     assert second[0].call_id not in ("", call_id)
 
 
-def test_on_retry_observer_reports_retry_after(make_client) -> None:
-    events = []
+@pytest.mark.anyio
+async def test_on_retry_observer_reports_retry_after(api: Api) -> None:
+    events: list[RetryEvent] = []
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -636,8 +778,8 @@ def test_on_retry_observer_reports_retry_after(make_client) -> None:
             return httpx.Response(429, headers={"retry-after": "5"}, json={"message": "slow"})
         return _ok([])
 
-    with make_client(handler, on_retry=events.append) as client:
-        client.bibles.list()
+    async with api.client(handler, on_retry=events.append) as client:
+        await client.bibles.list()
 
     assert len(events) == 1
     assert events[0].reason == "HTTP 429"
@@ -645,41 +787,45 @@ def test_on_retry_observer_reports_retry_after(make_client) -> None:
     assert events[0].delay_ms == 5000.0  # honored as the floor (base_delay/jitter are 0)
 
 
-def test_on_retry_observer_reports_transport_failures(make_client) -> None:
-    events = []
+@pytest.mark.anyio
+async def test_on_retry_observer_reports_transport_failures(api: Api) -> None:
+    events: list[RetryEvent] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("connection refused")
 
-    with make_client(handler, on_retry=events.append) as client, pytest.raises(NetworkError):
-        client.bibles.list()
+    async with api.client(handler, on_retry=events.append) as client:
+        with pytest.raises(NetworkError):
+            await client.bibles.list()
 
     # Three attempts all fail -> two retries before the final give-up.
     assert [(e.attempt, e.reason) for e in events] == [(1, "network error"), (2, "network error")]
 
 
-def test_on_retry_observer_silent_on_success_and_non_retryable(make_client) -> None:
-    events = []
+@pytest.mark.anyio
+async def test_on_retry_observer_silent_on_success_and_non_retryable(api: Api) -> None:
+    events: list[RetryEvent] = []
 
     def ok_handler(request: httpx.Request) -> httpx.Response:
         return _ok([])
 
-    with make_client(ok_handler, on_retry=events.append) as client:
-        client.bibles.list()
+    async with api.client(ok_handler, on_retry=events.append) as client:
+        await client.bibles.list()
     assert events == []  # nothing retried on first-try success
 
     def not_found_handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(404, json={"message": "nope"})
 
-    with (
-        make_client(not_found_handler, on_retry=events.append) as client,
-        pytest.raises(NotFoundError),
-    ):
-        client.bibles.get("missing")
+    async with api.client(not_found_handler, on_retry=events.append) as client:
+        with pytest.raises(NotFoundError):
+            await client.bibles.get("missing")
     assert events == []  # 4xx is not retried, so no retry event
 
 
-def test_on_retry_observer_exception_never_breaks_the_call(make_client, caplog) -> None:
+@pytest.mark.anyio
+async def test_on_retry_observer_exception_never_breaks_the_call(
+    api: Api, caplog: pytest.LogCaptureFixture
+) -> None:
     calls = {"n": 0}
 
     def observer(event: object) -> None:
@@ -691,11 +837,9 @@ def test_on_retry_observer_exception_never_breaks_the_call(make_client, caplog) 
             return httpx.Response(503, json={"message": "down"})
         return _ok([{"id": "b1", "name": "Bible One"}])
 
-    with (
-        caplog.at_level(logging.ERROR, logger="api_bible"),
-        make_client(handler, on_retry=observer) as client,
-    ):
-        bibles = client.bibles.list()
+    with caplog.at_level(logging.ERROR, logger="api_bible"):
+        async with api.client(handler, on_retry=observer) as client:
+            bibles = await client.bibles.list()
 
     assert bibles[0].id == "b1"  # the retry still happened and the call succeeded
     assert any("on_retry observer raised" in r.getMessage() for r in caplog.records)
@@ -704,7 +848,8 @@ def test_on_retry_observer_exception_never_breaks_the_call(make_client, caplog) 
 # --- response size cap -----------------------------------------------------
 
 
-def test_oversized_response_is_rejected_and_not_retried(make_client) -> None:
+@pytest.mark.anyio
+async def test_oversized_response_is_rejected_and_not_retried(api: Api) -> None:
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -713,11 +858,9 @@ def test_oversized_response_is_rejected_and_not_retried(make_client) -> None:
 
     events: list[RequestEvent] = []
 
-    with (
-        make_client(handler, max_response_bytes=64, on_request=events.append) as client,
-        pytest.raises(ApiError, match="max_response_bytes"),
-    ):
-        client.bibles.list()
+    async with api.client(handler, max_response_bytes=64, on_request=events.append) as client:
+        with pytest.raises(ApiError, match="max_response_bytes"):
+            await client.bibles.list()
 
     assert calls["n"] == 1  # deterministic failure -> not retried
     # The attempt got a response, so it is still observed.
@@ -725,41 +868,46 @@ def test_oversized_response_is_rejected_and_not_retried(make_client) -> None:
     assert events[0].headers is not None
 
 
-def test_max_response_bytes_none_disables_the_cap(make_client) -> None:
+@pytest.mark.anyio
+async def test_max_response_bytes_none_disables_the_cap(api: Api) -> None:
     big = "x" * 100_000
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"data": [{"id": "b1", "name": big}]})
 
-    with make_client(handler, max_response_bytes=None) as client:
-        bibles = client.bibles.list()
+    async with api.client(handler, max_response_bytes=None) as client:
+        bibles = await client.bibles.list()
 
     assert bibles[0].name == big
 
 
-def test_response_under_cap_is_parsed(make_client) -> None:
+@pytest.mark.anyio
+async def test_response_under_cap_is_parsed(api: Api) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return _ok([{"id": "b1", "name": "Bible One"}])
 
-    with make_client(handler, max_response_bytes=10_000) as client:
-        bibles = client.bibles.list()
+    async with api.client(handler, max_response_bytes=10_000) as client:
+        bibles = await client.bibles.list()
 
     assert bibles[0].id == "b1"
 
 
+@pytest.mark.anyio
 @pytest.mark.parametrize("value", [0, -1])
-def test_invalid_max_response_bytes_rejected(make_client, value: int) -> None:
+async def test_invalid_max_response_bytes_rejected(api: Api, value: int) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return _ok([])
 
     with pytest.raises(InvalidInputError, match="max_response_bytes"):
-        make_client(handler, max_response_bytes=value)
+        async with api.client(handler, max_response_bytes=value):
+            pass
 
 
 # --- per-request headers ---------------------------------------------------
 
 
-def test_per_request_headers_are_sent_alongside_client_headers(make_client) -> None:
+@pytest.mark.anyio
+async def test_per_request_headers_are_sent_alongside_client_headers(api: Api) -> None:
     seen = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -767,28 +915,30 @@ def test_per_request_headers_are_sent_alongside_client_headers(make_client) -> N
         seen["user-agent"] = request.headers.get("user-agent")
         return _ok([])
 
-    with make_client(handler) as client:
-        client.bibles.list(headers={"traceparent": "00-trace-span-01"})
+    async with api.client(handler) as client:
+        await client.bibles.list(headers={"traceparent": "00-trace-span-01"})
 
     assert seen["traceparent"] == "00-trace-span-01"
     # The per-request header merges in without clobbering client-level headers.
     assert seen["user-agent"].startswith("api-bible-sdk-python/")
 
 
-def test_per_request_headers_cannot_override_the_api_key(make_client) -> None:
+@pytest.mark.anyio
+async def test_per_request_headers_cannot_override_the_api_key(api: Api) -> None:
     seen = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen["api-key"] = request.headers.get("api-key")
         return _ok([])
 
-    with make_client(handler) as client:
-        client.bibles.list(headers={"api-key": "evil"})
+    async with api.client(handler) as client:
+        await client.bibles.list(headers={"api-key": "evil"})
 
     assert seen["api-key"] == "test-key"  # the configured key always wins
 
 
-def test_per_request_headers_thread_through_content_endpoints(make_client) -> None:
+@pytest.mark.anyio
+async def test_per_request_headers_thread_through_content_endpoints(api: Api) -> None:
     seen = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -800,8 +950,8 @@ def test_per_request_headers_thread_through_content_endpoints(make_client) -> No
 
     # chapters.get -> get_with_meta -> _content_get, so this covers the shared
     # content-endpoint path, not just the direct transport call.
-    with make_client(handler) as client:
-        client.chapters.get("b1", "GEN.1", headers={"traceparent": "trace-1"})
+    async with api.client(handler) as client:
+        await client.chapters.get("b1", "GEN.1", headers={"traceparent": "trace-1"})
 
     assert seen["traceparent"] == "trace-1"
 
@@ -839,6 +989,7 @@ _ERROR_RESPONSE_HEADERS = {
 }
 
 
+@pytest.mark.anyio
 @pytest.mark.parametrize(
     ("status", "content", "content_type", "client_kwargs"),
     [
@@ -851,15 +1002,16 @@ _ERROR_RESPONSE_HEADERS = {
     ],
     ids=["status", "redirect", "empty", "non-json-type", "bad-json", "oversize"],
 )
-def test_api_error_keeps_safe_response_headers(
-    make_client, status: int, content: bytes, content_type: str, client_kwargs: dict
+async def test_api_error_keeps_safe_response_headers(
+    api: Api, status: int, content: bytes, content_type: str, client_kwargs: dict
 ) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         headers = {**_ERROR_RESPONSE_HEADERS, "Content-Type": content_type}
         return httpx.Response(status, content=content, headers=headers)
 
-    with make_client(handler, **client_kwargs) as client, pytest.raises(ApiError) as info:
-        client.bibles.list()
+    async with api.client(handler, **client_kwargs) as client:
+        with pytest.raises(ApiError) as info:
+            await client.bibles.list()
 
     headers = info.value.headers
     assert headers is not None
@@ -870,12 +1022,14 @@ def test_api_error_keeps_safe_response_headers(
     assert "test-key" not in repr(headers)
 
 
-def test_network_error_has_no_headers(make_client) -> None:
+@pytest.mark.anyio
+async def test_network_error_has_no_headers(api: Api) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("connection refused")
 
-    with make_client(handler) as client, pytest.raises(NetworkError) as info:
-        client.bibles.list()
+    async with api.client(handler) as client:
+        with pytest.raises(NetworkError) as info:
+            await client.bibles.list()
 
     assert info.value.headers is None
 
@@ -883,22 +1037,16 @@ def test_network_error_has_no_headers(make_client) -> None:
 # --- api-key handling via httpx.Auth -----------------------------------------
 
 
-def _caller_client(handler, **kwargs: object) -> BibleClient:
-    http_client = httpx.Client(
-        base_url="https://rest.api.bible/v1", transport=httpx.MockTransport(handler), **kwargs
-    )
-    return BibleClient("test-key", http_client=http_client)
-
-
-def test_api_key_wins_over_caller_client_headers() -> None:
+@pytest.mark.anyio
+async def test_api_key_wins_over_caller_client_headers(api: Api) -> None:
     seen = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen["api-key"] = request.headers.get_list("api-key")
         return _ok([])
 
-    with _caller_client(handler, headers={"api-key": "evil"}) as client:
-        client.bibles.list()
+    async with api.client(handler, http_client_kwargs={"headers": {"api-key": "evil"}}) as client:
+        await client.bibles.list()
 
     assert seen["api-key"] == ["test-key"]
 
@@ -912,7 +1060,8 @@ class _HeaderAuth(httpx.Auth):
         yield request
 
 
-def test_caller_client_auth_still_runs_but_api_key_wins() -> None:
+@pytest.mark.anyio
+async def test_caller_client_auth_still_runs_but_api_key_wins(api: Api) -> None:
     seen = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -920,13 +1069,14 @@ def test_caller_client_auth_still_runs_but_api_key_wins() -> None:
         seen["api-key"] = request.headers.get_list("api-key")
         return _ok([])
 
-    with _caller_client(handler, auth=_HeaderAuth()) as client:
-        client.bibles.list()
+    async with api.client(handler, http_client_kwargs={"auth": _HeaderAuth()}) as client:
+        await client.bibles.list()
 
     assert seen == {"authorization": "Bearer caller-token", "api-key": ["test-key"]}
 
 
-def test_caller_client_multi_step_auth_flow_is_driven_to_completion() -> None:
+@pytest.mark.anyio
+async def test_caller_client_multi_step_auth_flow_is_driven_to_completion(api: Api) -> None:
     # e.g. a challenge/response scheme: the inner flow sees the 401 and retries.
     sent: list[tuple[str | None, str | None]] = []
 
@@ -945,37 +1095,55 @@ def test_caller_client_multi_step_auth_flow_is_driven_to_completion() -> None:
             return httpx.Response(401, json={"message": "challenge"})
         return _ok([])
 
-    with _caller_client(handler, auth=_ChallengeAuth()) as client:
-        client.bibles.list()
+    async with api.client(handler, http_client_kwargs={"auth": _ChallengeAuth()}) as client:
+        await client.bibles.list()
 
     assert sent == [(None, "test-key"), ("answered", "test-key")]
 
 
-def test_api_key_auth_repr_is_redacted() -> None:
-    transport = Transport("test-key")
-    try:
-        assert "test-key" not in repr(transport._auth)
-        assert "redacted" in repr(transport._auth)
-    finally:
-        transport.close()
+@pytest.mark.anyio
+async def test_caller_client_auth_survives_a_failed_send(api: Api) -> None:
+    # httpx closes the auth flow when the send fails; the wrapped flow must be
+    # closed with it and the call still retried and mapped as usual.
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise httpx.ConnectError("refused")
+        assert request.headers["authorization"] == "Bearer caller-token"
+        return _ok([])
+
+    async with api.client(handler, http_client_kwargs={"auth": _HeaderAuth()}) as client:
+        assert await client.bibles.list() == []
+
+    assert calls["n"] == 2
 
 
-def test_api_key_never_sits_in_request_frame_locals(make_client) -> None:
+@pytest.mark.parametrize("transport_cls", [Transport, AsyncTransport])
+def test_api_key_auth_repr_is_redacted(transport_cls: type) -> None:
+    transport = transport_cls("test-key")
+    assert "test-key" not in repr(transport._auth)
+    assert "redacted" in repr(transport._auth)
+
+
+@pytest.mark.anyio
+async def test_api_key_never_sits_in_request_frame_locals(api: Api) -> None:
     # Error trackers (e.g. Sentry) capture frame locals; the key must not be one.
     captured: list[str] = []
 
     def inspect_frames(event: RequestEvent) -> None:
         frame = inspect.currentframe()
         while frame is not None:
-            if frame.f_code is Transport.request.__code__:
+            if frame.f_code is api.transport_cls.request.__code__:
                 captured.extend(repr(v) for v in frame.f_locals.values())
             frame = frame.f_back
 
     def handler(request: httpx.Request) -> httpx.Response:
         return _ok([])
 
-    with make_client(handler, on_request=inspect_frames) as client:
-        client.bibles.list(headers={"traceparent": "t"})
+    async with api.client(handler, on_request=inspect_frames) as client:
+        await client.bibles.list(headers={"traceparent": "t"})
 
     assert captured  # sanity: we found the frame
     assert not any("test-key" in value for value in captured)
@@ -984,22 +1152,24 @@ def test_api_key_never_sits_in_request_frame_locals(make_client) -> None:
 # --- remaining branch coverage ------------------------------------------------
 
 
-def test_per_request_timeout_is_applied(make_client) -> None:
+@pytest.mark.anyio
+async def test_per_request_timeout_is_applied(api: Api) -> None:
     seen = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen["timeout"] = request.extensions["timeout"]
         return _ok([])
 
-    with make_client(handler) as client:
-        client.bibles.list(timeout=2.5)
+    async with api.client(handler) as client:
+        await client.bibles.list(timeout=2.5)
         assert seen["timeout"]["read"] == 2.5
-        client.bibles.list()  # without one, the client default applies
+        await client.bibles.list()  # without one, the client default applies
 
     assert seen["timeout"]["read"] != 2.5
 
 
-def test_retries_without_a_max_elapsed_budget(make_client) -> None:
+@pytest.mark.anyio
+async def test_retries_without_a_max_elapsed_budget(api: Api) -> None:
     calls = {"n": 0}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -1009,12 +1179,13 @@ def test_retries_without_a_max_elapsed_budget(make_client) -> None:
         return _ok([])
 
     retry = RetryConfig(max_attempts=3, base_delay=0.0, max_elapsed=None, jitter=lambda: 0.0)
-    with make_client(handler, retry=retry) as client:
-        assert client.bibles.list() == []
+    async with api.client(handler, retry=retry) as client:
+        assert await client.bibles.list() == []
 
     assert calls["n"] == 3
 
 
+@pytest.mark.anyio
 @pytest.mark.parametrize(
     ("content", "content_type"),
     [
@@ -1026,25 +1197,28 @@ def test_retries_without_a_max_elapsed_budget(make_client) -> None:
     ],
     ids=["html", "error-not-object", "json-array"],
 )
-def test_error_without_extractable_message_falls_back_to_status(
-    make_client, content: bytes, content_type: str
+async def test_error_without_extractable_message_falls_back_to_status(
+    api: Api, content: bytes, content_type: str
 ) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(502, content=content, headers={"Content-Type": content_type})
 
-    with make_client(handler) as client, pytest.raises(ServerError) as info:
-        client.bibles.list()
+    async with api.client(handler) as client:
+        with pytest.raises(ServerError) as info:
+            await client.bibles.list()
 
     assert str(info.value) == "HTTP 502"
     assert info.value.body == content.decode()
 
 
-def test_redirect_to_relative_location_does_not_name_a_host(make_client) -> None:
+@pytest.mark.anyio
+async def test_redirect_to_relative_location_does_not_name_a_host(api: Api) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(302, headers={"Location": "/v2/bibles?token=secret"})
 
-    with make_client(handler) as client, pytest.raises(ApiError) as info:
-        client.bibles.list()
+    async with api.client(handler) as client:
+        with pytest.raises(ApiError) as info:
+            await client.bibles.list()
 
     message = str(info.value)
     assert "an undisclosed host" in message

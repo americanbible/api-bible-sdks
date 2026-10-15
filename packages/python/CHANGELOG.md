@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`AsyncBibleClient`**, an asyncio- and trio-compatible client with the same
+  constructor and `from_env` arguments, resources, methods (including the
+  `*_with_meta` variants), models, errors and observers as `BibleClient`.
+  Calls are awaited and the client is closed with `async with` or `aclose()`;
+  `http_client` takes an `httpx.AsyncClient`. Retry, timeout, redirect,
+  size-cap and api-key behaviour is shared code with the sync client, so the two
+  cannot diverge. `last_meta` is per task. See README, "Async".
+- `anyio` (`>=4,<5`) is now a direct dependency. It was already installed
+  through httpx; the async client uses it to sleep between retries.
 - **Python 3.14** is officially supported: it is tested in CI and listed in the
   package classifiers.
 - A documented Python support policy (README, "Supported Python versions"):
