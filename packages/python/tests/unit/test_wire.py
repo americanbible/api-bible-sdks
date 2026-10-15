@@ -2,7 +2,7 @@
 
 Everything else in the unit suite uses ``httpx.MockTransport``, which skips the
 HTTP/1.1 layer (h11) that serializes and validates headers. These tests cover
-what only shows up on the wire.
+what only shows up on the wire, on both clients.
 """
 
 from __future__ import annotations
@@ -10,10 +10,12 @@ from __future__ import annotations
 import http.server
 import threading
 from collections.abc import Iterator
+from typing import Any
 
 import pytest
+from harness import Api, backend_for
 
-from api_bible import BibleClient, NetworkError, RequestEvent, RetryConfig
+from api_bible import NetworkError, RequestEvent, RetryConfig
 
 
 class _Handler(http.server.BaseHTTPRequestHandler):
@@ -41,8 +43,13 @@ def base_url() -> Iterator[str]:
         server.server_close()
 
 
-def _client(api_key: str, base_url: str, events: list[RequestEvent]) -> BibleClient:
-    return BibleClient(
+@pytest.fixture
+def anyio_backend(kind: str) -> str:
+    return backend_for(kind)
+
+
+def _client(api: Api, api_key: str, base_url: str, events: list[RequestEvent]) -> Any:
+    return api.open(
         api_key,
         base_url=base_url,
         allow_insecure_http=True,
@@ -51,21 +58,21 @@ def _client(api_key: str, base_url: str, events: list[RequestEvent]) -> BibleCli
     )
 
 
-def test_api_key_with_trailing_newline_is_sent_stripped(base_url: str) -> None:
+@pytest.mark.anyio
+async def test_api_key_with_trailing_newline_is_sent_stripped(api: Api, base_url: str) -> None:
     events: list[RequestEvent] = []
-    with _client("SECRETKEY123\n", base_url, events) as client:
-        assert client.bibles.list() == []
+    async with _client(api, "SECRETKEY123\n", base_url, events) as client:
+        assert await client.bibles.list() == []
 
     assert [event.status_code for event in events] == [200]
 
 
-def test_illegal_header_value_fails_once_without_echoing_it(base_url: str) -> None:
+@pytest.mark.anyio
+async def test_illegal_header_value_fails_once_without_echoing_it(api: Api, base_url: str) -> None:
     events: list[RequestEvent] = []
-    with (
-        _client("test-key", base_url, events) as client,
-        pytest.raises(NetworkError, match="illegal value") as exc_info,
-    ):
-        client.bibles.list(headers={"x-trace": "SECRETVALUE\n"})
+    async with _client(api, "test-key", base_url, events) as client:
+        with pytest.raises(NetworkError, match="illegal value") as exc_info:
+            await client.bibles.list(headers={"x-trace": "SECRETVALUE\n"})
 
     assert "SECRETVALUE" not in str(exc_info.value)
     assert [event.error for event in events] == ["invalid header"]
