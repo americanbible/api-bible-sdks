@@ -11,6 +11,7 @@ A TypeScript SDK for the [API.Bible](https://api.bible/) REST API — type-safe 
 ## Table of Contents
 
 - [Installation](#installation)
+- [Using with AI coding agents](#using-with-ai-coding-agents)
 - [Authentication](#authentication)
 - [Quickstart](#quickstart)
 - [Key Features](#key-features)
@@ -37,6 +38,19 @@ npm install @americanbible/api-bible-sdk
 > `import` resolves to the ESM build, `require()` to the CommonJS build — so it works in
 > Node 20+ (with or without `"type": "module"`), bundlers (Vite, Webpack 5+, esbuild, Rollup),
 > and test runners including Jest's default CJS transformer and Vitest.
+
+---
+
+## Using with AI coding agents
+
+If an AI coding agent writes your integration, install the official
+[API.Bible Agent Skill](https://github.com/americanbible/api-bible-sdks/tree/main/skills/api-bible).
+It teaches the agent to use this SDK correctly: Bible ID lookup, verse ID formats, FUMS reporting
+and copyright display.
+
+```bash
+npx skills add americanbible/api-bible-sdks --skill api-bible
+```
 
 ---
 
