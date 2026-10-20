@@ -32,6 +32,8 @@ jobs:
       - run: npm run lint
       - run: npm run test:coverage
       - run: npm run build
+      # The Agent Skill's ts/tsx examples typecheck against the dist/ types built above.
+      - run: npm run check:skill
 
   react:
     # Validate the React SDK against both ends of its peer range (react ^18 || ^19)
