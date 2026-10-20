@@ -17,8 +17,7 @@
     "test:coverage": "npm run test:coverage --workspaces --if-present",
     "test:contract:live": "npm run test:contract:live --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "check:skill": "node scripts/check-skill.mjs"
+    "lint": "npm run lint --workspaces --if-present"
   },
   "engines": {
     "node": ">=20.19"
