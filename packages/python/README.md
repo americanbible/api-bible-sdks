@@ -52,6 +52,37 @@ Or pass the key explicitly:
 client = BibleClient(api_key="your-key-here")
 ```
 
+### Async
+
+`AsyncBibleClient` takes the same arguments and has the same resources, methods,
+models and errors as `BibleClient`. You await each call, and you close the client
+with `async with` or `await client.aclose()`. It runs on asyncio and on trio.
+
+```python
+import asyncio
+
+from api_bible import AsyncBibleClient
+
+
+async def main() -> None:
+    async with AsyncBibleClient.from_env() as client:
+        bibles = await client.bibles.list(language="eng")
+        chapter = await client.chapters.get(bibles[0].id, "GEN.1")
+        print(chapter.reference)
+
+
+asyncio.run(main())
+```
+
+Retries, timeouts, the `Retry-After` and `max_elapsed` limits, redirects, the
+response size cap and api-key handling all behave exactly as described below for
+`BibleClient`. The difference is that backoff waits with `anyio.sleep` instead of
+blocking the thread. Pass your own pool as `http_client=httpx.AsyncClient(...)`.
+`on_request` / `on_retry` observers are plain functions called inline on the event
+loop, so keep them fast and non-blocking. `client.last_meta` is per task: a call
+made in another task, including a child task of a task group, doesn't change it.
+To tie metadata to a specific response, use a `*_with_meta` method.
+
 ## Error handling
 
 ```python
@@ -193,8 +224,10 @@ a request handler:
   client = BibleClient(api_key="...", max_response_bytes=50 * 1024 * 1024)
   ```
 
-- An async client is planned for a future release; see the
-  [design note](https://github.com/americanbible/api-bible-sdks/blob/main/packages/python/docs/async-client.md).
+- **Async code:** use `AsyncBibleClient` (see [Async](#async)). Its retries wait
+  with `anyio.sleep`, so a rate-limit storm never blocks the event loop, and
+  `max_elapsed` bounds each call in the same way. Observers run on the loop, so
+  they must not block.
 
 ## Observability
 
@@ -279,8 +312,10 @@ end-to-end latency including backoff. `elapsed_ms` alone is per-attempt latency,
 which understates the true P99 when retries happen. Like `path`, `call_id` is
 unique per call, so put it in logs or traces, not in metric labels.
 
-Both observers must be thread-safe if you share the client across threads. Any
-exception either raises is caught and logged — it can never break a request.
+Both observers must be thread-safe if you share the client across threads. With
+`AsyncBibleClient` they are called inline on the event loop, so they must not
+block either. Any exception either raises is caught and logged — it can never
+break a request.
 
 ## Per-request headers
 

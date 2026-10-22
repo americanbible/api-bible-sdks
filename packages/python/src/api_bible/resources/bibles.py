@@ -4,7 +4,7 @@ from collections.abc import Mapping
 
 from .._serialize import to_query
 from ..models import ApiResponse, Bible
-from ._base import BaseResource
+from ._base import BaseResource, _AsyncBaseResource
 
 
 class BiblesResource(BaseResource):
@@ -48,6 +48,57 @@ class BiblesResource(BaseResource):
     ) -> Bible:
         """Return a single bible by id."""
         resp = self._transport.request(
+            "GET",
+            "/bibles/{bible_id}",
+            model=ApiResponse[Bible],
+            path_params={"bible_id": bible_id},
+            timeout=timeout,
+            extra_headers=headers,
+        )
+        return resp.data
+
+
+class AsyncBiblesResource(_AsyncBaseResource):
+    """Async :class:`BiblesResource`. Endpoints under ``/bibles``."""
+
+    async def list(
+        self,
+        *,
+        language: str | None = None,
+        abbreviation: str | None = None,
+        name: str | None = None,
+        ids: list[str] | None = None,
+        include_full_details: bool | None = None,
+        timeout: float | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> list[Bible]:
+        """Return the bibles matching the given filters."""
+        params = to_query(
+            language=language,
+            abbreviation=abbreviation,
+            name=name,
+            ids=ids,
+            include_full_details=include_full_details,
+        )
+        resp = await self._transport.request(
+            "GET",
+            "/bibles",
+            model=ApiResponse[list[Bible]],
+            params=params or None,
+            timeout=timeout,
+            extra_headers=headers,
+        )
+        return resp.data
+
+    async def get(
+        self,
+        bible_id: str,
+        *,
+        timeout: float | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> Bible:
+        """Return a single bible by id."""
+        resp = await self._transport.request(
             "GET",
             "/bibles/{bible_id}",
             model=ApiResponse[Bible],

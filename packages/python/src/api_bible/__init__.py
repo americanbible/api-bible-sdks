@@ -6,7 +6,7 @@ import logging
 
 from ._http import RequestEvent, RequestObserver, RetryConfig, RetryEvent, RetryObserver
 from ._version import __version__
-from .client import BibleClient
+from .client import AsyncBibleClient, BibleClient
 from .errors import (
     ApiError,
     AuthError,
@@ -52,6 +52,7 @@ logging.getLogger("api_bible").addHandler(logging.NullHandler())
 __all__ = [
     "__version__",
     "BibleClient",
+    "AsyncBibleClient",
     "RetryConfig",
     "RequestEvent",
     "RequestObserver",
