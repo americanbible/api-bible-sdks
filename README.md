@@ -15,6 +15,30 @@ See each package's README for installation and usage.
 The Python SDK is complete and tested but not yet on PyPI — install it from
 source in the meantime. See [its README](./packages/python#install).
 
+## Agent Skill for AI coding agents
+
+[`skills/api-bible`](./skills/api-bible) is an [Agent Skill](https://agentskills.io) that
+teaches AI coding agents (Claude Code, Cursor, Codex, Copilot, Gemini CLI and others) to write
+correct API.Bible integrations. It covers:
+
+- the `api-key` header and the base URL;
+- looking up a `bibleId` before fetching content;
+- the dotted ID formats;
+- these SDKs;
+- FUMS reporting and copyright display.
+
+Install it into your project:
+
+```bash
+npx skills add americanbible/api-bible-sdks --skill api-bible
+```
+
+Or copy the `skills/api-bible` folder into your agent's skills directory, for example
+`.claude/skills/api-bible` for Claude Code.
+
+Found a mistake in it? Open an issue or a PR. CI typechecks every TypeScript example in the
+skill against the SDK (`npm run check:skill`).
+
 ## Repository layout
 
 This is an [npm workspaces](https://docs.npmjs.com/cli/v10/using-npm/workspaces) monorepo. JavaScript/TypeScript packages live under `packages/*` and share a single root lockfile. The Python package lives alongside them with its own `pyproject.toml` — npm ignores it.
@@ -24,6 +48,13 @@ packages/
 ├── typescript/   # @americanbible/api-bible-sdk
 ├── react/        # @americanbible/api-bible-sdk-react
 └── python/       # americanbible-api-bible-sdk (Python)
+skills/
+└── api-bible/    # Agent Skill for AI coding agents
+evals/            # behavior evals for the skill (claude plugin eval); see evals/README.md
+scripts/
+├── check-skill.mjs       # static check of the skill (structure, examples typecheck)
+├── eval-skill.sh         # runs the eval suite
+└── eval-skill-docker.sh  # runs it in evals/Dockerfile, as CI does
 ```
 
 ## Development
@@ -41,6 +72,12 @@ npm run build
 
 # Or target a single package
 npm run -w @americanbible/api-bible-sdk test
+
+# Check the Agent Skill (after npm run build)
+npm run check:skill
+
+# Run the skill's behavior evals (costs model usage; see evals/README.md)
+npm run eval:skill:docker
 ```
 
 ## Contributing
