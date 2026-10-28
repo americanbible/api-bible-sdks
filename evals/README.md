@@ -21,7 +21,8 @@ npm run eval:skill -- --case verse-kjv --runs 1 --ablation none   # iterate on o
 
 You also need a Claude credential: your normal Claude Code login, or `ANTHROPIC_API_KEY`.
 `scripts/eval-skill.sh` holds the shared flags: pinned models, threshold, cost ceiling, and the
-tools and domains granted. CI runs it in `.github/workflows/skill-evals.yml`.
+tools and domains granted. Every run ends by printing a Markdown summary table, also saved as
+`summary.md` in the run's `evals/results/<timestamp>/` directory with the JSON and HTML report.
 
 **Node from nvm, fnm or volta?** The eval sandbox can't read your home directory, so `npm`
 fails inside runs, and most cases need it to install the SDK. Run the suite in the CI-equivalent
@@ -33,6 +34,27 @@ npm run eval:skill:docker -- --tag smoke
 
 The key is `EVAL_API_BIBLE`, not `*_KEY`. The sandbox drops `EVAL_` variables whose names
 contain `KEY`, `TOKEN` or `SECRET`.
+
+## Reporting results
+
+**Every PR that changes `skills/` gets a comment with the eval summary table** and a link to the
+run. Paste the table itself, because artifacts and logs expire. Directory submissions (API-1902)
+include it too. A local run is fine as evidence; so is a CI run:
+
+```bash
+gh workflow run "Skill evals" --ref <branch>   # then approve it in the skill-evals environment
+```
+
+The workflow runs only on demand, and each run waits for a reviewer to approve it in the
+`skill-evals` GitHub environment, which holds the secrets. Its job summary shows the same table
+the script prints.
+
+**Credentials and side effects.** CI uses dedicated keys: an Anthropic key from its own
+workspace with a monthly spend limit (on top of `--max-cost-usd`), and an API.Bible eval app
+with a low quota, so its traffic can be filtered out of usage data. Agents can reach only
+`rest.api.bible`, the npm registry and localhost, so no case can report a FUMS view:
+`fums.api.bible` is blocked, and `web-page-fums` only fetches its page with curl, so the
+tracker script never runs.
 
 ## Cases
 

@@ -1,24 +1,17 @@
 name: Skill evals
 
-# Runs the api-bible Agent Skill eval suite (evals/) with `claude plugin eval`: real
-# agent sessions with and without the skill, graded on what they produce, against the
-# live API. Costs real model usage, so it runs only when the skill or suite changes,
-# weekly to catch SDK, API and model drift, and on demand.
+# Runs the api-bible Agent Skill eval suite (evals/) with `claude plugin eval`: real agent
+# sessions with and without the skill, graded on what they produce, against the live API.
 #
-# Path-filtered, so it must NOT be a required status check: a filtered workflow never
-# reports on PRs outside its paths and would block them (see python.yml).
+# Manual only, and every run waits for approval in the skill-evals environment, which holds
+# the secrets (dedicated, spend-capped Anthropic and API.Bible keys). No pull_request
+# trigger: on a same-repo PR, anyone with write access could edit this file and run it with
+# the keys. Once manual runs are consistent, the plan is to add back a weekly schedule
+# (to catch model and API drift), then label-triggered PR runs, both through the environment.
+#
+# Start a run for a branch with `gh workflow run "Skill evals" --ref <branch>`, approve it,
+# then paste the summary table into the PR (see evals/README.md).
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'skills/**'
-      - 'evals/**'
-      - '.claude-plugin/**'
-      - 'scripts/eval-skill.sh'
-      - 'scripts/eval-skill-docker.sh'
-      - '.github/workflows/skill-evals.yml'
-  schedule:
-    - cron: '0 14 * * 1'
   workflow_dispatch:
     inputs:
       runs:
@@ -37,9 +30,8 @@ concurrency:
 
 jobs:
   eval:
-    # Fork PRs get no secrets; a maintainer runs the suite for them with workflow_dispatch.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    environment: skill-evals
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -50,29 +42,19 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # Not named *_KEY: the eval sandbox strips EVAL_ variables whose names contain KEY, TOKEN or SECRET.
           EVAL_API_BIBLE: ${{ secrets.API_BIBLE_EVAL_KEY }}
-          RUNS: ${{ inputs.runs || '3' }}
+          RUNS: ${{ inputs.runs }}
           CASE: ${{ inputs.case }}
         run: |
-          args=(--runs "$RUNS" -j 4 --json /work/eval-results.json)
+          args=(--runs "$RUNS" -j 4)
           if [ -n "$CASE" ]; then args+=(--case "$CASE"); fi
           bash scripts/eval-skill-docker.sh "${args[@]}"
+      # The same table scripts/eval-skill.sh prints at the end of every run.
       - name: Summary
         if: always()
-        run: |
-          [ -f eval-results.json ] || exit 0
-          {
-            echo '## Skill evals'
-            jq -r '"Suite score: \(.aggregates.overallScore) · cases passed: \(.aggregates.casesPassed)/\(.aggregates.casesTotal) · mean Δ vs no skill: \(.aggregates.meanDelta // "n/a") · cost: $\(.costUsd)"' eval-results.json
-            echo
-            echo '| Case | With skill | Δ |'
-            echo '| --- | --- | --- |'
-            jq -r '.cases[] | "| \(.name) | \(.aggregates.score) | \(.aggregates.delta // "n/a") |"' eval-results.json
-          } >> "$GITHUB_STEP_SUMMARY"
+        run: cat evals/results/*/summary.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: skill-eval-results
-          path: |
-            eval-results.json
-            evals/results/
+          path: evals/results/
           if-no-files-found: ignore
