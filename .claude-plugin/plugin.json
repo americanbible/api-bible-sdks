@@ -1,0 +1,8 @@
+{
+  "name": "api-bible",
+  "description": "Agent Skill for building Scripture integrations with API.Bible: the api-key header, Bible and verse ID formats, the official SDKs, FUMS reporting and copyright display.",
+  "author": { "name": "American Bible Society" },
+  "homepage": "https://github.com/americanbible/api-bible-sdks/tree/main/skills/api-bible",
+  "repository": "https://github.com/americanbible/api-bible-sdks",
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,60 @@
+name: Skill evals
+
+# Runs the api-bible Agent Skill eval suite (evals/) with `claude plugin eval`: real agent
+# sessions with and without the skill, graded on what they produce, against the live API.
+#
+# Manual only, and every run waits for approval in the skill-evals environment, which holds
+# the secrets (dedicated, spend-capped Anthropic and API.Bible keys). No pull_request
+# trigger: on a same-repo PR, anyone with write access could edit this file and run it with
+# the keys. Once manual runs are consistent, the plan is to add back a weekly schedule
+# (to catch model and API drift), then label-triggered PR runs, both through the environment.
+#
+# Start a run for a branch with `gh workflow run "Skill evals" --ref <branch>`, approve it,
+# then paste the summary table into the PR (see evals/README.md).
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: 'Runs per case per arm'
+        default: '3'
+      case:
+        description: 'Case name glob (blank for all)'
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skill-evals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    environment: skill-evals
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Runs inside evals/Dockerfile, the same environment as local runs: Node, Claude Code,
+      # the sandbox prerequisites, and the proxy fix for Node's fetch.
+      - name: Run evals
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Not named *_KEY: the eval sandbox strips EVAL_ variables whose names contain KEY, TOKEN or SECRET.
+          EVAL_API_BIBLE: ${{ secrets.API_BIBLE_EVAL_KEY }}
+          RUNS: ${{ inputs.runs }}
+          CASE: ${{ inputs.case }}
+        run: |
+          args=(--runs "$RUNS" -j 4)
+          if [ -n "$CASE" ]; then args+=(--case "$CASE"); fi
+          bash scripts/eval-skill-docker.sh "${args[@]}"
+      # The same table scripts/eval-skill.sh prints at the end of every run.
+      - name: Summary
+        if: always()
+        run: cat evals/results/*/summary.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: skill-eval-results
+          path: evals/results/
+          if-no-files-found: ignore
