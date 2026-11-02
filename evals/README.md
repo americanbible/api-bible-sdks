@@ -49,12 +49,15 @@ The workflow runs only on demand, and each run waits for a reviewer to approve i
 `skill-evals` GitHub environment, which holds the secrets. Its job summary shows the same table
 the script prints.
 
-**Credentials and side effects.** CI uses dedicated keys: an Anthropic key from its own
-workspace with a monthly spend limit (on top of `--max-cost-usd`), and an API.Bible eval app
-with a low quota, so its traffic can be filtered out of usage data. Agents can reach only
-`rest.api.bible`, the npm registry and localhost, so no case can report a FUMS view:
-`fums.api.bible` is blocked, and `web-page-fums` only fetches its page with curl, so the
-tracker script never runs.
+**Credentials and side effects.** CI authenticates to Anthropic through Workload Identity
+Federation, like our other Claude workflows, billed to the workspace in `ANTHROPIC_WORKSPACE_ID`
+(a dedicated workspace with a monthly spend limit, on top of `--max-cost-usd`). Claude Code
+exchanges the job's GitHub OIDC token itself. The workflow refreshes that token every 4 minutes
+and turns on the shared credential cache, so the many parallel eval processes reuse one
+Anthropic token. API.Bible calls use a dedicated eval app with a low quota, so its traffic can be
+filtered out of usage data. Agents can reach only `rest.api.bible`, the npm registry and
+localhost, so no case can report a FUMS view: `fums.api.bible` is blocked, and `web-page-fums`
+only fetches its page with curl, so the tracker script never runs.
 
 ## Cases
 

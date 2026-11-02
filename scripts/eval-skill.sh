@@ -2,8 +2,9 @@
 # Runs the api-bible Agent Skill eval suite (evals/) with `claude plugin eval`.
 # Each case runs with and without the skill and is graded on what the agent produced.
 #
-# Requires a Claude credential (ANTHROPIC_API_KEY in CI) and an API.Bible key in
-# EVAL_API_BIBLE. Extra arguments pass through, e.g. `--case verse-kjv --runs 1`.
+# Requires a Claude credential (ANTHROPIC_API_KEY locally, Workload Identity Federation in CI)
+# and an API.Bible key in EVAL_API_BIBLE. Extra arguments pass through, e.g.
+# `--case verse-kjv --runs 1`.
 #
 # Ends by printing a Markdown summary table (evals/summary.mjs), also saved as summary.md
 # next to the run's aggregate-result.json and report.html. Paste it into the PR.
