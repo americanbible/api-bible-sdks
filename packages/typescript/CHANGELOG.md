@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- README: a "Using with AI coding agents" section that links the official API.Bible Agent Skill
+  (`skills/api-bible` in this repository). No code changes.
+
 ## [2.0.1] - 2026-09-29
 
 ### Fixed
