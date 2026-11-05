@@ -1,0 +1,86 @@
+name: Skill evals
+
+# Runs the api-bible Agent Skill eval suite (evals/) with `claude plugin eval`: real agent
+# sessions with and without the skill, graded on what they produce, against the live API.
+#
+# Manual only, and every run waits for approval in the skill-evals environment, which holds
+# the secrets. No pull_request trigger: on a same-repo PR, anyone with write access could
+# edit this file and run it with the credentials. Once manual runs are consistent, the plan
+# is to add back a weekly schedule (to catch model and API drift), then label-triggered PR
+# runs, both through the environment.
+#
+# Anthropic access is Workload Identity Federation, as in our other Claude workflows: Claude
+# Code exchanges the job's GitHub OIDC token itself, billed to ANTHROPIC_WORKSPACE_ID. Two
+# details matter because the eval starts a fresh `claude` process for every run:
+# - A GitHub OIDC token can be exchanged only once (jti) and expires in minutes, so a
+#   background loop writes a fresh one to the identity-token file every 4 minutes.
+# - The `default` profile turns on the shared credential cache in ANTHROPIC_CONFIG_DIR, so
+#   the parallel processes reuse one exchanged Anthropic token instead of each exchanging.
+#
+# Start a run for a branch with `gh workflow run "Skill evals" --ref <branch>`, approve it,
+# then paste the summary table into the PR (see evals/README.md).
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: 'Runs per case per arm'
+        default: '3'
+      case:
+        description: 'Case name glob (blank for all)'
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: skill-evals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    environment: skill-evals
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Runs inside evals/Dockerfile, the same environment as local runs: Node, Claude Code,
+      # the sandbox prerequisites, and the proxy fix for Node's fetch.
+      - name: Run evals
+        env:
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.ANTHROPIC_FEDERATION_RULE_ID }}
+          ANTHROPIC_ORGANIZATION_ID: ${{ secrets.ANTHROPIC_ORGANIZATION_ID }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ secrets.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
+          # Not named *_KEY: the eval sandbox strips EVAL_ variables whose names contain KEY, TOKEN or SECRET.
+          EVAL_API_BIBLE: ${{ secrets.API_BIBLE_EVAL_KEY }}
+          RUNS: ${{ inputs.runs }}
+          CASE: ${{ inputs.case }}
+        run: |
+          dir="$RUNNER_TEMP/anthropic"; mkdir -p "$dir/configs"; chmod 700 "$dir"
+          export ANTHROPIC_CONFIG_DIR="$dir" ANTHROPIC_IDENTITY_TOKEN_FILE="$dir/identity-token"
+          fetch() {
+            curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+              "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https%3A%2F%2Fapi.anthropic.com" \
+              | jq -r .value > "$dir/identity-token.tmp" && mv "$dir/identity-token.tmp" "$dir/identity-token"
+          }
+          fetch
+          (while sleep 240; do fetch; done) &
+          # Turns on the shared credential cache, so parallel claude processes reuse one exchanged token.
+          echo '{"version":"1.0","authentication":{"type":"oidc_federation"}}' > "$dir/configs/default.json"
+
+          args=(--runs "$RUNS" -j 4)
+          if [ -n "$CASE" ]; then args+=(--case "$CASE"); fi
+          bash scripts/eval-skill-docker.sh "${args[@]}"
+      # The same table scripts/eval-skill.sh prints at the end of every run.
+      - name: Summary
+        if: always()
+        run: cat evals/results/*/summary.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: skill-eval-results
+          path: evals/results/
+          if-no-files-found: ignore

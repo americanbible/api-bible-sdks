@@ -32,6 +32,10 @@ jobs:
       - run: npm run lint
       - run: npm run test:coverage
       - run: npm run build
+      # The Agent Skill's ts/tsx examples typecheck against the dist/ types built above.
+      - run: npm run check:skill
+        # Node-independent (tsc against the same dist types), so one matrix leg is enough.
+        if: matrix.node == 20
 
   react:
     # Validate the React SDK against both ends of its peer range (react ^18 || ^19)
