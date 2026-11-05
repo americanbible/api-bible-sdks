@@ -6,11 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 > **Release history.** Versions 1.0.0 through 1.4.0 were developed and dated in
-> this repository but never published to PyPI or tagged. The first release on
-> PyPI is the first version with a `py-v*` tag; entries before it describe changes
-> no installed user ever saw.
+> this repository but never published to PyPI or tagged. 1.5.0 is the first
+> release on PyPI; entries before it describe changes no installed user ever saw.
 
 ## [Unreleased]
+
+## [1.5.0] - 2026-11-05
 
 ### Added
 
@@ -204,4 +205,5 @@ Initial public release.
 - Typed Pydantic v2 response models and a granular exception hierarchy.
 - FUMS response metadata via `last_meta` and `*_with_meta` methods.
 
-[Unreleased]: https://github.com/americanbible/api-bible-sdks/commits/main/packages/python
+[Unreleased]: https://github.com/americanbible/api-bible-sdks/compare/py-v1.5.0...main
+[1.5.0]: https://github.com/americanbible/api-bible-sdks/releases/tag/py-v1.5.0
