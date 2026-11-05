@@ -1,8 +1,7 @@
 # Design note: async client
 
-Status: **proposed, not implemented.** The README says an async client is
-planned. This note records the intended approach so the work can be picked up
-without re-deriving it.
+Status: **implemented** (`AsyncBibleClient`, unreleased; targeted at 1.5.0).
+This note records the design and the reasoning behind it.
 
 ## Goal
 
@@ -60,10 +59,14 @@ the same diff.
 ### 2. `AsyncTransport` and `last_meta`
 
 `AsyncTransport` lives next to `Transport` in `_http.py`. `last_meta` can't use
-`threading.local` in async code, because many tasks share one thread. It moves
-to a `contextvars.ContextVar`, which is correct per task and also works for the
-sync client. The `*_with_meta` methods remain the recommended way to get FUMS
-metadata.
+`threading.local` in async code, because many tasks share one thread. The async
+transport instead uses a single module-level `contextvars.ContextVar`, which is
+per task. It holds an immutable mapping from a per-transport key (taken from a
+counter, never `id()`) to that transport's latest `Meta`. Every update replaces
+the mapping copy-on-write, and clearing an entry drops its key. There is never
+one ContextVar per instance or per call, and never a shared mutable dict. The
+sync `Transport` keeps `threading.local`. The `*_with_meta` methods remain the
+recommended way to get FUMS metadata.
 
 ### 3. Resources
 
@@ -89,8 +92,10 @@ asked for. That change would be additive.
 ## Testing
 
 - `httpx.MockTransport` accepts async handlers, and the `anyio` pytest plugin
-  ships with `anyio`, which is already a dependency through httpx. So no new
-  test dependency is needed. Run the async tests on both asyncio and trio.
+  ships with `anyio`. `anyio` became a direct runtime dependency, since
+  `AsyncTransport` calls `anyio.sleep`. Running the async tests on trio needs
+  `trio` itself, which was added to the `dev` dependency group (and to the CI
+  `deps` job's install line). The async tests run on both asyncio and trio.
 - Parametrize the existing transport tests over both clients where the
   behaviour is shared (retries, Retry-After, budget, redirects, size cap, header
   precedence, logging fields).

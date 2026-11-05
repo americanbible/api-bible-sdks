@@ -28,6 +28,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
+    "anyio>=4,<5",
     "httpx>=0.27,<1",
     "pydantic>=2,<3",
 ]
@@ -40,6 +41,8 @@ dev = [
     "pytest-cov",
     "ruff",
     "mypy",
+    # Second backend for the async tests (the anyio pytest plugin ships with anyio).
+    "trio",
 ]
 # Release tooling (python-release.yml, plus pip-audit in python.yml). Locked here
 # rather than pinned inline in the workflows so Dependabot keeps it current.

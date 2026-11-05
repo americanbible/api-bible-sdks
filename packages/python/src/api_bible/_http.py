@@ -4,23 +4,30 @@ The retry math (:func:`backoff_delay`, :func:`parse_retry_after`,
 :func:`next_retry_delay`) and every retry decision (``_classify_error``,
 ``_classify_response``, ``_next_step``) are pure functions, so they can be
 unit-tested in isolation and shared by every transport. Observer events and log
-records come from ``_TransportBase``. Only :class:`Transport` touches the network.
+records come from ``_TransportBase``. Only :class:`Transport` (sync) and
+:class:`AsyncTransport` touch the network, and they differ only in how they send,
+read, sleep and close.
 """
 
 from __future__ import annotations
 
+import contextlib
+import itertools
 import json
 import logging
 import random
 import threading
 import time
 import uuid
-from collections.abc import Callable, Generator, Mapping
+from collections.abc import AsyncGenerator, Callable, Generator, Mapping
+from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from types import MappingProxyType
 from typing import Any, Literal, TypeVar, cast
 
+import anyio
 import httpx
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
@@ -44,6 +51,7 @@ from .models import Meta
 
 __all__ = [
     "Transport",
+    "AsyncTransport",
     "RetryConfig",
     "RequestEvent",
     "RequestObserver",
@@ -114,6 +122,7 @@ class RequestEvent:
 # Observer invoked once per HTTP attempt. May be called concurrently when a
 # single client is shared across threads, so an implementation must be
 # thread-safe. Exceptions it raises are caught and logged, never propagated.
+# The async client calls it inline on the event loop, so it must not block.
 RequestObserver = Callable[["RequestEvent"], None]
 
 
@@ -146,8 +155,8 @@ class RetryEvent:
     call_id: str = ""  # same for every event of one call; always set by the SDK
 
 
-# Observer invoked once per retry, just before the backoff sleep. Same threading
-# and exception-safety contract as :data:`RequestObserver`.
+# Observer invoked once per retry, just before the backoff sleep. Same threading,
+# exception-safety and must-not-block contract as :data:`RequestObserver`.
 RetryObserver = Callable[["RetryEvent"], None]
 
 
@@ -312,6 +321,28 @@ class _ApiKeyAuth(httpx.Auth):
                 outgoing = flow.send(response)
         except StopIteration:
             return
+
+    async def async_auth_flow(
+        self, request: httpx.Request
+    ) -> AsyncGenerator[httpx.Request, httpx.Response]:
+        if self._inner is None:
+            request.headers["api-key"] = self._api_key
+            yield request
+            return
+        flow = self._inner.async_auth_flow(request)
+        try:
+            outgoing = await flow.__anext__()
+            while True:
+                outgoing.headers["api-key"] = self._api_key
+                response = yield outgoing
+                outgoing = await flow.asend(response)
+        except StopAsyncIteration:
+            return
+        finally:
+            # Unlike a sync generator, an abandoned async one is not closed
+            # promptly (trio warns about it). httpx closes this flow when a send
+            # fails, so pass that on to the inner flow.
+            await flow.aclose()
 
 
 @dataclass(frozen=True)
@@ -945,6 +976,176 @@ class Transport(_TransportBase):
 
     def close(self) -> None:
         self._client.close()
+
+
+# `last_meta` for async clients. Many tasks share one thread, so threading.local
+# would leak one task's metadata into another. A ContextVar is per task instead:
+# each asyncio/trio task runs in its own copy of the context. There is exactly one
+# ContextVar for all clients; it holds an immutable mapping from a per-transport
+# key to that transport's latest meta, replaced (never mutated) on every update,
+# so a context copied into another task can never observe a later change.
+_ASYNC_META: ContextVar[Mapping[int, Meta]] = ContextVar(
+    "api_bible_async_meta", default=MappingProxyType({})
+)
+# Keys come from a counter rather than id(): ids are reused after garbage
+# collection, and an int keeps no reference to the transport.
+_async_meta_keys = itertools.count()
+
+
+def _set_async_meta(key: int, meta: Meta | None) -> None:
+    current = _ASYNC_META.get()
+    if meta is None:
+        if key not in current:
+            return
+        # Drop the entry rather than store None, so the mapping doesn't grow with
+        # every client a long-lived context has ever used.
+        updated = {k: v for k, v in current.items() if k != key}
+    else:
+        updated = {**current, key: meta}
+    _ASYNC_META.set(MappingProxyType(updated))
+
+
+class AsyncTransport(_TransportBase):
+    """Async counterpart of :class:`Transport`, on :class:`httpx.AsyncClient`.
+
+    Shares every retry decision, observer event and log record with the sync
+    transport; only sending, reading, sleeping (``anyio.sleep``, so asyncio and
+    trio both work) and closing differ. Observers are called inline on the
+    event loop and must not block.
+    """
+
+    def __init__(
+        self,
+        api_key: str,
+        *,
+        base_url: str = DEFAULT_BASE_URL,
+        timeout: float | httpx.Timeout = DEFAULT_TIMEOUT,
+        retry: RetryConfig | None = None,
+        headers: dict[str, str] | None = None,
+        client: httpx.AsyncClient | None = None,
+        limits: httpx.Limits | None = None,
+        on_request: RequestObserver | None = None,
+        on_retry: RetryObserver | None = None,
+        max_response_bytes: int | None = DEFAULT_MAX_RESPONSE_BYTES,
+    ) -> None:
+        super().__init__(
+            api_key,
+            retry=retry,
+            headers=headers,
+            on_request=on_request,
+            on_retry=on_retry,
+            max_response_bytes=max_response_bytes,
+        )
+        if client is not None:
+            # A caller-supplied client owns its own timeout and pool limits.
+            self._client = client
+        else:
+            client_kwargs: dict[str, Any] = {"base_url": base_url, "timeout": timeout}
+            if limits is not None:
+                client_kwargs["limits"] = limits
+            self._client = httpx.AsyncClient(**client_kwargs)
+        # Wraps any auth the caller's own client carries, so it keeps working.
+        self._auth = _ApiKeyAuth(api_key, inner=self._client.auth)
+        self._meta_key = next(_async_meta_keys)
+
+    @property
+    def last_meta(self) -> Meta | None:
+        """FUMS metadata for the calling task's most recent completed call.
+
+        Reset to ``None`` at the start of every call, so a failed call never
+        leaves a previous call's metadata visible. ``None`` if that call failed
+        or its response carried no metadata. A call made in a child task (e.g.
+        a task group) updates that task's context only, not its parent's.
+        """
+        return _ASYNC_META.get().get(self._meta_key)
+
+    async def request(
+        self,
+        method: str,
+        route: str,
+        *,
+        model: type[ModelT],
+        path_params: Mapping[str, str] | None = None,
+        params: dict[str, str] | None = None,
+        timeout: float | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+    ) -> ModelT:
+        # Mirrors Transport.request line for line; see the comments there.
+        _set_async_meta(self._meta_key, None)
+        path = expand_route(route, **(path_params or {}))
+        call = _Call(method, path, route, uuid.uuid4().hex)
+
+        headers = {**self._extra_headers, **(extra_headers or {})}
+        extra: dict[str, Any] = {}
+        if timeout is not None:
+            extra["timeout"] = timeout
+
+        deadline = self._deadline()
+        for attempt in range(self._retry.max_attempts):
+            self._log_attempt(call, attempt)
+            start = time.monotonic()
+            try:
+                request = self._client.build_request(
+                    method, path, params=params, headers=headers, **extra
+                )
+                response = await self._client.send(
+                    request, auth=self._auth, stream=True, follow_redirects=False
+                )
+                try:
+                    body = await self._read_body(response)
+                finally:
+                    await response.aclose()
+            except httpx.HTTPError as exc:
+                elapsed_ms = (time.monotonic() - start) * 1000.0
+                label, failed = _classify_error(exc, self._redact)
+                self._emit(call, None, elapsed_ms, attempt, label)
+                if isinstance(failed, _Raise):
+                    raise failed.error from failed.cause
+                failure = failed
+            else:
+                elapsed_ms = (time.monotonic() - start) * 1000.0
+                self._observe_response(call, attempt, response, body, elapsed_ms)
+                verdict = _classify_response(
+                    response,
+                    body,
+                    max_response_bytes=self._max_response_bytes,
+                    error_headers=self._error_headers,
+                )
+                if isinstance(verdict, _Return):
+                    result = self._parse(response, verdict.body, model)
+                    _set_async_meta(self._meta_key, getattr(result, "meta", None))
+                    return result
+                if isinstance(verdict, _Raise):
+                    raise verdict.error
+                failure = verdict
+
+            step = _next_step(
+                attempt, failure, config=self._retry, deadline=deadline, now=time.monotonic
+            )
+            if isinstance(step, _GiveUp):
+                self._log_give_up(call, attempt, step)
+                raise step.failure.error
+            self._announce_retry(call, attempt, step)
+            if step.delay > 0:
+                await anyio.sleep(step.delay)
+
+        raise RuntimeError("retry loop exited without a result")  # pragma: no cover
+
+    async def _read_body(self, response: httpx.Response) -> bytes | None:
+        """Async :meth:`Transport._read_body`: ``None`` once the cap is crossed."""
+        buffer = _CappedBody(self._max_response_bytes)
+        # Stopping at the cap abandons the async generator mid-iteration; close it
+        # now rather than at garbage collection (trio warns about the latter).
+        # httpx annotates it as an AsyncIterator, but it is an async generator.
+        chunks = cast(AsyncGenerator[bytes, None], response.aiter_bytes())
+        async with contextlib.aclosing(chunks):
+            async for chunk in chunks:
+                if not buffer.add(chunk):
+                    return None
+        return buffer.getvalue()
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
 
 
 def _error_for_status(

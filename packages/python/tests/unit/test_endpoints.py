@@ -1,4 +1,4 @@
-"""Exercises every resource method: correct path + a parseable response."""
+"""Exercises every resource method on both clients: correct path + a parseable response."""
 
 from __future__ import annotations
 
@@ -8,8 +8,15 @@ from typing import Any
 
 import httpx
 import pytest
+from harness import Api, backend_for
 
 from api_bible import BibleClient, RequestEvent, ValidationError
+
+
+@pytest.fixture
+def anyio_backend(kind: str) -> str:
+    return backend_for(kind)
+
 
 # (id, call, expected path, response `data` payload)
 CASES: list[tuple[str, Callable[[BibleClient], Any], str, Any]] = [
@@ -111,15 +118,16 @@ CASES: list[tuple[str, Callable[[BibleClient], Any], str, Any]] = [
     [(c[1], c[2], c[3]) for c in CASES],
     ids=[c[0] for c in CASES],
 )
-def test_endpoint(make_client, call: Callable[[BibleClient], Any], path: str, data: Any) -> None:
+@pytest.mark.anyio
+async def test_endpoint(api: Api, call: Callable[[BibleClient], Any], path: str, data: Any) -> None:
     seen: dict[str, str] = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen["path"] = request.url.path
         return httpx.Response(200, json={"data": data})
 
-    with make_client(handler) as client:
-        result = call(client)
+    async with api.client(handler) as client:
+        result = await call(client)
 
     assert seen["path"] == path
     if isinstance(data, list):
@@ -129,7 +137,8 @@ def test_endpoint(make_client, call: Callable[[BibleClient], Any], path: str, da
         assert result.id == data["id"]
 
 
-def test_path_ids_are_percent_encoded(make_client) -> None:
+@pytest.mark.anyio
+async def test_path_ids_are_percent_encoded(api: Api) -> None:
     """An id containing /, ?, # or a space must stay inside its own segment
     instead of corrupting the URL or injecting a query string."""
     seen: dict[str, str] = {}
@@ -138,8 +147,8 @@ def test_path_ids_are_percent_encoded(make_client) -> None:
         seen["raw_path"] = request.url.raw_path.decode()
         return httpx.Response(200, json={"data": {"id": "x", "bibleId": "b"}})
 
-    with make_client(handler) as client:
-        client.books.get("a/b?c d", "GEN")
+    async with api.client(handler) as client:
+        await client.books.get("a/b?c d", "GEN")
 
     assert seen["raw_path"] == "/v1/bibles/a%2Fb%3Fc%20d/books/GEN"
 
@@ -221,8 +230,9 @@ ROUTE_CASES: list[tuple[str, Callable[[BibleClient], Any], str]] = [
     [(c[1], c[2]) for c in ROUTE_CASES],
     ids=[c[0] for c in ROUTE_CASES],
 )
-def test_endpoint_reports_route_template(
-    make_client, call: Callable[[BibleClient], Any], route: str
+@pytest.mark.anyio
+async def test_endpoint_reports_route_template(
+    api: Api, call: Callable[[BibleClient], Any], route: str
 ) -> None:
     events: list[RequestEvent] = []
 
@@ -230,11 +240,9 @@ def test_endpoint_reports_route_template(
         return httpx.Response(200, json={"data": {}})
 
     # Only the reported route matters here; the empty payload may not validate.
-    with (
-        make_client(handler, on_request=events.append) as client,
-        contextlib.suppress(ValidationError),
-    ):
-        call(client)
+    async with api.client(handler, on_request=events.append) as client:
+        with contextlib.suppress(ValidationError):
+            await call(client)
 
     assert len(events) == 1
     assert events[0].route == route
