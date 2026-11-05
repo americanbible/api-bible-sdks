@@ -867,7 +867,7 @@
           "bibleId": "aadc8a2f4bdb467b-01",
           "bookId": "GEN",
           "copyright": "The Holy Bible, Berean Standard Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, and the Berean Bible Translation Committee. This text of God&#39;s Word has been dedicated to the public domain. The Holy Bible, Berean Standard Audio Bible, BSB is produced in cooperation with Bible Hub, Discovery Bible, OpenBible.com, the Berean Bible Translation Committee, and Barry Hays. This audio narration of God&#39;s Word has been dedicated to the public domain.",
-          "expiresAt": "1790840048",
+          "expiresAt": "1793517527",
           "id": "GEN.1",
           "next": {
             "bookId": "GEN",
@@ -3969,7 +3969,7 @@
             "nameLocal": "Berean Standard Bible",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-02-14T02:16:47.000Z"
+            "updatedAt": "2026-10-27T02:20:05.000Z"
           },
           {
             "abbreviation": "engLXXup",
@@ -5033,7 +5033,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-09-29T02:18:14.000Z"
+            "updatedAt": "2026-10-31T02:20:09.000Z"
           },
           {
             "abbreviation": "engWEBU",
@@ -5061,7 +5061,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-09-29T02:19:51.000Z"
+            "updatedAt": "2026-10-31T02:21:36.000Z"
           },
           {
             "abbreviation": "engWEBU",
@@ -5089,7 +5089,7 @@
             "nameLocal": "World English Bible Updated",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-09-29T02:21:17.000Z"
+            "updatedAt": "2026-10-31T02:22:47.000Z"
           },
           {
             "abbreviation": "engWEBUS",
@@ -5155,7 +5155,7 @@
             "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-09-30T02:20:29.000Z"
+            "updatedAt": "2026-10-30T02:19:41.000Z"
           },
           {
             "abbreviation": "engWEBUS",
@@ -5188,7 +5188,7 @@
             "nameLocal": "World English Bible, American English Edition, without Strong's Numbers",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-09-30T02:21:58.000Z"
+            "updatedAt": "2026-10-30T02:21:08.000Z"
           },
           {
             "abbreviation": "WMB",
@@ -5216,7 +5216,7 @@
             "nameLocal": "World Messianic Bible",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-09-29T02:28:32.000Z"
+            "updatedAt": "2026-10-31T02:27:31.000Z"
           },
           {
             "abbreviation": "WMBBE",
@@ -5314,7 +5314,7 @@
             "nameLocal": "World Messianic Bible British Edition",
             "relatedDbl": null,
             "type": "text",
-            "updatedAt": "2026-09-30T02:15:44.000Z"
+            "updatedAt": "2026-10-31T02:15:15.000Z"
           }
         ]
       },
