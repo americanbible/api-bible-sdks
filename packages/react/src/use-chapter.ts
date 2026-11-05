@@ -7,8 +7,9 @@ import type { AsyncResource } from './types.js';
  * Fetch a single chapter, optionally with rendered content (html/text/json).
  *
  * Thin by design: maps 1:1 to `client.chapters.get`, forwards the abort signal,
- * and unwraps the `{ data }` envelope. All lifecycle/state lives in
- * {@link useAsyncResource} — this mirrors the `useBooks` template.
+ * and passes the `{ data, meta }` envelope through so `meta.fumsToken` reaches
+ * the caller. All lifecycle/state lives in {@link useAsyncResource} —
+ * this mirrors the `useBooks` template.
  *
  * @param bibleId    Bible ID. When falsy the hook stays idle (no request).
  * @param chapterId  Chapter ID (e.g. 'GEN.1'). When falsy the hook stays idle.
@@ -22,7 +23,7 @@ export function useChapter(
   params?: ChapterGetParams,
 ): AsyncResource<Chapter> {
   return useAsyncResource<Chapter>(
-    (client, signal) => client.chapters.get(bibleId, chapterId, params, signal).then((res) => res.data),
+    (client, signal) => client.chapters.get(bibleId, chapterId, params, signal),
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [bibleId, chapterId, stableStringify(params ?? {})],

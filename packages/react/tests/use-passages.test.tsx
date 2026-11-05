@@ -101,4 +101,57 @@ describe('usePassages', () => {
     expect(result.current.data).toEqual(mockPassage);
     await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
   });
+
+  describe('meta (FUMS token)', () => {
+    const withToken = (token: string): ApiResponse<Passage> => ({
+      data: mockPassage,
+      meta: { fumsToken: token },
+    });
+
+    it('returns the response meta once the content loads', async () => {
+      const get = vi.fn().mockResolvedValue(withToken('tok-1'));
+      const { result } = renderHook(() => usePassages(BIBLE_ID, PASSAGE_ID), {
+        wrapper: wrapperFor(makeClient(get)),
+      });
+
+      expect(result.current.meta).toBeUndefined();
+      await waitFor(() => expect(result.current.data).toEqual(mockPassage));
+      expect(result.current.meta).toEqual({ fumsToken: 'tok-1' });
+    });
+
+    it('resets meta with data when the inputs change', async () => {
+      const get = vi
+        .fn()
+        .mockResolvedValueOnce(withToken('tok-1'))
+        .mockReturnValue(new Promise(() => {})); // the second passage never arrives
+      const { result, rerender } = renderHook(({ id }) => usePassages(BIBLE_ID, id), {
+        wrapper: wrapperFor(makeClient(get)),
+        initialProps: { id: PASSAGE_ID },
+      });
+      await waitFor(() => expect(result.current.meta?.fumsToken).toBe('tok-1'));
+
+      rerender({ id: 'JHN.3.18' });
+      expect(result.current.data).toBeUndefined();
+      expect(result.current.meta).toBeUndefined();
+    });
+
+    it('refetch keeps the old meta while loading, then takes the new response\'s meta', async () => {
+      let resolveSecond: (v: ApiResponse<Passage>) => void = () => {};
+      const get = vi
+        .fn()
+        .mockResolvedValueOnce(withToken('tok-1'))
+        .mockReturnValueOnce(new Promise((resolve) => (resolveSecond = resolve)));
+      const { result } = renderHook(() => usePassages(BIBLE_ID, PASSAGE_ID), {
+        wrapper: wrapperFor(makeClient(get)),
+      });
+      await waitFor(() => expect(result.current.meta?.fumsToken).toBe('tok-1'));
+
+      act(() => result.current.refetch());
+      expect(result.current.isFetching).toBe(true);
+      expect(result.current.meta?.fumsToken).toBe('tok-1');
+
+      act(() => resolveSecond(withToken('tok-2')));
+      await waitFor(() => expect(result.current.meta?.fumsToken).toBe('tok-2'));
+    });
+  });
 });

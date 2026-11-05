@@ -20,7 +20,7 @@ import type { AsyncResource } from './types.js';
  */
 export function useAudioBibles(params?: AudioBibleListParams): AsyncResource<AudioBibleSummary[]> {
   return useAsyncResource<AudioBibleSummary[]>(
-    (client, signal) => client.audioBibles.list(params, signal).then((res) => res.data),
+    (client, signal) => client.audioBibles.list(params, signal).then((res) => ({ data: res.data })),
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [stableStringify(params ?? {})],

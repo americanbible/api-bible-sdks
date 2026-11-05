@@ -16,7 +16,7 @@ import type { AsyncResource } from './types.js';
  */
 export function useAudioBible(audioBibleId: string): AsyncResource<AudioBible> {
   return useAsyncResource<AudioBible>(
-    (client, signal) => client.audioBibles.get(audioBibleId, signal).then((res) => res.data),
+    (client, signal) => client.audioBibles.get(audioBibleId, signal).then((res) => ({ data: res.data })),
     // A single required id and no params object, so the raw id is a stable dep
     // key on its own — no JSON.stringify needed (unlike params-bearing hooks).
     [audioBibleId],

@@ -7,7 +7,7 @@ npm install @americanbible/api-bible-sdk-react @americanbible/api-bible-sdk reac
 The package provides `ApiBibleProvider` and one hook per endpoint: `useBibles`, `useBible`,
 `useBooks`, `useChapters`, `useChapter`, `useVerses`, `useVerse`, `usePassages`, `useSearch`,
 `useSectionsForBook`, `useSectionsForChapter`, `useSection` and the `useAudio*` hooks. Each hook
-returns `{ data, error, isLoading, status, refetch }`. It works with React 18 and 19.
+returns `{ data, meta, error, isLoading, status, refetch }`. It works with React 18 and 19.
 
 ## Keep the key out of the browser
 
@@ -46,40 +46,30 @@ In Next.js App Router:
 
 ## FUMS with hooks
 
-The hooks return only `data`. **They drop `meta`, so they never hand you `meta.fumsToken`.** For any
-Scripture content you display, which web apps must report to FUMS, get the shared client with
-`useApiBible()`, call the method yourself, and report the token:
+The content hooks (`useVerse`, `useChapter`, `usePassages`, `useSection`, `useSearch`,
+`useAudioChapter`) return the response's `meta` next to `data`. For any Scripture content you
+display, which web apps must report to FUMS, report `meta.fumsToken` from an effect:
 
 ```tsx
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useApiBible, type Passage } from '@americanbible/api-bible-sdk-react';
+import { useEffect } from 'react';
+import { usePassages } from '@americanbible/api-bible-sdk-react';
 
-type Fums = (command: 'trackView', token: string) => void;
+type Fums = (command: 'trackView' | 'trackListen', token: string) => void;
 
 export function PassageView({ bibleId, passageId }: { bibleId: string; passageId: string }) {
-  const client = useApiBible();
-  const [passage, setPassage] = useState<Passage>();
-  const [error, setError] = useState<Error>();
+  const { data: passage, meta, error, isLoading } = usePassages(bibleId, passageId, {
+    contentType: 'text',
+  });
 
   useEffect(() => {
-    const controller = new AbortController();
-    client.passages
-      .get(bibleId, passageId, { contentType: 'text' }, controller.signal)
-      .then(({ data, meta }) => {
-        setPassage(data);
-        const fums = (window as unknown as { fums?: Fums }).fums;
-        if (meta?.fumsToken && fums) fums('trackView', meta.fumsToken);
-      })
-      .catch((err: unknown) => {
-        if (!controller.signal.aborted) setError(err as Error);
-      });
-    return () => controller.abort();
-  }, [client, bibleId, passageId]);
+    const fums = (window as unknown as { fums?: Fums }).fums;
+    if (meta?.fumsToken && fums) fums('trackView', meta.fumsToken);
+  }, [meta?.fumsToken]);
 
   if (error) return <p>Could not load {passageId}.</p>;
-  if (!passage) return <p>Loading…</p>;
+  if (isLoading || !passage) return <p>Loading…</p>;
   return (
     <figure>
       <blockquote style={{ whiteSpace: 'pre-wrap' }}>{String(passage.content ?? '')}</blockquote>
@@ -91,12 +81,18 @@ export function PassageView({ bibleId, passageId }: { bibleId: string; passageId
 }
 ```
 
+`meta` resets with `data` when the inputs change, so a token never belongs to stale content.
+Report `useAudioChapter`'s token with `trackListen` instead of `trackView`. If the hook result
+has no `meta` field, the installed package predates it: upgrade
+`@americanbible/api-bible-sdk-react`.
+
 The page also needs the FUMS tracker script (see `licensing-and-fums.md`). When a Server
 Component fetches the content instead, pass `meta.fumsToken` down as a prop and report it from a
 small client component in a `useEffect`.
 
-The hooks are fine as they are for data that carries no token and needs no reporting: Bible and
-book lists (`useBibles`, `useBooks`, `useChapters`) and translation pickers.
+The list and metadata hooks (`useBibles`, `useBooks`, `useChapters`, the `useSectionsFor*` hooks
+and the other `useAudio*` hooks) carry no token and return `meta: undefined`. They need no
+reporting.
 
 ## Errors
 
