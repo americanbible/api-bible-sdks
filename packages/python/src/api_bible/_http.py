@@ -22,7 +22,7 @@ import uuid
 from collections.abc import AsyncGenerator, Callable, Generator, Mapping
 from contextvars import ContextVar
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from types import MappingProxyType
 from typing import Any, Literal, TypeVar, cast
@@ -235,8 +235,8 @@ def parse_retry_after(value: str | None) -> float | None:
         return None
     # A `-0000` zone ("UTC, source unknown") parses to a naive datetime.
     if when.tzinfo is None:
-        when = when.replace(tzinfo=timezone.utc)
-    return max(0.0, (when - datetime.now(timezone.utc)).total_seconds())
+        when = when.replace(tzinfo=UTC)
+    return max(0.0, (when - datetime.now(UTC)).total_seconds())
 
 
 def next_retry_delay(attempt: int, retry_after: float | None, config: RetryConfig) -> float:

@@ -8,7 +8,7 @@ with three published packages:
 | --- | --- | --- |
 | `@americanbible/api-bible-sdk` | `packages/typescript` | Node 20+, npm |
 | `@americanbible/api-bible-sdk-react` | `packages/react` | Node 20+, npm |
-| `americanbible-api-bible-sdk` (Python) | `packages/python` | Python 3.10+ |
+| `americanbible-api-bible-sdk` (Python) | `packages/python` | Python 3.11+ |
 
 The JavaScript/TypeScript packages share a single root lockfile; the Python
 package stands alone with its own `pyproject.toml`.
@@ -22,7 +22,7 @@ package stands alone with its own `pyproject.toml`.
   prints `EBADENGINE` warnings from tsdown's Babel 8 dependencies (they declare
   `^22.18 || >=24.11`); they're harmless and the build works. Use Node 22.18+ or
   24.11+ for a warning-free install (`nvm install 22` picks up the latest 22.x).
-- **Python 3.10+** and [uv](https://docs.astral.sh/uv/) for the Python package.
+- **Python 3.11+** and [uv](https://docs.astral.sh/uv/) for the Python package.
 
 ## Setup
 

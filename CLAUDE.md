@@ -51,7 +51,7 @@ The `prepublishOnly` hook runs `typecheck && test && build` automatically before
 
 ### Python SDK (`packages/python`)
 
-The Python package is not part of the npm workspace — run its tooling from `packages/python` (Python 3.10+):
+The Python package is not part of the npm workspace — run its tooling from `packages/python` (Python 3.11+):
 
 ```bash
 cd packages/python
