@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README: a "Using with AI coding agents" section that links the official API.Bible Agent Skill
   (`skills/api-bible` in this repository). No code changes.
 
+### Security
+
+- The `zod` dependency is raised from `^3.22.4` to `^4.6.7`. Every zod release
+  before 4.6.6 can exhaust memory while validating oversized constrained
+  collections ([GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)),
+  and the 3.x line has no patched release.
+
 ## [2.0.1] - 2026-09-29
 
 ### Fixed
