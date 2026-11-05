@@ -35,10 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   toolchain is now a PEP 735 dependency group locked in `uv.lock`; contributors
   run `uv sync` (see README, "Development").
 
-### Deprecated
+### Removed
 
-- **Python 3.10** reaches end of life in October 2026. 1.4.x is the last
-  release line that supports it, and 1.5.0 will require Python 3.11+.
+- **Python 3.10** support. It reached end of life in October 2026, so
+  `requires-python` is now `>=3.11`. No 1.x release supporting 3.10 was ever
+  published to PyPI.
 
 ## [1.4.0] - 2026-10-09
 
