@@ -66,6 +66,8 @@ After changing dependencies in `pyproject.toml`, run `uv lock` and commit `uv.lo
 
 This is an npm workspaces monorepo with three active SDKs: `packages/typescript` (`@americanbible/api-bible-sdk`) and `packages/react` (`@americanbible/api-bible-sdk-react`) share the root npm workspace, while `packages/python` (`americanbible-api-bible-sdk`) sits alongside with its own `pyproject.toml` and toolchain (pytest/ruff/mypy) and is not part of the npm workspace. The notes below focus on the TypeScript core; see each package's README for React and Python specifics.
 
+Outside the packages: `skills/api-bible/` is the Agent Skill for AI coding agents. `.claude-plugin/plugin.json` wraps the repo as a plugin so `claude plugin eval` can test it. `evals/` holds the behavior evals (see `evals/README.md`). `scripts/check-skill.mjs` is the static check that runs in CI. After editing the skill, run `npm run check:skill`. The evals cost model usage, so run them (`npm run eval:skill:docker`) only when asked.
+
 ### `packages/typescript` — `@americanbible/api-bible-sdk`
 
 **Dual ESM + CJS** — authored as ESM (`"type": "module"`, NodeNext resolution), built with tsdown to ship both `dist/index.js` (ESM) and `dist/index.cjs` (CJS) with types for each. Requires Node 20+. Runtime dependency: only `zod`.
