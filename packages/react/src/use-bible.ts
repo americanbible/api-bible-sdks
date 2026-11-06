@@ -16,7 +16,7 @@ import type { AsyncResource } from './types.js';
  */
 export function useBible(bibleId: string): AsyncResource<Bible> {
   return useAsyncResource<Bible>(
-    (client, signal) => client.bibles.get(bibleId, signal).then((res) => res.data),
+    (client, signal) => client.bibles.get(bibleId, signal).then((res) => ({ data: res.data })),
     [bibleId],
     { enabled: Boolean(bibleId), resourceKey: 'bibles.get' },
   );

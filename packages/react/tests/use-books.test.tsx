@@ -159,4 +159,14 @@ describe('useBooks', () => {
     expect(result.current.data).toEqual([mockBook]);
     await waitFor(() => expect(list).toHaveBeenCalledTimes(2));
   });
+
+  it('leaves meta undefined even when the response carries one', async () => {
+    const list = vi.fn().mockResolvedValue({ data: [mockBook], meta: { fumsToken: 'tok-1' } });
+    const { result } = renderHook(() => useBooks(BIBLE_ID), {
+      wrapper: wrapperFor(makeClient(list)),
+    });
+
+    await waitFor(() => expect(result.current.data).toEqual([mockBook]));
+    expect(result.current.meta).toBeUndefined();
+  });
 });

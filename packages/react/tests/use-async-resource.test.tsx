@@ -18,7 +18,13 @@ import { useAsyncResource } from '../src/use-async-resource.js';
 
 const client = { books: { list: vi.fn() } } as unknown as BibleClient;
 // The signature every `useAsyncResource` run callback has.
+// Mocks resolve the bare payload; `envelope` wraps it as the `{ data }` response
+// the engine expects. A synchronous throw from `run` still propagates as one.
 type Run<T> = (client: BibleClient, signal: AbortSignal) => Promise<T>;
+const envelope =
+  <T,>(run: Run<T>) =>
+  (c: BibleClient, s: AbortSignal) =>
+    run(c, s).then((data) => ({ data }));
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <ApiBibleProvider client={client}>{children}</ApiBibleProvider>
@@ -32,7 +38,7 @@ describe('useAsyncResource', () => {
       return new Promise<number>(() => {}); // never settles
     });
 
-    const { unmount } = renderHook(() => useAsyncResource(run, ['k']), { wrapper });
+    const { unmount } = renderHook(() => useAsyncResource(envelope(run), ['k']), { wrapper });
     expect(signal?.aborted).toBe(false);
 
     unmount();
@@ -46,7 +52,7 @@ describe('useAsyncResource', () => {
       return new Promise<number>(() => {});
     });
 
-    const { rerender } = renderHook(({ k }) => useAsyncResource(run, [k]), {
+    const { rerender } = renderHook(({ k }) => useAsyncResource(envelope(run), [k]), {
       wrapper,
       initialProps: { k: 'a' },
     });
@@ -63,7 +69,7 @@ describe('useAsyncResource', () => {
       () => new Promise<string>((resolve) => resolvers.push(resolve)),
     );
 
-    const { result, rerender } = renderHook(({ k }) => useAsyncResource(run, [k]), {
+    const { result, rerender } = renderHook(({ k }) => useAsyncResource(envelope(run), [k]), {
       wrapper,
       initialProps: { k: 'a' },
     });
@@ -85,7 +91,7 @@ describe('useAsyncResource', () => {
       throw boom;
     });
 
-    const { result } = renderHook(() => useAsyncResource<number>(run, ['k']), { wrapper });
+    const { result } = renderHook(() => useAsyncResource<number>(envelope(run), ['k']), { wrapper });
 
     await waitFor(() => expect(result.current.error).toBe(boom));
     expect(result.current.isLoading).toBe(false);
@@ -97,7 +103,7 @@ describe('useAsyncResource', () => {
       throw new TypeError('kaboom');
     });
 
-    const { result } = renderHook(() => useAsyncResource<number>(run, ['k']), { wrapper });
+    const { result } = renderHook(() => useAsyncResource<number>(envelope(run), ['k']), { wrapper });
 
     await waitFor(() => expect(result.current.error).toBeInstanceOf(BibleError));
     expect(result.current.error?.message).toContain('kaboom');
@@ -109,7 +115,7 @@ describe('useAsyncResource', () => {
       () => new Promise<string>((resolve) => resolvers.push(resolve)),
     );
 
-    const { result } = renderHook(() => useAsyncResource(run, ['k']), { wrapper });
+    const { result } = renderHook(() => useAsyncResource(envelope(run), ['k']), { wrapper });
 
     // First load — no data yet: both flags true.
     expect(result.current.status).toBe('loading');
@@ -139,7 +145,7 @@ describe('useAsyncResource', () => {
   it('reports idle status and issues no request when disabled', () => {
     const run = vi.fn<Run<number>>(() => Promise.resolve(1));
 
-    const { result } = renderHook(() => useAsyncResource<number>(run, ['k'], { enabled: false }), {
+    const { result } = renderHook(() => useAsyncResource<number>(envelope(run), ['k'], { enabled: false }), {
       wrapper,
     });
 
@@ -156,7 +162,7 @@ describe('useAsyncResource', () => {
     const { rerender } = renderHook(
       ({ k }) => {
         renders++;
-        return useAsyncResource<number>(run, [k], { enabled: false });
+        return useAsyncResource<number>(envelope(run), [k], { enabled: false });
       },
       { wrapper, initialProps: { k: 'a' } },
     );
@@ -174,7 +180,7 @@ describe('useAsyncResource', () => {
       Promise.reject(new NotFoundError('nope', 404, '')),
     );
 
-    const { result } = renderHook(() => useAsyncResource<number>(run, ['k']), { wrapper });
+    const { result } = renderHook(() => useAsyncResource<number>(envelope(run), ['k']), { wrapper });
 
     await waitFor(() => expect(result.current.status).toBe('error'));
     expect(result.current.isLoading).toBe(false);
@@ -187,7 +193,7 @@ describe('useAsyncResource', () => {
       () => new Promise<string>((resolve, reject) => controls.push({ resolve, reject })),
     );
 
-    const { result } = renderHook(() => useAsyncResource(run, ['k']), { wrapper });
+    const { result } = renderHook(() => useAsyncResource(envelope(run), ['k']), { wrapper });
 
     // Initial load succeeds.
     act(() => controls[0].resolve('A'));
@@ -209,6 +215,35 @@ describe('useAsyncResource', () => {
   });
 });
 
+describe('useAsyncResource meta', () => {
+  it('keeps meta with the last-good data through a failed refetch', async () => {
+    const run = vi.fn<Run<{ data: string; meta?: { fumsToken: string } }>>();
+    run
+      .mockResolvedValueOnce({ data: 'A', meta: { fumsToken: 'tok-A' } })
+      .mockRejectedValue(new ServerError('down', 503, ''));
+    const { result } = renderHook(() => useAsyncResource(run, ['k']), { wrapper });
+    await waitFor(() => expect(result.current.meta?.fumsToken).toBe('tok-A'));
+
+    act(() => result.current.refetch());
+    await waitFor(() => expect(result.current.status).toBe('error'));
+    expect(result.current.data).toBe('A');
+    expect(result.current.meta?.fumsToken).toBe('tok-A');
+  });
+
+  it('clears meta when the hook becomes disabled', async () => {
+    const run = vi.fn(() => Promise.resolve({ data: 'A', meta: { fumsToken: 'tok-A' } }));
+    const { result, rerender } = renderHook(
+      ({ enabled }) => useAsyncResource(run, ['k'], { enabled }),
+      { wrapper, initialProps: { enabled: true } },
+    );
+    await waitFor(() => expect(result.current.meta?.fumsToken).toBe('tok-A'));
+
+    rerender({ enabled: false });
+    expect(result.current.status).toBe('idle');
+    expect(result.current.meta).toBeUndefined();
+  });
+});
+
 describe('useAsyncResource input changes', () => {
   function controlledRun() {
     const controls: Array<{ resolve: (v: string) => void; reject: (e: unknown) => void }> = [];
@@ -220,7 +255,7 @@ describe('useAsyncResource input changes', () => {
 
   it('drops the previous input\'s data and reports isLoading while the new input loads', async () => {
     const { run, controls } = controlledRun();
-    const { result, rerender } = renderHook(({ id }) => useAsyncResource(run, [id]), {
+    const { result, rerender } = renderHook(({ id }) => useAsyncResource(envelope(run), [id]), {
       wrapper,
       initialProps: { id: 'a' },
     });
@@ -239,7 +274,7 @@ describe('useAsyncResource input changes', () => {
 
   it('never pairs the new input\'s error with the previous input\'s data', async () => {
     const { run, controls } = controlledRun();
-    const { result, rerender } = renderHook(({ id }) => useAsyncResource(run, [id]), {
+    const { result, rerender } = renderHook(({ id }) => useAsyncResource(envelope(run), [id]), {
       wrapper,
       initialProps: { id: 'good' },
     });
@@ -255,7 +290,7 @@ describe('useAsyncResource input changes', () => {
 
   it('resets when refetch() and an input change land in the same render', async () => {
     const { run, controls } = controlledRun();
-    const { result, rerender } = renderHook(({ id }) => useAsyncResource(run, [id]), {
+    const { result, rerender } = renderHook(({ id }) => useAsyncResource(envelope(run), [id]), {
       wrapper,
       initialProps: { id: 'a' },
     });
@@ -274,7 +309,7 @@ describe('useAsyncResource input changes', () => {
   it('keeps data when an option that does not change the request (debounceMs) changes', async () => {
     const { run, controls } = controlledRun();
     const { result, rerender } = renderHook(
-      ({ debounceMs }) => useAsyncResource(run, ['k'], { debounceMs }),
+      ({ debounceMs }) => useAsyncResource(envelope(run), ['k'], { debounceMs }),
       { wrapper, initialProps: { debounceMs: 0 } },
     );
     act(() => controls[0].resolve('A'));
@@ -295,8 +330,8 @@ describe('useAsyncResource de-duplication', () => {
       () => new Promise<string>((resolve) => resolvers.push(resolve)),
     );
 
-    const a = renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper });
-    const b = renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper });
+    const a = renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op' }), { wrapper });
+    const b = renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op' }), { wrapper });
 
     // Two subscribers, one underlying call.
     expect(run).toHaveBeenCalledTimes(1);
@@ -311,8 +346,8 @@ describe('useAsyncResource de-duplication', () => {
 
     // Same deps `['k']`, different operations — as useVerses vs useSectionsForChapter
     // would collide on `[bibleId, chapterId]`. Must stay two separate requests.
-    renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'verses.list' }), { wrapper });
-    renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'sections.listForChapter' }), {
+    renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'verses.list' }), { wrapper });
+    renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'sections.listForChapter' }), {
       wrapper,
     });
 
@@ -327,8 +362,8 @@ describe('useAsyncResource de-duplication', () => {
       return new Promise<string>((resolve) => resolvers.push(resolve));
     });
 
-    const a = renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper });
-    const b = renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper });
+    const a = renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op' }), { wrapper });
+    const b = renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op' }), { wrapper });
     expect(run).toHaveBeenCalledTimes(1);
 
     a.unmount(); // one leaves — the shared fetch must NOT be aborted
@@ -345,8 +380,8 @@ describe('useAsyncResource de-duplication', () => {
       return new Promise<string>(() => {}); // never settles
     });
 
-    const a = renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper });
-    const b = renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper });
+    const a = renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op' }), { wrapper });
+    const b = renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op' }), { wrapper });
     expect(run).toHaveBeenCalledTimes(1);
 
     a.unmount();
@@ -366,9 +401,9 @@ describe('useAsyncResource de-duplication', () => {
       return new Promise<string>(() => {});
     });
 
-    const a = renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper });
+    const a = renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op' }), { wrapper });
     a.unmount(); // last subscriber leaves…
-    renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper }); // …and one is back
+    renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op' }), { wrapper }); // …and one is back
 
     await Promise.resolve();
     expect(run).toHaveBeenCalledTimes(1);
@@ -382,8 +417,8 @@ describe('useAsyncResource de-duplication', () => {
     );
 
     // Two subscribers share ONE in-flight request.
-    const a = renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper });
-    const b = renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper });
+    const a = renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op' }), { wrapper });
+    const b = renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op' }), { wrapper });
     expect(run).toHaveBeenCalledTimes(1);
 
     // While that shared request is still in flight, `a` refetches. It must NOT
@@ -404,13 +439,13 @@ describe('useAsyncResource de-duplication', () => {
       () => new Promise<string>((resolve) => resolvers.push(resolve)),
     );
 
-    const a = renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper });
+    const a = renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op' }), { wrapper });
     act(() => resolvers[0]('one'));
     await waitFor(() => expect(a.result.current.data).toBe('one'));
     a.unmount();
 
     // The entry is evicted on settle, so a later mount fetches again.
-    const b = renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op' }), { wrapper });
+    const b = renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op' }), { wrapper });
     expect(run).toHaveBeenCalledTimes(2);
     act(() => resolvers[1]('two'));
     await waitFor(() => expect(b.result.current.data).toBe('two'));
@@ -426,7 +461,7 @@ describe('useAsyncResource debounce', () => {
       );
 
       const { rerender } = renderHook(
-        ({ k }) => useAsyncResource(run, [k], { resourceKey: 'op', debounceMs: 100 }),
+        ({ k }) => useAsyncResource(envelope(run), [k], { resourceKey: 'op', debounceMs: 100 }),
         { wrapper, initialProps: { k: 'a' } },
       );
 
@@ -450,7 +485,7 @@ describe('useAsyncResource debounce', () => {
     try {
       const run = vi.fn<Run<string>>(() => new Promise<string>(() => {}));
 
-      renderHook(() => useAsyncResource(run, ['k'], { resourceKey: 'op', debounceMs: 100 }), { wrapper });
+      renderHook(() => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op', debounceMs: 100 }), { wrapper });
 
       act(() => vi.advanceTimersByTime(99));
       expect(run).not.toHaveBeenCalled();
@@ -466,7 +501,7 @@ describe('useAsyncResource debounce', () => {
     try {
       const run = vi.fn<Run<string>>(() => Promise.resolve('a-data'));
       const { result, rerender } = renderHook(
-        ({ k }) => useAsyncResource(run, [k], { resourceKey: 'op', debounceMs: 100 }),
+        ({ k }) => useAsyncResource(envelope(run), [k], { resourceKey: 'op', debounceMs: 100 }),
         { wrapper, initialProps: { k: 'a' } },
       );
       await act(async () => vi.advanceTimersByTimeAsync(100));
@@ -487,7 +522,7 @@ describe('useAsyncResource debounce', () => {
       const run = vi.fn<Run<string>>();
       run.mockResolvedValueOnce('a-data').mockRejectedValue(new BibleError('b failed'));
       const { result, rerender } = renderHook(
-        ({ k }) => useAsyncResource(run, [k], { resourceKey: 'op', debounceMs: 100 }),
+        ({ k }) => useAsyncResource(envelope(run), [k], { resourceKey: 'op', debounceMs: 100 }),
         { wrapper, initialProps: { k: 'a' } },
       );
       await act(async () => vi.advanceTimersByTimeAsync(100));
@@ -510,7 +545,7 @@ describe('useAsyncResource debounce', () => {
     try {
       const run = vi.fn<Run<string>>(() => new Promise<string>(() => {}));
       const { result } = renderHook(
-        () => useAsyncResource(run, ['k'], { resourceKey: 'op', debounceMs: 100 }),
+        () => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op', debounceMs: 100 }),
         { wrapper },
       );
       expect(run).not.toHaveBeenCalled();
@@ -526,7 +561,7 @@ describe('useAsyncResource debounce', () => {
       const run = vi.fn<Run<string>>();
       run.mockResolvedValueOnce('one').mockReturnValue(new Promise<string>(() => {}));
       const { result } = renderHook(
-        () => useAsyncResource(run, ['k'], { resourceKey: 'op', debounceMs: 100 }),
+        () => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op', debounceMs: 100 }),
         { wrapper },
       );
       await act(async () => vi.advanceTimersByTimeAsync(100));
@@ -551,7 +586,7 @@ describe('useAsyncResource debounce', () => {
       const run = vi.fn<Run<string>>(() => new Promise<string>(() => {}));
 
       const { unmount } = renderHook(
-        () => useAsyncResource(run, ['k'], { resourceKey: 'op', debounceMs: 100 }),
+        () => useAsyncResource(envelope(run), ['k'], { resourceKey: 'op', debounceMs: 100 }),
         { wrapper },
       );
 
@@ -585,7 +620,7 @@ describe('useAsyncResource typed-error preservation', () => {
     'surfaces a rejected $name unchanged (concrete type + identity)',
     async ({ error, type }) => {
       const run = vi.fn<Run<number>>(() => Promise.reject(error));
-      const { result } = renderHook(() => useAsyncResource<number>(run, ['k']), { wrapper });
+      const { result } = renderHook(() => useAsyncResource<number>(envelope(run), ['k']), { wrapper });
 
       await waitFor(() => expect(result.current.status).toBe('error'));
       expect(result.current.error).toBe(error); // same instance — never re-wrapped
@@ -599,7 +634,7 @@ describe('useAsyncResource typed-error preservation', () => {
     const run = vi.fn<Run<number>>(() => {
       throw error;
     });
-    const { result } = renderHook(() => useAsyncResource<number>(run, ['k']), { wrapper });
+    const { result } = renderHook(() => useAsyncResource<number>(envelope(run), ['k']), { wrapper });
 
     await waitFor(() => expect(result.current.error).toBeInstanceOf(InvalidInputError));
     expect(result.current.error).toBe(error);
