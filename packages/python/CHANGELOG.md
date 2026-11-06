@@ -11,6 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A call on a closed client (after `close()` / `aclose()`, or on a caller-supplied
+  `http_client` its owner closed) now raises `InvalidInputError` instead of
+  httpx's bare `RuntimeError`, so `except BibleError` catches it. No request is
+  sent and no `on_request` event fires. A close during a retry backoff ends the
+  call the same way.
+
+### Documentation
+
+- The README "Error handling" example no longer expects `NotFoundError` for an
+  unknown Bible ID. api.bible answers that with 403, which the SDK raises as
+  `AuthError`. The example now uses a missing verse (404) and explains the 403
+  causes.
+
 ## [1.5.0] - 2026-11-05
 
 ### Added

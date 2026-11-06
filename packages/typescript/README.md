@@ -436,10 +436,11 @@ try {
     // You called the SDK wrong (missing apiKey, malformed params) — no request was sent
     console.error("Invalid input:", err.message);
   } else if (err instanceof AuthError) {
-    // 401 or 403 — check your API key
+    // 401 or 403 — a bad API key, a used-up quota, or a Bible ID that is unknown
+    // or not licensed to your key (as here). Read err.message to tell them apart.
     console.error("Authentication failed:", err.message);
   } else if (err instanceof NotFoundError) {
-    // 404 — Bible or verse ID does not exist
+    // 404 — book, chapter, verse or passage ID does not exist
     console.error("Not found:", err.message);
   } else if (err instanceof BadRequestError) {
     // 400 — malformed request
