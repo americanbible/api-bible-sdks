@@ -197,6 +197,66 @@ async def test_async_with_and_aclose_close_the_pool() -> None:
     assert http_client.is_closed
 
 
+def _counting(calls: list[httpx.Request]) -> httpx.AsyncClient:
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return _empty(request)
+
+    return _http(handler)
+
+
+@pytest.mark.anyio
+async def test_call_after_aclose_raises_invalid_input_without_sending() -> None:
+    calls: list[httpx.Request] = []
+    events: list[object] = []
+    client = AsyncBibleClient("k", http_client=_counting(calls), on_request=events.append)
+    await client.aclose()
+
+    with pytest.raises(InvalidInputError, match="client is closed"):
+        await client.bibles.list()
+    assert calls == []
+    assert events == []
+
+
+@pytest.mark.anyio
+async def test_call_on_externally_closed_http_client_raises_invalid_input() -> None:
+    calls: list[httpx.Request] = []
+    http_client = _counting(calls)
+    client = AsyncBibleClient("k", http_client=http_client)
+    await http_client.aclose()
+
+    with pytest.raises(InvalidInputError, match="client is closed"):
+        await client.bibles.list()
+    assert calls == []
+
+
+@pytest.mark.anyio
+async def test_aclose_during_backoff_stops_the_retry_loop(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(503, json={"message": "down"})
+
+    client = AsyncBibleClient(
+        "k",
+        http_client=_http(handler),
+        retry=RetryConfig(max_attempts=3, base_delay=0.05, jitter=lambda: 1.0),
+    )
+
+    # Another task closes the client while this call sleeps between attempts.
+    async def sleep_then_close(_seconds: float) -> None:
+        await client.aclose()
+
+    monkeypatch.setattr("api_bible._http.anyio.sleep", sleep_then_close)
+
+    with pytest.raises(InvalidInputError, match="client is closed"):
+        await client.bibles.list()
+    assert len(calls) == 1
+
+
 @pytest.mark.anyio
 async def test_sets_user_agent_identifying_the_sdk() -> None:
     seen: dict[str, str | None] = {}

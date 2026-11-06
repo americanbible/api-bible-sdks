@@ -506,6 +506,16 @@ def _next_step(
     return _Retry(failure, delay)
 
 
+def _closed_error() -> InvalidInputError:
+    """The error for a call on a closed client.
+
+    httpx would raise a bare ``RuntimeError``, which ``except BibleError`` misses.
+    Checked before every attempt, so it also covers a close during a backoff
+    sleep and a caller-supplied ``http_client`` closed by its owner.
+    """
+    return InvalidInputError("client is closed; create a new client to make more requests")
+
+
 class _CappedBody:
     """Accumulates a streamed body, refusing to grow past ``cap`` bytes."""
 
@@ -902,6 +912,8 @@ class Transport(_TransportBase):
 
         deadline = self._deadline()
         for attempt in range(self._retry.max_attempts):
+            if self._client.is_closed:
+                raise _closed_error()
             self._log_attempt(call, attempt)
             start = time.monotonic()
             try:
@@ -1082,6 +1094,8 @@ class AsyncTransport(_TransportBase):
 
         deadline = self._deadline()
         for attempt in range(self._retry.max_attempts):
+            if self._client.is_closed:
+                raise _closed_error()
             self._log_attempt(call, attempt)
             start = time.monotonic()
             try:

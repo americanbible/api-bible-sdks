@@ -86,20 +86,25 @@ To tie metadata to a specific response, use a `*_with_meta` method.
 ## Error handling
 
 ```python
-from api_bible import ApiError, BibleClient, NotFoundError
+from api_bible import ApiError, AuthError, BibleClient, NotFoundError
 
 with BibleClient.from_env() as client:
     try:
-        client.bibles.get("does-not-exist")
+        client.verses.get("bba9f40183526463-01", "GEN.99.99")
     except NotFoundError:
-        print("no such bible")
+        print("no such verse")  # unknown book, chapter, verse or passage id
+    except AuthError as exc:
+        # 401/403: a bad key, a used-up quota, or a bible id that is unknown or
+        # not licensed to your key. They share a status code, so read the message.
+        print(exc)
     except ApiError as exc:  # catches every HTTP failure
         print(exc.status_code, exc)
 ```
 
 Hierarchy: `BibleError` → `ApiError` → {`AuthError`, `BadRequestError`,
 `NotFoundError`, `ConflictError`, `UnprocessableEntityError`, `RateLimitError`,
-`ServerError`, `NetworkError`}, plus `InvalidInputError` (bad caller input) and
+`ServerError`, `NetworkError`}, plus `InvalidInputError` (bad caller input, or a
+call on a closed client) and
 `ValidationError` (response did not match the schema). `RateLimitError` (429) and `ServerError` (5xx) are retried
 automatically. A `2xx` response that is empty or carries a non-JSON
 `Content-Type` (e.g. a proxy's HTML error page) is treated as a failure and
