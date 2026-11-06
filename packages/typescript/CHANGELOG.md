@@ -7,10 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-11-06
+
+A security release: the `zod` dependency moves to 4.x (see **Security**). The
+response types (`Bible`, `Verse`, `ApiResponse<T>`, …) and every client method
+signature are unchanged. The one visible difference is in `ValidationError`
+(see **Changed**).
+
 ### Added
 
 - README: a "Using with AI coding agents" section that links the official API.Bible Agent Skill
   (`skills/api-bible` in this repository). No code changes.
+
+### Changed
+
+- `ValidationError.issues` now holds zod 4 issues. `path` and `message` are
+  still there, so `format()` works as before, but the message wording is
+  zod 4's. Some issue codes are renamed (for example `invalid_string` is now
+  `invalid_format` and `invalid_enum_value` is now `invalid_value`),
+  `invalid_type` issues no longer carry `received`, and `path` is typed
+  `PropertyKey[]`. Code that only logs `format()` or reads `path` / `message`
+  needs no change.
+- zod 4 supports TypeScript 5.5 and later. On older compilers, enable
+  `skipLibCheck` if errors are reported inside zod's own declarations.
 
 ### Security
 
@@ -156,7 +175,8 @@ Initial public release.
 - `onResponse` / `onRetry` observability hooks.
 - Dual ESM + CJS builds with type declarations for each; requires Node 20+.
 
-[Unreleased]: https://github.com/americanbible/api-bible-sdks/compare/ts-v2.0.1...HEAD
+[Unreleased]: https://github.com/americanbible/api-bible-sdks/compare/ts-v2.0.2...HEAD
+[2.0.2]: https://github.com/americanbible/api-bible-sdks/compare/ts-v2.0.1...ts-v2.0.2
 [2.0.1]: https://github.com/americanbible/api-bible-sdks/compare/ts-v2.0.0...ts-v2.0.1
 [2.0.0]: https://github.com/americanbible/api-bible-sdks/releases/tag/ts-v2.0.0
 [1.1.0]: https://github.com/americanbible/api-bible-sdks/compare/ts-v1.0.0...ts-v1.1.0
