@@ -25,11 +25,19 @@ fi
 cd "$(dirname "$0")/.."
 docker build -q -t api-bible-skill-evals evals >/dev/null
 
+# With SKILL_EVAL_TEMP_DIR set, the container's /tmp (where --keep-temp leaves each run's
+# sandbox) is that host directory, so the sandboxes outlive the container.
+temp=()
+if [ -n "${SKILL_EVAL_TEMP_DIR:-}" ]; then
+  mkdir -p "$SKILL_EVAL_TEMP_DIR"
+  temp=(-v "$(cd "$SKILL_EVAL_TEMP_DIR" && pwd):/tmp")
+fi
+
 # --privileged lets Claude Code's bubblewrap sandbox create namespaces inside the container.
 # Running as the host user lets it write evals/results/ into the mounted checkout, which on CI
 # runners belongs to a different uid than the image's node user.
 exec docker run --rm --privileged \
   --user "$(id -u):$(id -g)" -e HOME=/tmp \
-  "${credential[@]}" -e EVAL_API_BIBLE \
+  "${credential[@]}" ${temp[@]+"${temp[@]}"} -e EVAL_API_BIBLE \
   -v "$PWD:/work" \
   api-bible-skill-evals bash scripts/eval-skill.sh --no-publish "$@"
