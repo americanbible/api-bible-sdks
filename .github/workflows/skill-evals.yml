@@ -28,10 +28,6 @@ on:
       case:
         description: 'Case name glob (blank for all)'
         default: ''
-      keep_temp:
-        description: 'Keep each run''s sandbox (workspace + trace.jsonl) in the results artifact'
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -66,7 +62,6 @@ jobs:
           EVAL_API_BIBLE: ${{ secrets.API_BIBLE_EVAL_KEY }}
           RUNS: ${{ inputs.runs }}
           CASE: ${{ inputs.case }}
-          KEEP_TEMP: ${{ inputs.keep_temp }}
         run: |
           dir="$RUNNER_TEMP/anthropic"; mkdir -p "$dir/configs"; chmod 700 "$dir"
           export ANTHROPIC_CONFIG_DIR="$dir" ANTHROPIC_IDENTITY_TOKEN_FILE="$dir/identity-token"
@@ -82,9 +77,6 @@ jobs:
 
           args=(--runs "$RUNS" -j 4)
           if [ -n "$CASE" ]; then args+=(--case "$CASE"); fi
-          if [ "$KEEP_TEMP" = true ]; then
-            args+=(--keep-temp); export SKILL_EVAL_TEMP_DIR="$PWD/evals/results/tmp"
-          fi
           bash scripts/eval-skill-docker.sh "${args[@]}"
       # The same table scripts/eval-skill.sh prints at the end of every run.
       - name: Summary
