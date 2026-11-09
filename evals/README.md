@@ -25,8 +25,8 @@ tools and domains granted. Every run ends by printing a Markdown summary table, 
 `summary.md` in the run's `evals/results/<timestamp>/` directory with the JSON and HTML report.
 
 **Node from nvm, fnm or volta?** The eval sandbox can't read your home directory, so `npm`
-fails inside runs, and most cases need it to install the SDK. Run the suite in the CI-equivalent
-container instead (Docker required, `ANTHROPIC_API_KEY` exported):
+fails inside runs, and most cases need it to install the SDK. Run the suite in a Linux
+container that matches CI instead (Docker required, `ANTHROPIC_API_KEY` exported):
 
 ```bash
 npm run eval:skill:docker -- --tag smoke

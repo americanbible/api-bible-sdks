@@ -46,8 +46,24 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # Runs inside evals/Dockerfile, the same environment as local runs: Node, Claude Code,
-      # the sandbox prerequisites, and the proxy fix for Node's fetch.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      # Runs on the runner rather than in evals/Dockerfile: inside a container, Claude Code's
+      # sandbox can't set up its nested user namespace on Ubuntu runners (apply-seccomp:
+      # "caller must provide CAP_SYS_ADMIN"), so every agent Bash command fails. This step
+      # recreates what the Dockerfile provides: the sandbox prerequisites, the same Claude Code
+      # version, and the node wrapper that makes Node's fetch use the sandbox proxy.
+      - name: Set up eval environment
+        run: |
+          # Ubuntu 24.04 blocks the unprivileged user namespaces bubblewrap needs.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends bubblewrap socat
+          npm install -g @anthropic-ai/claude-code@2.1.293
+          bin="$(dirname "$(command -v node)")"
+          mv "$bin/node" "$bin/node-real"
+          printf '#!/bin/sh\nexport NODE_USE_ENV_PROXY=1\nexec "%s/node-real" "$@"\n' "$bin" > "$bin/node"
+          chmod +x "$bin/node"
       - name: Run evals
         env:
           ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.ANTHROPIC_FEDERATION_RULE_ID }}
@@ -73,12 +89,7 @@ jobs:
 
           args=(--runs "$RUNS" -j 4)
           if [ -n "$CASE" ]; then args+=(--case "$CASE"); fi
-          bash scripts/eval-skill-docker.sh "${args[@]}"
-      # The eval container runs as root in CI (see scripts/eval-skill-docker.sh), so its results
-      # are root-owned; hand them back so the steps below can read them.
-      - name: Fix results ownership
-        if: always()
-        run: sudo chown -R "$(id -u):$(id -g)" evals/results 2>/dev/null || true
+          bash scripts/eval-skill.sh --no-publish "${args[@]}"
       # The same table scripts/eval-skill.sh prints at the end of every run.
       - name: Summary
         if: always()
