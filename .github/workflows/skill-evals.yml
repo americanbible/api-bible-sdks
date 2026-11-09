@@ -74,6 +74,11 @@ jobs:
           args=(--runs "$RUNS" -j 4)
           if [ -n "$CASE" ]; then args+=(--case "$CASE"); fi
           bash scripts/eval-skill-docker.sh "${args[@]}"
+      # The eval container runs as root in CI (see scripts/eval-skill-docker.sh), so its results
+      # are root-owned; hand them back so the steps below can read them.
+      - name: Fix results ownership
+        if: always()
+        run: sudo chown -R "$(id -u):$(id -g)" evals/results 2>/dev/null || true
       # The same table scripts/eval-skill.sh prints at the end of every run.
       - name: Summary
         if: always()
