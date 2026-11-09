@@ -46,10 +46,6 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # Ubuntu 24.04 runners block unprivileged user namespaces via AppArmor, which breaks
-      # Claude Code's bubblewrap sandbox: every agent Bash command fails, while Write still works.
-      - name: Allow unprivileged user namespaces
-        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       # Runs inside evals/Dockerfile, the same environment as local runs: Node, Claude Code,
       # the sandbox prerequisites, and the proxy fix for Node's fetch.
       - name: Run evals
