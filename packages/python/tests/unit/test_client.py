@@ -179,6 +179,57 @@ def test_context_manager_closes_pool() -> None:
     assert http_client.is_closed
 
 
+def _counting(calls: list[httpx.Request]) -> httpx.Client:
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return _empty(request)
+
+    return httpx.Client(base_url=BASE_URL, transport=httpx.MockTransport(handler))
+
+
+def test_call_after_close_raises_invalid_input_without_sending() -> None:
+    calls: list[httpx.Request] = []
+    events: list[object] = []
+    client = BibleClient("k", http_client=_counting(calls), on_request=events.append)
+    client.close()
+
+    with pytest.raises(InvalidInputError, match="client is closed"):
+        client.bibles.list()
+    assert calls == []
+    assert events == []
+
+
+def test_call_on_externally_closed_http_client_raises_invalid_input() -> None:
+    calls: list[httpx.Request] = []
+    http_client = _counting(calls)
+    client = BibleClient("k", http_client=http_client)
+    http_client.close()
+
+    with pytest.raises(InvalidInputError, match="client is closed"):
+        client.bibles.list()
+    assert calls == []
+
+
+def test_close_during_backoff_stops_the_retry_loop() -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(503, json={"message": "down"})
+
+    http_client = httpx.Client(base_url=BASE_URL, transport=httpx.MockTransport(handler))
+    client = BibleClient(
+        "k",
+        http_client=http_client,
+        retry=RetryConfig(max_attempts=3, jitter=lambda: 0.0),
+        on_retry=lambda event: client.close(),
+    )
+
+    with pytest.raises(InvalidInputError, match="client is closed"):
+        client.bibles.list()
+    assert len(calls) == 1
+
+
 def test_last_meta_exposes_fums(make_client) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
