@@ -90,14 +90,6 @@ jobs:
       - name: Summary
         if: always()
         run: cat evals/results/*/summary.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
-      # --keep-temp seals what the plugin wrote to home/ and tmp/ in a read-only sandbox (mode
-      # 000), which the upload can't read. Drop it; the workspace and trace.jsonl stay.
-      - name: Drop sealed sandbox dirs
-        if: always() && inputs.keep_temp
-        run: |
-          [ -d evals/results/tmp ] || exit 0
-          chmod -R u+rwX evals/results/tmp
-          find evals/results/tmp -mindepth 2 -maxdepth 2 -name sealed -type d -exec rm -rf {} +
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
