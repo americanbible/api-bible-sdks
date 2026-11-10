@@ -85,20 +85,9 @@ jobs:
           # Turns on the shared credential cache, so parallel claude processes reuse one exchanged token.
           echo '{"version":"1.0","authentication":{"type":"oidc_federation"}}' > "$dir/configs/default.json"
 
-          # TEMP(debug): --keep-temp so the step below can print the agent's tool results.
-          args=(--runs "$RUNS" -j 4 --keep-temp)
+          args=(--runs "$RUNS" -j 4)
           if [ -n "$CASE" ]; then args+=(--case "$CASE"); fi
           bash scripts/eval-skill.sh --no-publish "${args[@]}"
-      # TEMP(debug): prints each kept run's Bash calls and results to the log (secrets are masked).
-      - name: Show agent tool results
-        if: failure()
-        run: |
-          shopt -s nullglob
-          for f in /tmp/claude-eval-*/out/trace.jsonl "${TMPDIR%/}"/claude-eval-*/out/trace.jsonl; do
-            echo "=== $f"
-            jq -r 'select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | "$ " + .input.command' "$f"
-            jq -r 'select(.type=="user") | .message.content[]? | select(.type=="tool_result") | "-> " + (.content | tostring | .[0:1500])' "$f"
-          done
       # The same table scripts/eval-skill.sh prints at the end of every run.
       - name: Summary
         if: always()
