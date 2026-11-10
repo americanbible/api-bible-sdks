@@ -57,7 +57,8 @@ and turns on the shared credential cache, so the many parallel eval processes re
 Anthropic token. API.Bible calls use a dedicated eval app with a low quota, so its traffic can be
 filtered out of usage data. Agents can reach only `rest.api.bible`, the npm registry and
 localhost, so no case can report a FUMS view: `fums.api.bible` is blocked, and `web-page-fums`
-only fetches its page with curl, so the tracker script never runs.
+only saves its rendered page, so the tracker script never runs. The macOS sandbox used in CI
+can't open ports, so cases mustn't start a server; `web-page-fums` renders its page without one.
 
 ## Cases
 
