@@ -99,8 +99,9 @@ jobs:
       - name: Show agent tool calls
         if: always() && inputs.debug
         run: |
-          shopt -s nullglob
-          for f in "${TMPDIR%/}"/claude-eval-*/out/trace.jsonl /tmp/claude-eval-*/out/trace.jsonl; do
+          # Kept sandboxes are named claude-eval-* on Linux and e-* on macOS; find them by their trace.
+          find /tmp/ "${TMPDIR:-/tmp}" -maxdepth 3 -path '*/out/trace.jsonl' 2>/dev/null | sort -u |
+          while read -r f; do
             echo "::group::$f"
             jq -r 'select(.type=="user") | .message.content | strings | "PROMPT: " + .[0:300]' "$f" | head -1
             jq -r '.message.content[]? |
