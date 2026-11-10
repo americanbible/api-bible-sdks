@@ -1,7 +1,7 @@
 # The environment local skill eval runs use (scripts/eval-skill-docker.sh): Linux, Node 22, and
-# Claude Code's sandbox prerequisites. CI runs directly on the runner instead, because the
-# sandbox can't nest inside a container there; .github/workflows/skill-evals.yml mirrors this
-# file's setup, so keep the two in step.
+# Claude Code's sandbox prerequisites. CI runs on a macOS runner instead, because the Linux
+# sandbox fails on GitHub's Ubuntu runners; .github/workflows/skill-evals.yml mirrors this
+# file's Claude Code version and node wrapper, so keep the two in step.
 FROM node:22-bookworm
 
 RUN apt-get update \

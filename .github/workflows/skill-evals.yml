@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   eval:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     environment: skill-evals
     permissions:
       contents: read
@@ -46,24 +46,22 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 22
-      # Runs on the runner rather than in evals/Dockerfile: inside a container, Claude Code's
-      # sandbox can't set up its nested user namespace on Ubuntu runners (apply-seccomp:
-      # "caller must provide CAP_SYS_ADMIN"), so every agent Bash command fails. This step
-      # recreates what the Dockerfile provides: the sandbox prerequisites, the same Claude Code
-      # version, and the node wrapper that makes Node's fetch use the sandbox proxy.
+      # macOS, not Linux: on Ubuntu runners Claude Code's bubblewrap sandbox fails every agent
+      # Bash command (apply-seccomp: "nested userns is capability-restricted", an open bug,
+      # anthropics/claude-code#93130). On macOS the sandbox uses Seatbelt instead. This step
+      # recreates what evals/Dockerfile provides for local runs: Node 22, the same Claude Code
+      # version, and the node wrapper that makes Node's fetch use the sandbox proxy. Node comes
+      # from Homebrew because the sandbox can't read the home directory, where setup-node puts it.
       - name: Set up eval environment
         run: |
-          # Ubuntu 24.04 blocks the unprivileged user namespaces bubblewrap needs.
-          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-          sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends bubblewrap socat
-          npm install -g @anthropic-ai/claude-code@2.1.293
-          bin="$(dirname "$(command -v node)")"
-          mv "$bin/node" "$bin/node-real"
-          printf '#!/bin/sh\nexport NODE_USE_ENV_PROXY=1\nexec "%s/node-real" "$@"\n' "$bin" > "$bin/node"
-          chmod +x "$bin/node"
+          sudo mkdir -p /opt/eval-tools && sudo chown "$(id -u)" /opt/eval-tools
+          brew install node@22
+          node_bin="$(brew --prefix node@22)/bin"
+          "$node_bin/npm" install -g --prefix /opt/eval-tools @anthropic-ai/claude-code@2.1.293
+          printf '#!/bin/sh\nexport NODE_USE_ENV_PROXY=1\nexec "%s/node" "$@"\n' "$node_bin" > /opt/eval-tools/bin/node
+          chmod +x /opt/eval-tools/bin/node
+          echo "$node_bin" >> "$GITHUB_PATH"
+          echo /opt/eval-tools/bin >> "$GITHUB_PATH"
       - name: Run evals
         env:
           ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.ANTHROPIC_FEDERATION_RULE_ID }}
@@ -95,9 +93,8 @@ jobs:
       - name: Show agent tool results
         if: failure()
         run: |
-          sysctl kernel.apparmor_restrict_unprivileged_userns || true
           shopt -s nullglob
-          for f in /tmp/claude-eval-*/out/trace.jsonl; do
+          for f in /tmp/claude-eval-*/out/trace.jsonl "${TMPDIR%/}"/claude-eval-*/out/trace.jsonl; do
             echo "=== $f"
             jq -r 'select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | "$ " + .input.command' "$f"
             jq -r 'select(.type=="user") | .message.content[]? | select(.type=="tool_result") | "-> " + (.content | tostring | .[0:1500])' "$f"
