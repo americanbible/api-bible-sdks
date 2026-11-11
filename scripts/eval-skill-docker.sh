@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Runs scripts/eval-skill.sh inside evals/Dockerfile, the same environment as CI.
+# Runs scripts/eval-skill.sh inside evals/Dockerfile, a Linux environment
+# with Node 22, Claude Code and its sandbox prerequisites.
 # Needs EVAL_API_BIBLE and a Claude credential: ANTHROPIC_API_KEY locally, or Workload
 # Identity Federation in CI (the ANTHROPIC_* federation variables plus ANTHROPIC_CONFIG_DIR,
 # set up by .github/workflows/skill-evals.yml). Arguments pass through.

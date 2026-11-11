@@ -25,7 +25,7 @@ tools and domains granted. Every run ends by printing a Markdown summary table, 
 `summary.md` in the run's `evals/results/<timestamp>/` directory with the JSON and HTML report.
 
 **Node from nvm, fnm or volta?** The eval sandbox can't read your home directory, so `npm`
-fails inside runs, and most cases need it to install the SDK. Run the suite in the CI-equivalent
+fails inside runs, and most cases need it to install the SDK. Run the suite in a Linux
 container instead (Docker required, `ANTHROPIC_API_KEY` exported):
 
 ```bash
@@ -38,8 +38,9 @@ contain `KEY`, `TOKEN` or `SECRET`.
 ## Reporting results
 
 **Every PR that changes `skills/` gets a comment with the eval summary table** and a link to the
-run. Paste the table itself, because artifacts and logs expire. Directory submissions (API-1902)
-include it too. A local run is fine as evidence; so is a CI run:
+run. A CI run posts it for you: when the branch has an open PR, the workflow comments the table
+on it. For a local run, paste the table yourself; the table matters because artifacts and logs
+expire. Directory submissions (API-1902) include it too.
 
 ```bash
 gh workflow run "Skill evals" --ref <branch>   # then approve it in the skill-evals environment
@@ -57,7 +58,8 @@ and turns on the shared credential cache, so the many parallel eval processes re
 Anthropic token. API.Bible calls use a dedicated eval app with a low quota, so its traffic can be
 filtered out of usage data. Agents can reach only `rest.api.bible`, the npm registry and
 localhost, so no case can report a FUMS view: `fums.api.bible` is blocked, and `web-page-fums`
-only fetches its page with curl, so the tracker script never runs.
+only saves its rendered page, so the tracker script never runs. The macOS sandbox used in CI
+can't open ports, so cases mustn't start a server; `web-page-fums` renders its page without one.
 
 ## Cases
 
