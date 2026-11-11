@@ -35,31 +35,31 @@ interface Case {
   name: string;
   resource: keyof BibleClient;
   method: string;
-  render: () => AsyncResource<unknown>;
+  useHook: () => AsyncResource<unknown>;
 }
 
 const contentHooks: Case[] = [
-  { name: 'useVerse', resource: 'verses', method: 'get', render: () => useVerse('b', 'JHN.3.16') },
-  { name: 'useChapter', resource: 'chapters', method: 'get', render: () => useChapter('b', 'JHN.3') },
-  { name: 'usePassages', resource: 'passages', method: 'get', render: () => usePassages('b', 'JHN.3.16-JHN.3.17') },
-  { name: 'useSection', resource: 'sections', method: 'get', render: () => useSection('b', 'JHN.S1') },
-  { name: 'useSearch', resource: 'search', method: 'search', render: () => useSearch('b', { query: 'faith' }) },
-  { name: 'useAudioChapter', resource: 'audioBibles', method: 'getChapter', render: () => useAudioChapter('a', 'GEN.1') },
+  { name: 'useVerse', resource: 'verses', method: 'get', useHook: () => useVerse('b', 'JHN.3.16') },
+  { name: 'useChapter', resource: 'chapters', method: 'get', useHook: () => useChapter('b', 'JHN.3') },
+  { name: 'usePassages', resource: 'passages', method: 'get', useHook: () => usePassages('b', 'JHN.3.16-JHN.3.17') },
+  { name: 'useSection', resource: 'sections', method: 'get', useHook: () => useSection('b', 'JHN.S1') },
+  { name: 'useSearch', resource: 'search', method: 'search', useHook: () => useSearch('b', { query: 'faith' }) },
+  { name: 'useAudioChapter', resource: 'audioBibles', method: 'getChapter', useHook: () => useAudioChapter('a', 'GEN.1') },
 ];
 
 const otherHooks: Case[] = [
-  { name: 'useBibles', resource: 'bibles', method: 'list', render: () => useBibles() },
-  { name: 'useBible', resource: 'bibles', method: 'get', render: () => useBible('b') },
-  { name: 'useBooks', resource: 'books', method: 'list', render: () => useBooks('b') },
-  { name: 'useChapters', resource: 'chapters', method: 'list', render: () => useChapters('b', 'JHN') },
-  { name: 'useVerses', resource: 'verses', method: 'list', render: () => useVerses('b', 'JHN.3') },
-  { name: 'useSectionsForBook', resource: 'sections', method: 'listForBook', render: () => useSectionsForBook('b', 'JHN') },
-  { name: 'useSectionsForChapter', resource: 'sections', method: 'listForChapter', render: () => useSectionsForChapter('b', 'JHN.3') },
-  { name: 'useAudioBibles', resource: 'audioBibles', method: 'list', render: () => useAudioBibles() },
-  { name: 'useAudioBible', resource: 'audioBibles', method: 'get', render: () => useAudioBible('a') },
-  { name: 'useAudioBooks', resource: 'audioBibles', method: 'listBooks', render: () => useAudioBooks('a') },
-  { name: 'useAudioBook', resource: 'audioBibles', method: 'getBook', render: () => useAudioBook('a', 'GEN') },
-  { name: 'useAudioChapters', resource: 'audioBibles', method: 'listChapters', render: () => useAudioChapters('a', 'GEN') },
+  { name: 'useBibles', resource: 'bibles', method: 'list', useHook: () => useBibles() },
+  { name: 'useBible', resource: 'bibles', method: 'get', useHook: () => useBible('b') },
+  { name: 'useBooks', resource: 'books', method: 'list', useHook: () => useBooks('b') },
+  { name: 'useChapters', resource: 'chapters', method: 'list', useHook: () => useChapters('b', 'JHN') },
+  { name: 'useVerses', resource: 'verses', method: 'list', useHook: () => useVerses('b', 'JHN.3') },
+  { name: 'useSectionsForBook', resource: 'sections', method: 'listForBook', useHook: () => useSectionsForBook('b', 'JHN') },
+  { name: 'useSectionsForChapter', resource: 'sections', method: 'listForChapter', useHook: () => useSectionsForChapter('b', 'JHN.3') },
+  { name: 'useAudioBibles', resource: 'audioBibles', method: 'list', useHook: () => useAudioBibles() },
+  { name: 'useAudioBible', resource: 'audioBibles', method: 'get', useHook: () => useAudioBible('a') },
+  { name: 'useAudioBooks', resource: 'audioBibles', method: 'listBooks', useHook: () => useAudioBooks('a') },
+  { name: 'useAudioBook', resource: 'audioBibles', method: 'getBook', useHook: () => useAudioBook('a', 'GEN') },
+  { name: 'useAudioChapters', resource: 'audioBibles', method: 'listChapters', useHook: () => useAudioChapters('a', 'GEN') },
 ];
 
 function wrapperFor({ resource, method }: Case, fn: unknown) {
@@ -72,14 +72,14 @@ function wrapperFor({ resource, method }: Case, fn: unknown) {
 describe('meta pass-through', () => {
   it.each(contentHooks)('$name returns the response meta', async (c) => {
     const fn = vi.fn().mockResolvedValue(response);
-    const { result } = renderHook(c.render, { wrapper: wrapperFor(c, fn) });
+    const { result } = renderHook(c.useHook, { wrapper: wrapperFor(c, fn) });
     await waitFor(() => expect(result.current.data).toEqual(response.data));
     expect(result.current.meta).toEqual({ fumsToken: 'tok-1' });
   });
 
   it.each(otherHooks)('$name leaves meta undefined', async (c) => {
     const fn = vi.fn().mockResolvedValue(response);
-    const { result } = renderHook(c.render, { wrapper: wrapperFor(c, fn) });
+    const { result } = renderHook(c.useHook, { wrapper: wrapperFor(c, fn) });
     await waitFor(() => expect(result.current.data).toEqual(response.data));
     expect(result.current.meta).toBeUndefined();
   });
