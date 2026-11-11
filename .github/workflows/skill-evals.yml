@@ -17,8 +17,8 @@ name: Skill evals
 # - The `default` profile turns on the shared credential cache in ANTHROPIC_CONFIG_DIR, so
 #   the parallel processes reuse one exchanged Anthropic token instead of each exchanging.
 #
-# Start a run for a branch with `gh workflow run "Skill evals" --ref <branch>`, approve it,
-# then paste the summary table into the PR (see evals/README.md).
+# Start a run for a branch with `gh workflow run "Skill evals" --ref <branch>` and approve it.
+# If the branch has an open PR, the run comments the summary table on it (see evals/README.md).
 on:
   workflow_dispatch:
     inputs:
@@ -28,6 +28,10 @@ on:
       case:
         description: 'Case name glob (blank for all)'
         default: ''
+      debug:
+        description: 'Keep each run''s sandbox and print the agent''s tool calls and results to the log'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -38,16 +42,31 @@ concurrency:
 
 jobs:
   eval:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     environment: skill-evals
     permissions:
       contents: read
       id-token: write
+      pull-requests: write
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # Runs inside evals/Dockerfile, the same environment as local runs: Node, Claude Code,
-      # the sandbox prerequisites, and the proxy fix for Node's fetch.
+      # macOS, not Linux: on Ubuntu runners Claude Code's bubblewrap sandbox fails every agent
+      # Bash command (apply-seccomp: "nested userns is capability-restricted", an open bug,
+      # anthropics/claude-code#93130). On macOS the sandbox uses Seatbelt instead. This step
+      # recreates what evals/Dockerfile provides for local runs: Node 22, the same Claude Code
+      # version, and the node wrapper that makes Node's fetch use the sandbox proxy. Node comes
+      # from Homebrew because the sandbox can't read the home directory, where setup-node puts it.
+      - name: Set up eval environment
+        run: |
+          sudo mkdir -p /opt/eval-tools && sudo chown "$(id -u)" /opt/eval-tools
+          brew install node@22
+          node_bin="$(brew --prefix node@22)/bin"
+          "$node_bin/npm" install -g --prefix /opt/eval-tools @anthropic-ai/claude-code@2.1.293
+          printf '#!/bin/sh\nexport NODE_USE_ENV_PROXY=1\nexec "%s/node" "$@"\n' "$node_bin" > /opt/eval-tools/bin/node
+          chmod +x /opt/eval-tools/bin/node
+          echo "$node_bin" >> "$GITHUB_PATH"
+          echo /opt/eval-tools/bin >> "$GITHUB_PATH"
       - name: Run evals
         env:
           ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.ANTHROPIC_FEDERATION_RULE_ID }}
@@ -58,6 +77,7 @@ jobs:
           EVAL_API_BIBLE: ${{ secrets.API_BIBLE_EVAL_KEY }}
           RUNS: ${{ inputs.runs }}
           CASE: ${{ inputs.case }}
+          DEBUG: ${{ inputs.debug }}
         run: |
           dir="$RUNNER_TEMP/anthropic"; mkdir -p "$dir/configs"; chmod 700 "$dir"
           export ANTHROPIC_CONFIG_DIR="$dir" ANTHROPIC_IDENTITY_TOKEN_FILE="$dir/identity-token"
@@ -73,7 +93,24 @@ jobs:
 
           args=(--runs "$RUNS" -j 4)
           if [ -n "$CASE" ]; then args+=(--case "$CASE"); fi
-          bash scripts/eval-skill-docker.sh "${args[@]}"
+          if [ "$DEBUG" = true ]; then args+=(--keep-temp); fi
+          bash scripts/eval-skill.sh --no-publish "${args[@]}"
+      # Each kept run's prompt, tool calls and tool results. The log is public on this repo;
+      # secrets are masked, but keep debug runs to the cases you're investigating.
+      - name: Show agent tool calls
+        if: always() && inputs.debug
+        run: |
+          # Kept sandboxes are named claude-eval-* on Linux and e-* on macOS; find them by their trace.
+          find /tmp/ "${TMPDIR:-/tmp}" -maxdepth 3 -path '*/out/trace.jsonl' 2>/dev/null | sort -u |
+          while read -r f; do
+            echo "::group::$f"
+            jq -r 'select(.type=="user") | .message.content | strings | "PROMPT: " + .[0:300]' "$f" | head -1
+            jq -r '.message.content[]? |
+              if .type == "tool_use" then "$ " + .name + " " + (.input | tostring | .[0:500])
+              elif .type == "tool_result" then "-> " + (.content | tostring | .[0:1500])
+              else empty end' "$f"
+            echo "::endgroup::"
+          done
       # The same table scripts/eval-skill.sh prints at the end of every run.
       - name: Summary
         if: always()
@@ -84,3 +121,23 @@ jobs:
           name: skill-eval-results
           path: evals/results/
           if-no-files-found: ignore
+      # Comments the summary table on the branch's open PR, so the results outlive the run's
+      # logs and artifact. Skipped when the run produced no summary or the branch has no open PR.
+      - name: Comment on PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
+          RUNS: ${{ inputs.runs }}
+          CASE: ${{ inputs.case }}
+        run: |
+          summary=$(ls evals/results/*/summary.md 2>/dev/null | tail -1)
+          if [ -z "$summary" ]; then echo "No summary to post."; exit 0; fi
+          pr=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
+          if [ -z "$pr" ]; then echo "No open PR for $BRANCH."; exit 0; fi
+          {
+            cat "$summary"
+            echo
+            echo "[Run $GITHUB_RUN_ID]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) on \`${GITHUB_SHA::7}\` · ${RUNS} runs per case per arm · cases: ${CASE:-all}"
+          } > "$RUNNER_TEMP/comment.md"
+          gh pr comment "$pr" --body-file "$RUNNER_TEMP/comment.md"

@@ -2,8 +2,9 @@
 name: api-bible
 description: >-
   Build Scripture integrations with API.Bible (American Bible Society). Use when
-  working with Bible verses, passages, chapters, translations, or Scripture search
-  in an app or website: covers the api-key header, bibleId/verseId formats, the
+  writing or debugging code that calls API.Bible: listing the Bibles a key can access,
+  books, chapters, verses, passages, audio Bibles, or Scripture search, in a
+  script, app or website. Covers the api-key header, bibleId/verseId formats, the
   official @americanbible/api-bible-sdk TypeScript SDK and its React hooks, FUMS
   usage reporting, and copyright display. Trigger on mentions of api.bible, Bible
   API, Scripture API, verse lookup, or Bible translation integration.
