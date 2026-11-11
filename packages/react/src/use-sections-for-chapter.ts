@@ -17,7 +17,7 @@ import type { AsyncResource } from './types.js';
  */
 export function useSectionsForChapter(bibleId: string, chapterId: string): AsyncResource<SectionSummary[]> {
   return useAsyncResource<SectionSummary[]>(
-    (client, signal) => client.sections.listForChapter(bibleId, chapterId, signal).then((res) => ({ data: res.data })),
+    (client, signal) => client.sections.listForChapter(bibleId, chapterId, signal),
     // Two required ids and no params object, so the raw ids are a stable dep
     // key on their own — no JSON.stringify needed (unlike params-bearing hooks).
     [bibleId, chapterId],

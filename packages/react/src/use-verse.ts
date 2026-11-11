@@ -29,6 +29,6 @@ export function useVerse(
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [bibleId, verseId, stableStringify(params ?? {})],
-    { enabled: Boolean(bibleId && verseId), resourceKey: 'verses.get' },
+    { enabled: Boolean(bibleId && verseId), resourceKey: 'verses.get', exposeMeta: true },
   );
 }

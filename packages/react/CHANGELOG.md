@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The list and metadata hooks return `meta: undefined`. The README has a new
   FUMS section.
 
+### Changed
+
+- `meta` is a required field on `AsyncResource` (`meta: Meta | undefined`), so
+  code that builds an `AsyncResource` by hand no longer typechecks until it adds
+  `meta`. Test mocks are the usual case, e.g.
+  `vi.mocked(usePassages).mockReturnValue({ data, meta: undefined, error: undefined, ... })`.
+  Code that only reads hook results is unaffected.
+
 ## [1.0.0] - 2026-10-14
 
 First public release. Requires `react` 18 or 19 and `@americanbible/api-bible-sdk`

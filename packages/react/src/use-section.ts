@@ -30,6 +30,6 @@ export function useSection(
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [bibleId, sectionId, stableStringify(params ?? {})],
-    { enabled: Boolean(bibleId && sectionId), resourceKey: 'sections.get' },
+    { enabled: Boolean(bibleId && sectionId), resourceKey: 'sections.get', exposeMeta: true },
   );
 }

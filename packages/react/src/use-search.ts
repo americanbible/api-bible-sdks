@@ -55,6 +55,7 @@ export function useSearch(
     {
       enabled: Boolean(bibleId && params.query?.trim()),
       resourceKey: 'search.search',
+      exposeMeta: true,
       debounceMs: options?.debounceMs,
     },
   );

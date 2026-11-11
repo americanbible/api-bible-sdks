@@ -17,7 +17,7 @@ import type { AsyncResource } from './types.js';
  */
 export function useVerses(bibleId: string, chapterId: string): AsyncResource<VerseSummary[]> {
   return useAsyncResource<VerseSummary[]>(
-    (client, signal) => client.verses.list(bibleId, chapterId, signal).then((res) => ({ data: res.data })),
+    (client, signal) => client.verses.list(bibleId, chapterId, signal),
     // Two required ids and no params object, so the raw ids are a stable dep
     // key on their own — no JSON.stringify needed (unlike params-bearing hooks).
     [bibleId, chapterId],

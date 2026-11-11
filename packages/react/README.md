@@ -336,17 +336,22 @@ the Scripture is shown. Add the tracker once per page, near the end of `<body>`:
 Then report the token from the content hook's `meta`:
 
 ```tsx
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePassages } from '@americanbible/api-bible-sdk-react';
 
 type Fums = (command: 'trackView' | 'trackListen', token: string) => void;
 
 function PassageView({ bibleId, passageId }: { bibleId: string; passageId: string }) {
   const { data, meta, isLoading } = usePassages(bibleId, passageId, { contentType: 'text' });
+  const reported = useRef<string | undefined>(undefined);
 
   useEffect(() => {
+    const token = meta?.fumsToken;
     const fums = (window as unknown as { fums?: Fums }).fums;
-    if (meta?.fumsToken && fums) fums('trackView', meta.fumsToken);
+    // The ref stops StrictMode's dev-only effect re-run from reporting twice.
+    if (!token || !fums || reported.current === token) return;
+    reported.current = token;
+    fums('trackView', token);
   }, [meta?.fumsToken]);
 
   if (isLoading) return <p>Loading…</p>;
@@ -355,9 +360,36 @@ function PassageView({ bibleId, passageId }: { bibleId: string; passageId: strin
 ```
 
 `meta` resets with `data` when the inputs change, so a token never belongs to
-stale content. Report `useAudioChapter`'s token with `trackListen` instead. The
-list and metadata hooks (`useBibles`, `useBooks`, `useChapters`, …) carry no
-token and return `meta: undefined`.
+stale content. The list and metadata hooks (`useBibles`, `useBooks`,
+`useChapters`, …) carry no token and return `meta: undefined`.
+
+FUMS expects each token once. Two cases can hand you the same content twice:
+
+- **Shared requests.** Components that ask for the same content at the same
+  moment share one request, so they all get the same `meta.fumsToken`. Report
+  it from the one component that owns the content, not from every component
+  that renders it.
+- **Audio refetch.** Report `useAudioChapter`'s token with `trackListen`, on
+  first play. A `refetch()` to renew an expiring `resourceUrl` brings a new
+  token, so an effect keyed on the token would report the same chapter again
+  mid-listen. Report from `onPlay`, once per chapter:
+
+```tsx
+function ChapterAudio({ audioBibleId, chapterId }: { audioBibleId: string; chapterId: string }) {
+  const { data, meta } = useAudioChapter(audioBibleId, chapterId);
+  const reported = useRef<string | undefined>(undefined);
+
+  const onPlay = () => {
+    const fums = (window as unknown as { fums?: Fums }).fums;
+    const chapterKey = `${audioBibleId}/${chapterId}`;
+    if (!meta?.fumsToken || !fums || reported.current === chapterKey) return;
+    reported.current = chapterKey;
+    fums('trackListen', meta.fumsToken);
+  };
+
+  return <audio src={data?.resourceUrl} controls onPlay={onPlay} />;
+}
+```
 
 ## Caching
 

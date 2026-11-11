@@ -53,7 +53,7 @@ display, which web apps must report to FUMS, report `meta.fumsToken` from an eff
 ```tsx
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePassages } from '@americanbible/api-bible-sdk-react';
 
 type Fums = (command: 'trackView' | 'trackListen', token: string) => void;
@@ -63,9 +63,15 @@ export function PassageView({ bibleId, passageId }: { bibleId: string; passageId
     contentType: 'text',
   });
 
+  // Report each token once. The ref also stops StrictMode's dev-only effect re-run from
+  // reporting twice.
+  const reported = useRef<string | undefined>(undefined);
   useEffect(() => {
+    const token = meta?.fumsToken;
     const fums = (window as unknown as { fums?: Fums }).fums;
-    if (meta?.fumsToken && fums) fums('trackView', meta.fumsToken);
+    if (!token || !fums || reported.current === token) return;
+    reported.current = token;
+    fums('trackView', token);
   }, [meta?.fumsToken]);
 
   if (error) return <p>Could not load {passageId}.</p>;
@@ -82,9 +88,16 @@ export function PassageView({ bibleId, passageId }: { bibleId: string; passageId
 ```
 
 `meta` resets with `data` when the inputs change, so a token never belongs to stale content.
-Report `useAudioChapter`'s token with `trackListen` instead of `trackView`. If the hook result
-has no `meta` field, the installed package predates it: upgrade
+If the hook result has no `meta` field, the installed package predates it: upgrade
 `@americanbible/api-bible-sdk-react`.
+
+Components that request the same content at the same moment share one request and get the same
+token. Report it from the one component that owns the content, not from each one that renders it.
+
+Report `useAudioChapter`'s token with `trackListen` instead of `trackView`, on first play (in the
+`<audio>` element's `onPlay`), once per chapter. Don't key an effect on the token: `refetch()`,
+used to renew an expiring `resourceUrl`, brings a new token and would report the same chapter
+again.
 
 The page also needs the FUMS tracker script (see `licensing-and-fums.md`). When a Server
 Component fetches the content instead, pass `meta.fumsToken` down as a prop and report it from a

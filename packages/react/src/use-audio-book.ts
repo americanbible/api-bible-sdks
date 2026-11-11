@@ -20,7 +20,7 @@ export function useAudioBook(
   params?: AudioBookGetParams,
 ): AsyncResource<AudioBookSummary> {
   return useAsyncResource<AudioBookSummary>(
-    (client, signal) => client.audioBibles.getBook(audioBibleId, bookId, params, signal).then((res) => ({ data: res.data })),
+    (client, signal) => client.audioBibles.getBook(audioBibleId, bookId, params, signal),
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [audioBibleId, bookId, stableStringify(params ?? {})],

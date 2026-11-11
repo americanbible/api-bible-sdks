@@ -216,12 +216,21 @@ describe('useAsyncResource', () => {
 });
 
 describe('useAsyncResource meta', () => {
+  it('drops meta unless exposeMeta is set', async () => {
+    const run = vi.fn(() => Promise.resolve({ data: 'A', meta: { fumsToken: 'tok-A' } }));
+    const { result } = renderHook(() => useAsyncResource(run, ['k']), { wrapper });
+    await waitFor(() => expect(result.current.data).toBe('A'));
+    expect(result.current.meta).toBeUndefined();
+  });
+
   it('keeps meta with the last-good data through a failed refetch', async () => {
     const run = vi.fn<Run<{ data: string; meta?: { fumsToken: string } }>>();
     run
       .mockResolvedValueOnce({ data: 'A', meta: { fumsToken: 'tok-A' } })
       .mockRejectedValue(new ServerError('down', 503, ''));
-    const { result } = renderHook(() => useAsyncResource(run, ['k']), { wrapper });
+    const { result } = renderHook(() => useAsyncResource(run, ['k'], { exposeMeta: true }), {
+      wrapper,
+    });
     await waitFor(() => expect(result.current.meta?.fumsToken).toBe('tok-A'));
 
     act(() => result.current.refetch());
@@ -233,7 +242,7 @@ describe('useAsyncResource meta', () => {
   it('clears meta when the hook becomes disabled', async () => {
     const run = vi.fn(() => Promise.resolve({ data: 'A', meta: { fumsToken: 'tok-A' } }));
     const { result, rerender } = renderHook(
-      ({ enabled }) => useAsyncResource(run, ['k'], { enabled }),
+      ({ enabled }) => useAsyncResource(run, ['k'], { enabled, exposeMeta: true }),
       { wrapper, initialProps: { enabled: true } },
     );
     await waitFor(() => expect(result.current.meta?.fumsToken).toBe('tok-A'));

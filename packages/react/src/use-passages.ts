@@ -29,6 +29,6 @@ export function usePassages(
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [bibleId, passageId, stableStringify(params ?? {})],
-    { enabled: Boolean(bibleId && passageId), resourceKey: 'passages.get' },
+    { enabled: Boolean(bibleId && passageId), resourceKey: 'passages.get', exposeMeta: true },
   );
 }

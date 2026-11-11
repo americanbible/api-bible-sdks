@@ -16,9 +16,9 @@ type State<T> =
   | { status: 'error'; data: T | undefined; meta: Meta | undefined; error: BibleError }; // keeps last-good data through a failed refetch of the same inputs
 
 /**
- * What a hook's `run` resolves to: the SDK's `{ data, meta }` envelope. Content
- * hooks pass the SDK response straight through; hooks with no FUMS token return
- * `{ data }` so `meta` stays `undefined`.
+ * What a hook's `run` resolves to: the SDK's `{ data, meta }` envelope. Every
+ * hook passes the SDK response straight through; `exposeMeta` decides whether
+ * `meta` reaches the caller.
  */
 export interface ResourceResponse<T> {
   data: T;
@@ -48,6 +48,12 @@ export interface UseAsyncResourceOptions {
    * unmount and on any further `deps` change.
    */
   debounceMs?: number;
+  /**
+   * Return the response's `meta` (carrying `fumsToken`) to the caller. Set only
+   * on the content hooks; every other hook leaves `meta` `undefined`, since the
+   * list and metadata endpoints carry no token to report. Default: `false`.
+   */
+  exposeMeta?: boolean;
 }
 
 // --- In-flight request de-duplication --------------------------------------
@@ -236,7 +242,8 @@ function acquire(
  *     endpoints.
  *
  * @param run   Calls the SDK; receives the shared client and an AbortSignal, and
- *              resolves to the `{ data, meta? }` envelope.
+ *              resolves to the `{ data, meta? }` envelope (pass the SDK response
+ *              straight through).
  * @param deps  Values that, when changed, re-run the request (like effect deps);
  *              must include every input `run` reads (invariant 1 above).
  */
@@ -246,7 +253,7 @@ export function useAsyncResource<T>(
   options: UseAsyncResourceOptions = {},
 ): AsyncResource<T> {
   const { client, onSettled } = useApiBibleContext();
-  const { enabled = true, resourceKey, debounceMs } = options;
+  const { enabled = true, resourceKey, debounceMs, exposeMeta = false } = options;
 
   const [state, setState] = useState<State<T>>(() =>
     enabled
@@ -337,7 +344,9 @@ export function useAsyncResource<T>(
       void (async () => {
         try {
           const { data, meta } = (await acquired.promise) as ResourceResponse<T>;
-          if (active) setState({ status: 'success', data, meta, error: undefined });
+          if (active) {
+            setState({ status: 'success', data, meta: exposeMeta ? meta : undefined, error: undefined });
+          }
         } catch (err) {
           // Cancellation is expected on unmount / deps change — swallow it.
           if (!active || acquired.isAborted()) return;

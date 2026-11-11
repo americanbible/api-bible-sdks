@@ -18,7 +18,7 @@ export function useAudioBooks(
   params?: AudioBookListParams,
 ): AsyncResource<AudioBookSummary[]> {
   return useAsyncResource<AudioBookSummary[]>(
-    (client, signal) => client.audioBibles.listBooks(audioBibleId, params, signal).then((res) => ({ data: res.data })),
+    (client, signal) => client.audioBibles.listBooks(audioBibleId, params, signal),
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [audioBibleId, stableStringify(params ?? {})],

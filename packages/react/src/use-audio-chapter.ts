@@ -26,6 +26,10 @@ export function useAudioChapter(
     // Two required ids and no params object, so the raw ids are a stable dep
     // key on their own — no JSON.stringify needed (unlike params-bearing hooks).
     [audioBibleId, chapterId],
-    { enabled: Boolean(audioBibleId && chapterId), resourceKey: 'audioBibles.getChapter' },
+    {
+      enabled: Boolean(audioBibleId && chapterId),
+      resourceKey: 'audioBibles.getChapter',
+      exposeMeta: true,
+    },
   );
 }

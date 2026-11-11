@@ -27,6 +27,6 @@ export function useChapter(
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [bibleId, chapterId, stableStringify(params ?? {})],
-    { enabled: Boolean(bibleId && chapterId), resourceKey: 'chapters.get' },
+    { enabled: Boolean(bibleId && chapterId), resourceKey: 'chapters.get', exposeMeta: true },
   );
 }
