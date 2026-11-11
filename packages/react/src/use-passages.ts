@@ -8,8 +8,9 @@ import type { AsyncResource } from './types.js';
  * (e.g. 'JHN.3.16-JHN.3.17') — optionally with rendered content (html/text/json).
  *
  * Thin by design: maps 1:1 to `client.passages.get`, forwards the abort signal,
- * and unwraps the `{ data }` envelope. All lifecycle/state lives in
- * {@link useAsyncResource} — this mirrors the `useChapter` template (passages
+ * and passes the `{ data, meta }` envelope through so `meta.fumsToken` reaches
+ * the caller. All lifecycle/state lives in {@link useAsyncResource} —
+ * this mirrors the `useChapter` template (passages
  * expose only a single `get`, so there is no list variant).
  *
  * @param bibleId    Bible ID. When falsy the hook stays idle (no request).
@@ -24,10 +25,10 @@ export function usePassages(
   params?: PassageGetParams,
 ): AsyncResource<Passage> {
   return useAsyncResource<Passage>(
-    (client, signal) => client.passages.get(bibleId, passageId, params, signal).then((res) => res.data),
+    (client, signal) => client.passages.get(bibleId, passageId, params, signal),
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [bibleId, passageId, stableStringify(params ?? {})],
-    { enabled: Boolean(bibleId && passageId), resourceKey: 'passages.get' },
+    { enabled: Boolean(bibleId && passageId), resourceKey: 'passages.get', exposeMeta: true },
   );
 }

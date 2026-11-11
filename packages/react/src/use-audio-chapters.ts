@@ -17,7 +17,7 @@ export function useAudioChapters(
   bookId: string,
 ): AsyncResource<AudioChapterSummary[]> {
   return useAsyncResource<AudioChapterSummary[]>(
-    (client, signal) => client.audioBibles.listChapters(audioBibleId, bookId, signal).then((res) => res.data),
+    (client, signal) => client.audioBibles.listChapters(audioBibleId, bookId, signal),
     // Two required ids and no params object, so the raw ids are a stable dep
     // key on their own — no JSON.stringify needed (unlike params-bearing hooks).
     [audioBibleId, bookId],

@@ -17,7 +17,7 @@ import type { AsyncResource } from './types.js';
  */
 export function useBooks(bibleId: string, params?: BookListParams): AsyncResource<Book[]> {
   return useAsyncResource<Book[]>(
-    (client, signal) => client.books.list(bibleId, params, signal).then((res) => res.data),
+    (client, signal) => client.books.list(bibleId, params, signal),
     // Re-run when the id or params change. stableStringify turns a possibly-new-
     // every-render params object into a stable, key-order-independent string, so
     // callers needn't memoize.

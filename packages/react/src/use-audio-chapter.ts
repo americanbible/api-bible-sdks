@@ -6,9 +6,10 @@ import type { AsyncResource } from './types.js';
  * Fetch a single audio chapter, including its presigned `resourceUrl`.
  *
  * Thin by design: maps 1:1 to `client.audioBibles.getChapter`, forwards the
- * abort signal, and unwraps the `{ data }` envelope. All lifecycle/state lives
- * in {@link useAsyncResource} — the single-`get` counterpart to
- * {@link useAudioChapters}.
+ * abort signal, and passes the `{ data, meta }` envelope through so
+ * `meta.fumsToken` (report it with `trackListen`) reaches the caller. All
+ * lifecycle/state lives in {@link useAsyncResource} — the single-`get`
+ * counterpart to {@link useAudioChapters}.
  *
  * The returned `resourceUrl` is presigned and expires at `expiresAt` (epoch
  * seconds); call `refetch()` to obtain a fresh URL.
@@ -21,10 +22,14 @@ export function useAudioChapter(
   chapterId: string,
 ): AsyncResource<AudioChapter> {
   return useAsyncResource<AudioChapter>(
-    (client, signal) => client.audioBibles.getChapter(audioBibleId, chapterId, signal).then((res) => res.data),
+    (client, signal) => client.audioBibles.getChapter(audioBibleId, chapterId, signal),
     // Two required ids and no params object, so the raw ids are a stable dep
     // key on their own — no JSON.stringify needed (unlike params-bearing hooks).
     [audioBibleId, chapterId],
-    { enabled: Boolean(audioBibleId && chapterId), resourceKey: 'audioBibles.getChapter' },
+    {
+      enabled: Boolean(audioBibleId && chapterId),
+      resourceKey: 'audioBibles.getChapter',
+      exposeMeta: true,
+    },
   );
 }

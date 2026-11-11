@@ -19,8 +19,9 @@ export interface UseSearchOptions {
  * Full-text search across a Bible's text.
  *
  * Thin by design: maps 1:1 to `client.search.search`, forwards the abort signal,
- * and unwraps the `{ data }` envelope. All lifecycle/state lives in
- * {@link useAsyncResource} — this mirrors the `usePassages`/`useBooks` template.
+ * and passes the `{ data, meta }` envelope through so `meta.fumsToken` reaches
+ * the caller. All lifecycle/state lives in {@link useAsyncResource} —
+ * this mirrors the `usePassages`/`useBooks` template.
  *
  * A keyword query returns pagination state on the result — `total`, `limit`,
  * `offset` — so callers page by incrementing `params.offset`; there is
@@ -41,7 +42,7 @@ export function useSearch(
   options?: UseSearchOptions,
 ): AsyncResource<SearchResult> {
   return useAsyncResource<SearchResult>(
-    (client, signal) => client.search.search(bibleId, params, signal).then((res) => res.data),
+    (client, signal) => client.search.search(bibleId, params, signal),
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize. `params`
     // is required (unlike the other hooks), so no `?? {}` fallback — the type
@@ -54,6 +55,7 @@ export function useSearch(
     {
       enabled: Boolean(bibleId && params.query?.trim()),
       resourceKey: 'search.search',
+      exposeMeta: true,
       debounceMs: options?.debounceMs,
     },
   );

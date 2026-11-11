@@ -8,8 +8,9 @@ import type { AsyncResource } from './types.js';
  * with include-* flags and parallels.
  *
  * Thin by design: maps 1:1 to `client.sections.get`, forwards the abort signal,
- * and unwraps the `{ data }` envelope. All lifecycle/state lives in
- * {@link useAsyncResource} — this mirrors the `usePassages`/`useChapter`
+ * and passes the `{ data, meta }` envelope through so `meta.fumsToken` reaches
+ * the caller. All lifecycle/state lives in {@link useAsyncResource} —
+ * this mirrors the `usePassages`/`useChapter`
  * template (the single-`get` counterpart to the list hooks
  * {@link useSectionsForBook} / {@link useSectionsForChapter}).
  *
@@ -25,10 +26,10 @@ export function useSection(
   params?: SectionGetParams,
 ): AsyncResource<Section> {
   return useAsyncResource<Section>(
-    (client, signal) => client.sections.get(bibleId, sectionId, params, signal).then((res) => res.data),
+    (client, signal) => client.sections.get(bibleId, sectionId, params, signal),
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [bibleId, sectionId, stableStringify(params ?? {})],
-    { enabled: Boolean(bibleId && sectionId), resourceKey: 'sections.get' },
+    { enabled: Boolean(bibleId && sectionId), resourceKey: 'sections.get', exposeMeta: true },
   );
 }

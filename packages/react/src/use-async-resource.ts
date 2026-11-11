@@ -1,18 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BibleError, type BibleClient } from '@americanbible/api-bible-sdk';
+import { BibleError, type BibleClient, type Meta } from '@americanbible/api-bible-sdk';
 import { stableStringify } from './stable-stringify.js';
 import { useApiBibleContext } from './use-api-bible.js';
 import type { ApiBibleContextValue } from './context.js';
 import type { AsyncResource, SettledEvent } from './types.js';
 
 // One state object per request. A single `setState` per transition keeps
-// isLoading / data / error mutually consistent in every render — there is no
-// window where two independent `useState` values disagree.
+// isLoading / data / meta / error mutually consistent in every render — there is
+// no window where two independent `useState` values disagree. `meta` always
+// travels with the `data` it arrived with.
 type State<T> =
-  | { status: 'idle'; data: undefined; error: undefined }
-  | { status: 'loading'; data: T | undefined; error: undefined } // keeps last data during a refetch of the same inputs
-  | { status: 'success'; data: T; error: undefined }
-  | { status: 'error'; data: T | undefined; error: BibleError }; // keeps last-good data through a failed refetch of the same inputs
+  | { status: 'idle'; data: undefined; meta: undefined; error: undefined }
+  | { status: 'loading'; data: T | undefined; meta: Meta | undefined; error: undefined } // keeps last data during a refetch of the same inputs
+  | { status: 'success'; data: T; meta: Meta | undefined; error: undefined }
+  | { status: 'error'; data: T | undefined; meta: Meta | undefined; error: BibleError }; // keeps last-good data through a failed refetch of the same inputs
+
+/**
+ * What a hook's `run` resolves to: the SDK's `{ data, meta }` envelope. Every
+ * hook passes the SDK response straight through; `exposeMeta` decides whether
+ * `meta` reaches the caller.
+ */
+export interface ResourceResponse<T> {
+  data: T;
+  meta?: Meta;
+}
 
 export interface UseAsyncResourceOptions {
   /** When false, the hook stays idle and issues no request. Default: `true`. */
@@ -37,6 +48,12 @@ export interface UseAsyncResourceOptions {
    * unmount and on any further `deps` change.
    */
   debounceMs?: number;
+  /**
+   * Return the response's `meta` (carrying `fumsToken`) to the caller. Set only
+   * on the content hooks; every other hook leaves `meta` `undefined`, since the
+   * list and metadata endpoints carry no token to report. Default: `false`.
+   */
+  exposeMeta?: boolean;
 }
 
 // --- In-flight request de-duplication --------------------------------------
@@ -196,12 +213,12 @@ function acquire(
  * Responsibilities (implemented once, inherited by every resource hook):
  *  - run the request on mount and whenever `deps` change (new inputs start from
  *    `data: undefined`; only `refetch` of the same inputs keeps previous data)
- *  - expose `{ data, error, status, isLoading, isFetching, refetch }`
+ *  - expose `{ data, meta, error, status, isLoading, isFetching, refetch }`
  *  - de-duplicate concurrent identical requests (opt in with `resourceKey`)
  *  - cancel the in-flight request on unmount / deps change (AbortController),
  *    once no other subscriber still needs it (a microtask later, so StrictMode's
  *    dev remount rejoins it instead of re-fetching)
- *  - reset `data` (and report `'loading'`) as soon as the inputs change, even
+ *  - reset `data` and `meta` (and report `'loading'`) as soon as the inputs change, even
  *    while a `debounceMs` wait is still pending
  *  - ignore stale or aborted results (a slow response can't clobber a newer one)
  *  - treat cancellation as a non-event (never surfaced as `error`)
@@ -224,22 +241,24 @@ function acquire(
  *     Same key + same `deps` share a request, so a duplicated key cross-wires two
  *     endpoints.
  *
- * @param run   Calls the SDK; receives the shared client and an AbortSignal.
+ * @param run   Calls the SDK; receives the shared client and an AbortSignal, and
+ *              resolves to the `{ data, meta? }` envelope (pass the SDK response
+ *              straight through).
  * @param deps  Values that, when changed, re-run the request (like effect deps);
  *              must include every input `run` reads (invariant 1 above).
  */
 export function useAsyncResource<T>(
-  run: (client: BibleClient, signal: AbortSignal) => Promise<T>,
+  run: (client: BibleClient, signal: AbortSignal) => Promise<ResourceResponse<T>>,
   deps: readonly unknown[],
   options: UseAsyncResourceOptions = {},
 ): AsyncResource<T> {
   const { client, onSettled } = useApiBibleContext();
-  const { enabled = true, resourceKey, debounceMs } = options;
+  const { enabled = true, resourceKey, debounceMs, exposeMeta = false } = options;
 
   const [state, setState] = useState<State<T>>(() =>
     enabled
-      ? { status: 'loading', data: undefined, error: undefined }
-      : { status: 'idle', data: undefined, error: undefined },
+      ? { status: 'loading', data: undefined, meta: undefined, error: undefined }
+      : { status: 'idle', data: undefined, meta: undefined, error: undefined },
   );
 
   // A monotonically increasing counter is the simplest way to force a re-run
@@ -283,7 +302,9 @@ export function useAsyncResource<T>(
       // whose deps keep changing (e.g. a search box while the query is still blank)
       // re-renders on every keystroke.
       setState((prev) =>
-        prev.status === 'idle' ? prev : { status: 'idle', data: undefined, error: undefined },
+        prev.status === 'idle'
+          ? prev
+          : { status: 'idle', data: undefined, meta: undefined, error: undefined },
       );
       return;
     }
@@ -299,9 +320,10 @@ export function useAsyncResource<T>(
     // so a burst of keystrokes doesn't re-render once more per keystroke.
     setState((prev) => {
       const data = keepData ? prev.data : undefined;
-      return prev.status === 'loading' && prev.data === data
+      const meta = keepData ? prev.meta : undefined;
+      return prev.status === 'loading' && prev.data === data && prev.meta === meta
         ? prev
-        : { status: 'loading', data, error: undefined };
+        : { status: 'loading', data, meta, error: undefined };
     });
 
     // Issue the request. Deferred behind `debounceMs` when set, so only the final
@@ -321,15 +343,18 @@ export function useAsyncResource<T>(
 
       void (async () => {
         try {
-          const data = (await acquired.promise) as T;
-          if (active) setState({ status: 'success', data, error: undefined });
+          const { data, meta } = (await acquired.promise) as ResourceResponse<T>;
+          if (active) {
+            setState({ status: 'success', data, meta: exposeMeta ? meta : undefined, error: undefined });
+          }
         } catch (err) {
           // Cancellation is expected on unmount / deps change — swallow it.
           if (!active || acquired.isAborted()) return;
           const error = toBibleError(err);
-          // Keep the last-good `data` visible through a failed refetch. `prev.data`
-          // is already undefined after an input change (reset in the effect above).
-          setState((prev) => ({ status: 'error', data: prev.data, error }));
+          // Keep the last-good `data` (and its `meta`) visible through a failed
+          // refetch. Both are already undefined after an input change (reset in
+          // the effect above).
+          setState((prev) => ({ status: 'error', data: prev.data, meta: prev.meta, error }));
         }
       })();
     };
@@ -355,6 +380,7 @@ export function useAsyncResource<T>(
 
   return {
     data: state.data,
+    meta: state.meta,
     error: state.error,
     status: state.status,
     // First load for the current inputs only: a refetch keeps prior `data`, so it

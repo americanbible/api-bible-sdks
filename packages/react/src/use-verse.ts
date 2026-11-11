@@ -8,8 +8,9 @@ import type { AsyncResource } from './types.js';
  * include-* flags and parallels.
  *
  * Thin by design: maps 1:1 to `client.verses.get`, forwards the abort signal,
- * and unwraps the `{ data }` envelope. All lifecycle/state lives in
- * {@link useAsyncResource} — this mirrors the `useSection`/`useChapter` template
+ * and passes the `{ data, meta }` envelope through so `meta.fumsToken` reaches
+ * the caller. All lifecycle/state lives in {@link useAsyncResource} —
+ * this mirrors the `useSection`/`useChapter` template
  * (the single-`get` counterpart to the list hook {@link useVerses}).
  *
  * @param bibleId  Bible ID. When falsy the hook stays idle (no request).
@@ -24,10 +25,10 @@ export function useVerse(
   params?: VerseGetParams,
 ): AsyncResource<Verse> {
   return useAsyncResource<Verse>(
-    (client, signal) => client.verses.get(bibleId, verseId, params, signal).then((res) => res.data),
+    (client, signal) => client.verses.get(bibleId, verseId, params, signal),
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [bibleId, verseId, stableStringify(params ?? {})],
-    { enabled: Boolean(bibleId && verseId), resourceKey: 'verses.get' },
+    { enabled: Boolean(bibleId && verseId), resourceKey: 'verses.get', exposeMeta: true },
   );
 }

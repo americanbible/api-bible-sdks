@@ -289,6 +289,11 @@ Every resource hook returns the same `AsyncResource<T>`:
   loads. Changing an input (an id, `params`) resets it to `undefined` at once,
   even while a `debounceMs` wait is pending, so one input's result is never
   shown for another; only `refetch()` keeps it.
+- **`meta`** — the response's `meta` for the current `data`, carrying
+  `meta.fumsToken`. Filled in by the content hooks (`useVerse`, `useChapter`,
+  `usePassages`, `useSection`, `useSearch`, `useAudioChapter`); always `undefined`
+  for the list and metadata hooks. It resets and is kept exactly when `data` is,
+  and a `refetch()` replaces it with the new response's `meta`. See [FUMS](#fums).
 - **`error`** — a typed SDK error (a `BibleError` subclass such as `NotFoundError`
   or `RateLimitError`; narrow with `instanceof`), or `undefined`. Cancellations are
   never surfaced here. Note that api.bible answers an unknown Bible ID, or one
@@ -313,6 +318,78 @@ works from a single package.
 `ApiBibleConfig` (the provider's `config`), `ApiBibleProviderProps`,
 `SettledEvent` / `SettledObserver` (`onSettled`), and `UseSearchOptions`
 (`useSearch`'s `options`).
+
+## FUMS
+
+API.Bible's [fair-use terms](https://docs.api.bible/resources/fair-use) require
+web apps to report every content response's `meta.fumsToken` to FUMS whenever
+the Scripture is shown. Add the tracker once per page, near the end of `<body>`:
+
+```html
+<script src="https://pkg.api.bible/fumsV3.min.js"></script>
+<script>
+  window.fumsData = window.fumsData || [];
+  window.fums = window.fums || function () { window.fumsData.push(arguments); };
+</script>
+```
+
+Then report the token from the content hook's `meta`:
+
+```tsx
+import { useEffect, useRef } from 'react';
+import { usePassages } from '@americanbible/api-bible-sdk-react';
+
+type Fums = (command: 'trackView' | 'trackListen', token: string) => void;
+
+function PassageView({ bibleId, passageId }: { bibleId: string; passageId: string }) {
+  const { data, meta, isLoading } = usePassages(bibleId, passageId, { contentType: 'text' });
+  const reported = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    const token = meta?.fumsToken;
+    const fums = (window as unknown as { fums?: Fums }).fums;
+    // The ref stops StrictMode's dev-only effect re-run from reporting twice.
+    if (!token || !fums || reported.current === token) return;
+    reported.current = token;
+    fums('trackView', token);
+  }, [meta?.fumsToken]);
+
+  if (isLoading) return <p>Loading…</p>;
+  return <p>{String(data?.content ?? '')}</p>;
+}
+```
+
+`meta` resets with `data` when the inputs change, so a token never belongs to
+stale content. The list and metadata hooks (`useBibles`, `useBooks`,
+`useChapters`, …) carry no token and return `meta: undefined`.
+
+FUMS expects each token once. Two cases can hand you the same content twice:
+
+- **Shared requests.** Components that ask for the same content at the same
+  moment share one request, so they all get the same `meta.fumsToken`. Report
+  it from the one component that owns the content, not from every component
+  that renders it.
+- **Audio refetch.** Report `useAudioChapter`'s token with `trackListen`, on
+  first play. A `refetch()` to renew an expiring `resourceUrl` brings a new
+  token, so an effect keyed on the token would report the same chapter again
+  mid-listen. Report from `onPlay`, once per chapter:
+
+```tsx
+function ChapterAudio({ audioBibleId, chapterId }: { audioBibleId: string; chapterId: string }) {
+  const { data, meta } = useAudioChapter(audioBibleId, chapterId);
+  const reported = useRef<string | undefined>(undefined);
+
+  const onPlay = () => {
+    const fums = (window as unknown as { fums?: Fums }).fums;
+    const chapterKey = `${audioBibleId}/${chapterId}`;
+    if (!meta?.fumsToken || !fums || reported.current === chapterKey) return;
+    reported.current = chapterKey;
+    fums('trackListen', meta.fumsToken);
+  };
+
+  return <audio src={data?.resourceUrl} controls onPlay={onPlay} />;
+}
+```
 
 ## Caching
 

@@ -15,7 +15,7 @@ import type { AsyncResource } from './types.js';
  */
 export function useBibles(params?: BibleListParams): AsyncResource<Bible[]> {
   return useAsyncResource<Bible[]>(
-    (client, signal) => client.bibles.list(params, signal).then((res) => res.data),
+    (client, signal) => client.bibles.list(params, signal),
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [stableStringify(params ?? {})],

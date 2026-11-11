@@ -1,4 +1,4 @@
-import type { BibleClientConfig, BibleError } from '@americanbible/api-bible-sdk';
+import type { BibleClientConfig, BibleError, Meta } from '@americanbible/api-bible-sdk';
 
 /**
  * The uniform result every resource hook returns. Field names deliberately
@@ -15,6 +15,15 @@ export interface AsyncResource<T> {
    * `refetch` of the same inputs keeps the previous value.
    */
   data: T | undefined;
+  /**
+   * The response envelope's `meta` for the current `data`. The content hooks
+   * (`useVerse`, `useChapter`, `usePassages`, `useSection`, `useSearch`,
+   * `useAudioChapter`) fill it in, so `meta.fumsToken` is available to report to
+   * FUMS once the content loads. Always `undefined` for the list and metadata
+   * hooks. Resets and is kept exactly when `data` is, so a token never belongs
+   * to stale content; a `refetch` replaces it with the new response's `meta`.
+   */
+  meta: Meta | undefined;
   /** A typed SDK error, or `undefined`. Cancellations are never surfaced here. */
   error: BibleError | undefined;
   /**
