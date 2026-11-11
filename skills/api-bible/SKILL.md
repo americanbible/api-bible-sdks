@@ -12,8 +12,8 @@ license: Apache-2.0
 metadata:
   author: American Bible Society
   version: "1.0"
-  sdk-version: "2.0.1"
-  react-sdk-version: "1.0.0"
+  sdk-version: "2.0.2"
+  react-sdk-version: "1.1.0"
 ---
 
 # API.Bible

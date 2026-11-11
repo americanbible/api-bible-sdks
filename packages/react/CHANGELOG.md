@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-11
+
+### Security
+
+- The `@americanbible/api-bible-sdk` peer dependency now requires `^2.0.2`
+  (was `^2.0.1`). Core 2.0.2 moves its `zod` dependency to 4.x as a security
+  fix, so installing this release pulls in a patched core. No React SDK code
+  changes were needed.
+
 ### Added
 
 - `AsyncResource` has a new `meta` field. The content hooks (`useVerse`,
