@@ -38,8 +38,9 @@ contain `KEY`, `TOKEN` or `SECRET`.
 ## Reporting results
 
 **Every PR that changes `skills/` gets a comment with the eval summary table** and a link to the
-run. Paste the table itself, because artifacts and logs expire. Directory submissions (API-1902)
-include it too. A local run is fine as evidence; so is a CI run:
+run. A CI run posts it for you: when the branch has an open PR, the workflow comments the table
+on it. For a local run, paste the table yourself; the table matters because artifacts and logs
+expire. Directory submissions (API-1902) include it too.
 
 ```bash
 gh workflow run "Skill evals" --ref <branch>   # then approve it in the skill-evals environment
