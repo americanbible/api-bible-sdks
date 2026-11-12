@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `audioBibles.getChapter` accepts `{ includeTimecodes: true }` (new `AudioChapterGetParams`
+  type), which sends `include-timecodes=true`. api.bible returns a chapter's
+  `timecodes` only when this is requested, so earlier releases never received
+  them. Call it as `getChapter(audioBibleId, chapterId, params?, signal?)`; the
+  existing `getChapter(audioBibleId, chapterId, signal)` form still works.
+- `Timecode` type export for the entries of `AudioChapter.timecodes`.
+
+### Fixed
+
+- README and doc comments no longer say timecodes are "not a request option".
+  They are returned only when requested and api.bible has them for the chapter.
+
 ## [2.0.2] - 2026-11-06
 
 A security release: the `zod` dependency moves to 4.x (see **Security**). The

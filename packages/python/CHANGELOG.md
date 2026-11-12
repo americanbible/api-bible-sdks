@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `audio_bibles.get_chapter(..., include_timecodes=True)` (sync and async) sends
+  `include-timecodes=true`. api.bible returns a chapter's `timecodes` only when
+  this is requested, so earlier releases never received them. The default
+  (`False`) leaves the request unchanged.
+- `Timecode` model (`start`, `end`, `verse_id`), exported from `api_bible`.
+
+### Changed
+
+- `AudioChapter.timecodes` is now `list[Timecode] | None`. It was mistyped as
+  `list[ContentNode]`, but was never populated because the SDK never requested
+  timecodes.
+
 ### Fixed
 
 - A call on a closed client (after `close()` / `aclose()`, or on a caller-supplied

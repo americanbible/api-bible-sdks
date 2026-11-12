@@ -449,6 +449,115 @@ describe("AudioBiblesResource", () => {
       );
     });
 
+    it("sends include-timecodes=true when includeTimecodes is true", async () => {
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(
+          mockResponse(200, { data: mockAudioChapter, meta: {} }),
+        );
+      const { data } = await makeClient(
+        fetchFn as unknown as typeof fetch,
+      ).audioBibles.getChapter(AUDIO_BIBLE_ID, CHAPTER_ID, {
+        includeTimecodes: true,
+      });
+
+      const calledUrl = (fetchFn.mock.calls[0] as [string])[0];
+      expect(calledUrl).toBe(
+        `https://rest.api.bible/v1/audio-bibles/${AUDIO_BIBLE_ID}/chapters/${CHAPTER_ID}?include-timecodes=true`,
+      );
+      expect(data.timecodes?.[0]).toEqual({
+        start: "0:00",
+        end: "0:05",
+        verseId: "GEN.1.1",
+      });
+    });
+
+    it("sends include-timecodes=false when includeTimecodes is false", async () => {
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(
+          mockResponse(200, { data: mockAudioChapter, meta: {} }),
+        );
+      await makeClient(fetchFn as unknown as typeof fetch).audioBibles.getChapter(
+        AUDIO_BIBLE_ID,
+        CHAPTER_ID,
+        { includeTimecodes: false },
+      );
+
+      const calledUrl = (fetchFn.mock.calls[0] as [string])[0];
+      expect(calledUrl).toBe(
+        `https://rest.api.bible/v1/audio-bibles/${AUDIO_BIBLE_ID}/chapters/${CHAPTER_ID}?include-timecodes=false`,
+      );
+    });
+
+    it("sends no query string for an empty params object", async () => {
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(
+          mockResponse(200, { data: mockAudioChapter, meta: {} }),
+        );
+      await makeClient(fetchFn as unknown as typeof fetch).audioBibles.getChapter(
+        AUDIO_BIBLE_ID,
+        CHAPTER_ID,
+        {},
+      );
+
+      const calledUrl = (fetchFn.mock.calls[0] as [string])[0];
+      expect(calledUrl).toBe(
+        `https://rest.api.bible/v1/audio-bibles/${AUDIO_BIBLE_ID}/chapters/${CHAPTER_ID}`,
+      );
+    });
+
+    it("still accepts an AbortSignal as the third argument (legacy form)", async () => {
+      const fetchFn = vi.fn();
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        makeClient(fetchFn as unknown as typeof fetch).audioBibles.getChapter(
+          AUDIO_BIBLE_ID,
+          CHAPTER_ID,
+          controller.signal,
+        ),
+      ).rejects.toThrow();
+      expect(fetchFn).not.toHaveBeenCalled();
+    });
+
+    it("honours the signal when passed after params", async () => {
+      const fetchFn = vi.fn();
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        makeClient(fetchFn as unknown as typeof fetch).audioBibles.getChapter(
+          AUDIO_BIBLE_ID,
+          CHAPTER_ID,
+          { includeTimecodes: true },
+          controller.signal,
+        ),
+      ).rejects.toThrow();
+      expect(fetchFn).not.toHaveBeenCalled();
+    });
+
+    it("passes the signal through with params in the 4-argument form", async () => {
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(
+          mockResponse(200, { data: mockAudioChapter, meta: {} }),
+        );
+      const controller = new AbortController();
+      await makeClient(fetchFn as unknown as typeof fetch).audioBibles.getChapter(
+        AUDIO_BIBLE_ID,
+        CHAPTER_ID,
+        { includeTimecodes: true },
+        controller.signal,
+      );
+
+      const [calledUrl, init] = fetchFn.mock.calls[0] as [string, RequestInit];
+      expect(calledUrl).toContain("?include-timecodes=true");
+      expect(init.signal).toBeDefined();
+    });
+
     it("propagates NotFoundError for unknown chapter ID", async () => {
       const fetchFn = vi
         .fn()

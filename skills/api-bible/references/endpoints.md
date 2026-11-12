@@ -128,7 +128,9 @@ related audio Bibles in `audioBibles`. Audio is fetched **one chapter at a time*
 const { data: audioBibles } = await client.audioBibles.list({ language: 'eng' });
 const audioBibleId = audioBibles[0]?.id;
 if (audioBibleId) {
-  const { data: chapter, meta } = await client.audioBibles.getChapter(audioBibleId, 'JHN.3');
+  const { data: chapter, meta } = await client.audioBibles.getChapter(audioBibleId, 'JHN.3', {
+    includeTimecodes: true,
+  });
   const expiresAt = new Date(chapter.expiresAt * 1000);
   console.log(chapter.resourceUrl, expiresAt, chapter.timecodes?.length, meta?.fumsToken);
 }
@@ -136,7 +138,7 @@ if (audioBibleId) {
 
 ```bash
 curl -s -H "api-key: $BIBLE_API_KEY" "https://rest.api.bible/v1/audio-bibles?language=eng"
-curl -s -H "api-key: $BIBLE_API_KEY" "https://rest.api.bible/v1/audio-bibles/<audioBibleId>/chapters/JHN.3"
+curl -s -H "api-key: $BIBLE_API_KEY" "https://rest.api.bible/v1/audio-bibles/<audioBibleId>/chapters/JHN.3?include-timecodes=true"
 ```
 
 Other audio methods: `audioBibles.get`, `listBooks`, `getBook` and `listChapters`.
@@ -144,8 +146,10 @@ Other audio methods: `audioBibles.get`, `listBooks`, `getBook` and `listChapters
 - `resourceUrl` is a **signed URL that expires**, by default about an hour after the request.
   `expiresAt` says exactly when. Request the chapter when the user is about to play it, and don't
   store the URL or put it in a long-lived cache.
-- `timecodes`, which map verse IDs to start and end times, appear only when API.Bible has them for
-  that chapter.
+- `timecodes`, which map verse IDs to start and end times (seconds, as strings such as `"4.240"`),
+  are opt-in: pass `{ includeTimecodes: true }` (`include-timecodes=true` on the wire,
+  `include_timecodes=True` in Python). They appear only when requested and API.Bible has them for
+  that chapter, so handle them being absent.
 - Report audio playback with `fums('trackListen', token)`, not `trackView`.
 
 ## Versification across translations (`use-org-id`)

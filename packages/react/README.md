@@ -277,9 +277,10 @@ when the data should be in the initial HTML.
   (`AudioBookSummary`).
 - **`useAudioChapters(audioBibleId, bookId)`** — lists a book's audio chapter
   summaries (`AudioChapterSummary[]`).
-- **`useAudioChapter(audioBibleId, chapterId)`** — a single audio chapter with a
-  presigned, expiring `resourceUrl` (`AudioChapter`); call `refetch()` for a
-  fresh URL.
+- **`useAudioChapter(audioBibleId, chapterId, params?)`** — a single audio chapter
+  with a presigned, expiring `resourceUrl` (`AudioChapter`); call `refetch()` for
+  a fresh URL. Pass `{ includeTimecodes: true }` to request verse-level
+  `timecodes`, which are returned only when requested and the chapter has them.
 
 ### Hook result
 
