@@ -225,7 +225,9 @@ class Timecode(_Model):
     """One verse's position in a chapter's audio.
 
     ``start`` and ``end`` are seconds into the audio, sent as 3-decimal strings
-    (e.g. ``"4.240"``).
+    (e.g. ``"4.240"``). ``verse_id`` is usually one verse but can be a range
+    when one recording covers several verses (e.g. ``"GEN.1.6-GEN.1.7"``), so a
+    lookup by a single verse id can miss.
     """
 
     start: str

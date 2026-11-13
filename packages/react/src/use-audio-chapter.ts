@@ -28,7 +28,12 @@ export function useAudioChapter(
   params?: AudioChapterGetParams,
 ): AsyncResource<AudioChapter> {
   return useAsyncResource<AudioChapter>(
-    (client, signal) => client.audioBibles.getChapter(audioBibleId, chapterId, params, signal),
+    (client, signal) =>
+      // Without params, use the 3-argument form: core 2.0.x reads the third
+      // argument as the signal, so this keeps cancellation working there.
+      params
+        ? client.audioBibles.getChapter(audioBibleId, chapterId, params, signal)
+        : client.audioBibles.getChapter(audioBibleId, chapterId, signal),
     // stableStringify turns a possibly-new-every-render params object into a
     // stable, key-order-independent string, so callers needn't memoize.
     [audioBibleId, chapterId, stableStringify(params ?? {})],

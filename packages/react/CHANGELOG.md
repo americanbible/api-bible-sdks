@@ -11,9 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `useAudioChapter(audioBibleId, chapterId, params?)` accepts
   `{ includeTimecodes: true }` and passes it to `audioBibles.getChapter`, so the
-  chapter's `timecodes` are requested. Changing the flag refetches. Requires
-  `@americanbible/api-bible-sdk` 2.1.0; raise the peer dependency to `^2.1.0`
-  when releasing.
+  chapter's `timecodes` are requested. Changing the flag refetches. Passing
+  `params` requires `@americanbible/api-bible-sdk` 2.1.0; without `params` the
+  hook works on any 2.x core. Release core 2.1.0 first, then raise this
+  package's peer and dev dependency to `^2.1.0`.
 
 ## [1.1.0] - 2026-11-11
 

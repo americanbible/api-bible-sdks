@@ -323,7 +323,7 @@ audioBibles.listChapters(audioBibleId: string, bookId: string, signal?: AbortSig
 audioBibles.getChapter(audioBibleId: string, chapterId: string, params?: AudioChapterGetParams, signal?: AbortSignal): Promise<ApiResponse<AudioChapter>>
 ```
 
-`AudioChapter` includes a signed `resourceUrl` for the audio stream. The `timecodes` array maps verse IDs to start and end times (seconds, as strings such as `"4.240"`). It is returned only when you request it and api.bible has timecode data for that chapter, so it can still be absent:
+`AudioChapter` includes a signed `resourceUrl` for the audio stream. The `timecodes` array maps verse IDs to start and end times (seconds, as strings such as `"4.240"`). It is returned only when you request it and api.bible has timecode data for that chapter, so it can still be absent. `verseId` is usually one verse but can be a range such as `GEN.1.6-GEN.1.7` when one recording covers several verses, so don't assume one entry per verse:
 
 ```typescript
 const { data } = await client.audioBibles.getChapter(audioBibleId, 'MAT.1', { includeTimecodes: true });

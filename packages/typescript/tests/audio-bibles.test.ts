@@ -50,8 +50,9 @@ const mockAudioChapter = {
   ...mockChapterSummary,
   resourceUrl: "https://cdn.example.com/audio/GEN.1.mp3?sig=abc123",
   timecodes: [
-    { start: "0:00", end: "0:05", verseId: "GEN.1.1" },
-    { start: "0:05", end: "0:12", verseId: "GEN.1.2" },
+    // Seconds as 3-decimal strings, the shape api.bible sends.
+    { start: "4.160", end: "10.100", verseId: "GEN.1.1" },
+    { start: "10.100", end: "16.240", verseId: "GEN.1.2" },
   ],
   expiresAt: 1700000000,
   next: { id: "GEN.2", bookId: BOOK_ID, number: "2" },
@@ -466,8 +467,8 @@ describe("AudioBiblesResource", () => {
         `https://rest.api.bible/v1/audio-bibles/${AUDIO_BIBLE_ID}/chapters/${CHAPTER_ID}?include-timecodes=true`,
       );
       expect(data.timecodes?.[0]).toEqual({
-        start: "0:00",
-        end: "0:05",
+        start: "4.160",
+        end: "10.100",
         verseId: "GEN.1.1",
       });
     });
@@ -539,23 +540,37 @@ describe("AudioBiblesResource", () => {
       expect(fetchFn).not.toHaveBeenCalled();
     });
 
-    it("passes the signal through with params in the 4-argument form", async () => {
-      const fetchFn = vi
-        .fn()
-        .mockResolvedValue(
-          mockResponse(200, { data: mockAudioChapter, meta: {} }),
-        );
+    it("aborts an in-flight request when the signal follows params", async () => {
       const controller = new AbortController();
-      await makeClient(fetchFn as unknown as typeof fetch).audioBibles.getChapter(
-        AUDIO_BIBLE_ID,
-        CHAPTER_ID,
-        { includeTimecodes: true },
-        controller.signal,
+      const fetchFn = vi.fn().mockImplementation(
+        (_url: string, init: RequestInit) =>
+          // The fetcher bridges the caller's signal into its own controller, so
+          // this inner signal aborts only if the caller's signal reached it.
+          new Promise((_, reject) => {
+            init.signal!.addEventListener("abort", () => {
+              const e = new Error("The operation was aborted");
+              e.name = "AbortError";
+              reject(e);
+            });
+            queueMicrotask(() => controller.abort());
+          }),
       );
 
-      const [calledUrl, init] = fetchFn.mock.calls[0] as [string, RequestInit];
-      expect(calledUrl).toContain("?include-timecodes=true");
-      expect(init.signal).toBeDefined();
+      const err = (await makeClient(
+        fetchFn as unknown as typeof fetch,
+      )
+        .audioBibles.getChapter(
+          AUDIO_BIBLE_ID,
+          CHAPTER_ID,
+          { includeTimecodes: true },
+          controller.signal,
+        )
+        .catch((e: unknown) => e)) as Error;
+
+      expect(err.name).toBe("AbortError");
+      expect((fetchFn.mock.calls[0] as [string])[0]).toContain(
+        "?include-timecodes=true",
+      );
     });
 
     it("propagates NotFoundError for unknown chapter ID", async () => {

@@ -16,7 +16,9 @@ export const AudioChapterSummarySchema = z.object({
 export type AudioChapterSummary = z.infer<typeof AudioChapterSummarySchema>;
 
 // `start` / `end` are seconds into the chapter audio, sent as 3-decimal
-// strings (e.g. "4.240").
+// strings (e.g. "4.240"). `verseId` is usually one verse but can be a range
+// when one recording covers several verses (e.g. "GEN.1.6-GEN.1.7"), so a
+// lookup by a single verse ID can miss.
 const TimecodeSchema = z.object({
   start: z.string(),
   end: z.string(),

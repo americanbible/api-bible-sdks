@@ -149,7 +149,8 @@ Other audio methods: `audioBibles.get`, `listBooks`, `getBook` and `listChapters
 - `timecodes`, which map verse IDs to start and end times (seconds, as strings such as `"4.240"`),
   are opt-in: pass `{ includeTimecodes: true }` (`include-timecodes=true` on the wire,
   `include_timecodes=True` in Python). They appear only when requested and API.Bible has them for
-  that chapter, so handle them being absent.
+  that chapter, so handle them being absent. A `verseId` can be a range (`GEN.1.6-GEN.1.7`)
+  when one recording covers several verses, so don't assume one entry per verse.
 - Report audio playback with `fums('trackListen', token)`, not `trackView`.
 
 ## Versification across translations (`use-org-id`)

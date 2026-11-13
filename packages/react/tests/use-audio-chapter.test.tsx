@@ -47,12 +47,8 @@ describe('useAudioChapter', () => {
 
     expect(result.current.data).toEqual(mockAudioChapter);
     expect(result.current.error).toBeUndefined();
-    expect(getChapter).toHaveBeenCalledWith(
-      AUDIO_BIBLE_ID,
-      CHAPTER_ID,
-      undefined,
-      expect.any(AbortSignal),
-    );
+    // No params: the 3-argument form, which core 2.0.x also understands.
+    expect(getChapter).toHaveBeenCalledWith(AUDIO_BIBLE_ID, CHAPTER_ID, expect.any(AbortSignal));
   });
 
   it('forwards includeTimecodes params', async () => {
