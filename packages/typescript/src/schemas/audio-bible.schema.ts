@@ -15,11 +15,17 @@ export const AudioChapterSummarySchema = z.object({
 
 export type AudioChapterSummary = z.infer<typeof AudioChapterSummarySchema>;
 
+// `start` / `end` are seconds into the chapter audio, sent as 3-decimal
+// strings (e.g. "4.240"). `verseId` is usually one verse but can be a range
+// when one recording covers several verses (e.g. "GEN.1.6-GEN.1.7"), so a
+// lookup by a single verse ID can miss.
 const TimecodeSchema = z.object({
   start: z.string(),
   end: z.string(),
   verseId: z.string(),
 }).passthrough();
+
+export type Timecode = z.infer<typeof TimecodeSchema>;
 
 const AudioChapterNavSchema = z.object({
   id: z.string(),
@@ -39,7 +45,8 @@ export const AudioChapterSchema = AudioChapterSummarySchema.extend({
   // getChapter caller for a field they always receive.
   reference: z.string(),
   resourceUrl: z.string(),
-  // Present only when api.bible has timecode data for the chapter; not a request option.
+  // Present only when the request sets `includeTimecodes` and api.bible has
+  // timecode data for the chapter.
   timecodes: z.array(TimecodeSchema).optional(),
   expiresAt: z.coerce.number(),
   next: AudioChapterNavSchema.optional(),
@@ -109,4 +116,12 @@ export type AudioBookListParams = {
 
 export type AudioBookGetParams = {
   includeChapters?: boolean;
+};
+
+export type AudioChapterGetParams = {
+  /**
+   * Request verse-level `timecodes`. They are returned only when this is
+   * `true` and api.bible has timecode data for the chapter. Default: `false`.
+   */
+  includeTimecodes?: boolean;
 };

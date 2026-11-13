@@ -33,6 +33,7 @@ __all__ = [
     "AudioBibleSummary",
     "AudioBook",
     "AudioChapter",
+    "Timecode",
     "SearchResult",
     "SearchVerse",
     "SearchPassage",
@@ -220,13 +221,29 @@ class AudioBook(_Model):
     audio: str | None = None
 
 
+class Timecode(_Model):
+    """One verse's position in a chapter's audio.
+
+    ``start`` and ``end`` are seconds into the audio, sent as 3-decimal strings
+    (e.g. ``"4.240"``). ``verse_id`` is usually one verse but can be a range
+    when one recording covers several verses (e.g. ``"GEN.1.6-GEN.1.7"``), so a
+    lookup by a single verse id can miss.
+    """
+
+    start: str
+    end: str
+    verse_id: str = Field(alias="verseId")
+
+
 class AudioChapter(_Model):
     id: str
     bible_id: str = Field(alias="bibleId")
     book_id: str = Field(alias="bookId")
     number: str | None = None
     resource_url: str | None = Field(default=None, alias="resourceUrl")
-    timecodes: list[ContentNode] | None = None
+    # Present only when requested with ``include_timecodes=True`` and api.bible
+    # has timecode data for the chapter.
+    timecodes: list[Timecode] | None = None
 
 
 class SearchVerse(_Model):

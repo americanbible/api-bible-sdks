@@ -125,15 +125,24 @@ class AudioBiblesResource(BaseResource):
         audio_bible_id: str,
         chapter_id: str,
         *,
+        include_timecodes: bool = False,
         timeout: float | None = None,
         headers: Mapping[str, str] | None = None,
     ) -> AudioChapter:
-        """Return a single chapter of an audio bible."""
+        """Return a single chapter of an audio bible.
+
+        Pass ``include_timecodes=True`` to request verse-level ``timecodes``.
+        They are returned only when requested and api.bible has timecode data
+        for the chapter, so ``timecodes`` can still be ``None``.
+        """
+        # Only send the flag when it's on, so the default request is unchanged.
+        params = to_query(include_timecodes=include_timecodes or None)
         resp = self._transport.request(
             "GET",
             "/audio-bibles/{audio_bible_id}/chapters/{chapter_id}",
             model=ApiResponse[AudioChapter],
             path_params={"audio_bible_id": audio_bible_id, "chapter_id": chapter_id},
+            params=params or None,
             timeout=timeout,
             extra_headers=headers,
         )
@@ -257,15 +266,24 @@ class AsyncAudioBiblesResource(_AsyncBaseResource):
         audio_bible_id: str,
         chapter_id: str,
         *,
+        include_timecodes: bool = False,
         timeout: float | None = None,
         headers: Mapping[str, str] | None = None,
     ) -> AudioChapter:
-        """Return a single chapter of an audio bible."""
+        """Return a single chapter of an audio bible.
+
+        Pass ``include_timecodes=True`` to request verse-level ``timecodes``.
+        They are returned only when requested and api.bible has timecode data
+        for the chapter, so ``timecodes`` can still be ``None``.
+        """
+        # Only send the flag when it's on, so the default request is unchanged.
+        params = to_query(include_timecodes=include_timecodes or None)
         resp = await self._transport.request(
             "GET",
             "/audio-bibles/{audio_bible_id}/chapters/{chapter_id}",
             model=ApiResponse[AudioChapter],
             path_params={"audio_bible_id": audio_bible_id, "chapter_id": chapter_id},
+            params=params or None,
             timeout=timeout,
             extra_headers=headers,
         )

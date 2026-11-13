@@ -47,7 +47,49 @@ describe('useAudioChapter', () => {
 
     expect(result.current.data).toEqual(mockAudioChapter);
     expect(result.current.error).toBeUndefined();
+    // No params: the 3-argument form, which core 2.0.x also understands.
     expect(getChapter).toHaveBeenCalledWith(AUDIO_BIBLE_ID, CHAPTER_ID, expect.any(AbortSignal));
+  });
+
+  it('forwards includeTimecodes params', async () => {
+    const getChapter = vi.fn().mockResolvedValue(okResponse);
+    const params = { includeTimecodes: true } as const;
+    const { result } = renderHook(() => useAudioChapter(AUDIO_BIBLE_ID, CHAPTER_ID, params), {
+      wrapper: wrapperFor(makeClient(getChapter)),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(getChapter).toHaveBeenCalledWith(
+      AUDIO_BIBLE_ID,
+      CHAPTER_ID,
+      params,
+      expect.any(AbortSignal),
+    );
+  });
+
+  it('refetches when includeTimecodes changes, but not for an equal new params object', async () => {
+    const getChapter = vi.fn().mockResolvedValue(okResponse);
+    const { result, rerender } = renderHook(
+      ({ include }: { include: boolean }) =>
+        useAudioChapter(AUDIO_BIBLE_ID, CHAPTER_ID, { includeTimecodes: include }),
+      { wrapper: wrapperFor(makeClient(getChapter)), initialProps: { include: false } },
+    );
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(getChapter).toHaveBeenCalledTimes(1);
+
+    // Same value, fresh object: no new request.
+    rerender({ include: false });
+    expect(getChapter).toHaveBeenCalledTimes(1);
+
+    rerender({ include: true });
+    await waitFor(() => expect(getChapter).toHaveBeenCalledTimes(2));
+    expect(getChapter).toHaveBeenLastCalledWith(
+      AUDIO_BIBLE_ID,
+      CHAPTER_ID,
+      { includeTimecodes: true },
+      expect.any(AbortSignal),
+    );
   });
 
   it('surfaces a NotFoundError in `error`', async () => {

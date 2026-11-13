@@ -42,6 +42,7 @@ from .models import (
     SearchVerse,
     Section,
     SectionSummary,
+    Timecode,
     Verse,
     VerseSummary,
 )
@@ -78,6 +79,7 @@ __all__ = [
     "AudioBibleSummary",
     "AudioBook",
     "AudioChapter",
+    "Timecode",
     "SearchResult",
     "SearchVerse",
     "SearchPassage",
