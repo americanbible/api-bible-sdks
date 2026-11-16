@@ -8,6 +8,8 @@ export {
   type AudioBookGetParams,
   type AudioChapterSummary,
   type AudioChapter,
+  type AudioChapterGetParams,
+  type Timecode,
 } from './schemas/audio-bible.schema.js';
 export { type Bible, type BibleListParams } from './schemas/bible.schema.js';
 export {

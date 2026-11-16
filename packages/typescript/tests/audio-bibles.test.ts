@@ -50,8 +50,9 @@ const mockAudioChapter = {
   ...mockChapterSummary,
   resourceUrl: "https://cdn.example.com/audio/GEN.1.mp3?sig=abc123",
   timecodes: [
-    { start: "0:00", end: "0:05", verseId: "GEN.1.1" },
-    { start: "0:05", end: "0:12", verseId: "GEN.1.2" },
+    // Seconds as 3-decimal strings, the shape api.bible sends.
+    { start: "4.160", end: "10.100", verseId: "GEN.1.1" },
+    { start: "10.100", end: "16.240", verseId: "GEN.1.2" },
   ],
   expiresAt: 1700000000,
   next: { id: "GEN.2", bookId: BOOK_ID, number: "2" },
@@ -446,6 +447,129 @@ describe("AudioBiblesResource", () => {
       const calledUrl = (fetchFn.mock.calls[0] as [string])[0];
       expect(calledUrl).toBe(
         `https://rest.api.bible/v1/audio-bibles/${AUDIO_BIBLE_ID}/chapters/${CHAPTER_ID}`,
+      );
+    });
+
+    it("sends include-timecodes=true when includeTimecodes is true", async () => {
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(
+          mockResponse(200, { data: mockAudioChapter, meta: {} }),
+        );
+      const { data } = await makeClient(
+        fetchFn as unknown as typeof fetch,
+      ).audioBibles.getChapter(AUDIO_BIBLE_ID, CHAPTER_ID, {
+        includeTimecodes: true,
+      });
+
+      const calledUrl = (fetchFn.mock.calls[0] as [string])[0];
+      expect(calledUrl).toBe(
+        `https://rest.api.bible/v1/audio-bibles/${AUDIO_BIBLE_ID}/chapters/${CHAPTER_ID}?include-timecodes=true`,
+      );
+      expect(data.timecodes?.[0]).toEqual({
+        start: "4.160",
+        end: "10.100",
+        verseId: "GEN.1.1",
+      });
+    });
+
+    it("sends include-timecodes=false when includeTimecodes is false", async () => {
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(
+          mockResponse(200, { data: mockAudioChapter, meta: {} }),
+        );
+      await makeClient(fetchFn as unknown as typeof fetch).audioBibles.getChapter(
+        AUDIO_BIBLE_ID,
+        CHAPTER_ID,
+        { includeTimecodes: false },
+      );
+
+      const calledUrl = (fetchFn.mock.calls[0] as [string])[0];
+      expect(calledUrl).toBe(
+        `https://rest.api.bible/v1/audio-bibles/${AUDIO_BIBLE_ID}/chapters/${CHAPTER_ID}?include-timecodes=false`,
+      );
+    });
+
+    it("sends no query string for an empty params object", async () => {
+      const fetchFn = vi
+        .fn()
+        .mockResolvedValue(
+          mockResponse(200, { data: mockAudioChapter, meta: {} }),
+        );
+      await makeClient(fetchFn as unknown as typeof fetch).audioBibles.getChapter(
+        AUDIO_BIBLE_ID,
+        CHAPTER_ID,
+        {},
+      );
+
+      const calledUrl = (fetchFn.mock.calls[0] as [string])[0];
+      expect(calledUrl).toBe(
+        `https://rest.api.bible/v1/audio-bibles/${AUDIO_BIBLE_ID}/chapters/${CHAPTER_ID}`,
+      );
+    });
+
+    it("still accepts an AbortSignal as the third argument (legacy form)", async () => {
+      const fetchFn = vi.fn();
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        makeClient(fetchFn as unknown as typeof fetch).audioBibles.getChapter(
+          AUDIO_BIBLE_ID,
+          CHAPTER_ID,
+          controller.signal,
+        ),
+      ).rejects.toThrow();
+      expect(fetchFn).not.toHaveBeenCalled();
+    });
+
+    it("honours the signal when passed after params", async () => {
+      const fetchFn = vi.fn();
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        makeClient(fetchFn as unknown as typeof fetch).audioBibles.getChapter(
+          AUDIO_BIBLE_ID,
+          CHAPTER_ID,
+          { includeTimecodes: true },
+          controller.signal,
+        ),
+      ).rejects.toThrow();
+      expect(fetchFn).not.toHaveBeenCalled();
+    });
+
+    it("aborts an in-flight request when the signal follows params", async () => {
+      const controller = new AbortController();
+      const fetchFn = vi.fn().mockImplementation(
+        (_url: string, init: RequestInit) =>
+          // The fetcher bridges the caller's signal into its own controller, so
+          // this inner signal aborts only if the caller's signal reached it.
+          new Promise((_, reject) => {
+            init.signal!.addEventListener("abort", () => {
+              const e = new Error("The operation was aborted");
+              e.name = "AbortError";
+              reject(e);
+            });
+            queueMicrotask(() => controller.abort());
+          }),
+      );
+
+      const err = (await makeClient(
+        fetchFn as unknown as typeof fetch,
+      )
+        .audioBibles.getChapter(
+          AUDIO_BIBLE_ID,
+          CHAPTER_ID,
+          { includeTimecodes: true },
+          controller.signal,
+        )
+        .catch((e: unknown) => e)) as Error;
+
+      expect(err.name).toBe("AbortError");
+      expect((fetchFn.mock.calls[0] as [string])[0]).toContain(
+        "?include-timecodes=true",
       );
     });
 

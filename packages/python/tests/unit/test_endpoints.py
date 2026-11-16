@@ -10,7 +10,7 @@ import httpx
 import pytest
 from harness import Api, backend_for
 
-from api_bible import BibleClient, RequestEvent, ValidationError
+from api_bible import BibleClient, RequestEvent, Timecode, ValidationError
 
 
 @pytest.fixture
@@ -135,6 +135,61 @@ async def test_endpoint(api: Api, call: Callable[[BibleClient], Any], path: str,
         assert len(result) == len(data)
     else:
         assert result.id == data["id"]
+
+
+@pytest.mark.anyio
+async def test_audio_get_chapter_requests_and_parses_timecodes(api: Api) -> None:
+    seen: dict[str, Any] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["params"] = dict(request.url.params)
+        return httpx.Response(
+            200,
+            json={
+                "data": {
+                    "id": "GEN.1",
+                    "bibleId": "a1",
+                    "bookId": "GEN",
+                    "timecodes": [
+                        {"start": "0.000", "end": "4.240", "verseId": "GEN.1.1"},
+                        {"start": "4.240", "end": "9.100", "verseId": "GEN.1.2"},
+                    ],
+                }
+            },
+        )
+
+    async with api.client(handler) as client:
+        chapter = await client.audio_bibles.get_chapter("a1", "GEN.1", include_timecodes=True)
+
+    assert seen["params"] == {"include-timecodes": "true"}
+    assert chapter.timecodes is not None
+    assert all(isinstance(t, Timecode) for t in chapter.timecodes)
+    assert chapter.timecodes[1].verse_id == "GEN.1.2"
+    assert chapter.timecodes[1].start == "4.240"
+    assert chapter.timecodes[1].end == "9.100"
+
+
+@pytest.mark.parametrize("include_timecodes", [None, False])
+@pytest.mark.anyio
+async def test_audio_get_chapter_omits_timecodes_flag_by_default(
+    api: Api, include_timecodes: bool | None
+) -> None:
+    seen: dict[str, Any] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["params"] = dict(request.url.params)
+        return httpx.Response(200, json={"data": {"id": "GEN.1", "bibleId": "a1", "bookId": "GEN"}})
+
+    async with api.client(handler) as client:
+        if include_timecodes is None:
+            chapter = await client.audio_bibles.get_chapter("a1", "GEN.1")
+        else:
+            chapter = await client.audio_bibles.get_chapter(
+                "a1", "GEN.1", include_timecodes=include_timecodes
+            )
+
+    assert seen["params"] == {}
+    assert chapter.timecodes is None
 
 
 @pytest.mark.anyio

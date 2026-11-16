@@ -319,11 +319,18 @@ audioBibles.listBooks(audioBibleId: string, params?: AudioBookListParams, signal
 audioBibles.getBook(audioBibleId: string, bookId: string, params?: AudioBookGetParams, signal?: AbortSignal): Promise<ApiResponse<AudioBookSummary>>
 
 audioBibles.listChapters(audioBibleId: string, bookId: string, signal?: AbortSignal): Promise<ApiResponse<AudioChapterSummary[]>>
-// Returns resourceUrl (signed audio stream URL); timecodes are included only when api.bible has them
-audioBibles.getChapter(audioBibleId: string, chapterId: string, signal?: AbortSignal): Promise<ApiResponse<AudioChapter>>
+// Returns resourceUrl (signed audio stream URL); pass { includeTimecodes: true } to request timecodes
+audioBibles.getChapter(audioBibleId: string, chapterId: string, params?: AudioChapterGetParams, signal?: AbortSignal): Promise<ApiResponse<AudioChapter>>
 ```
 
-`AudioChapter` includes a signed `resourceUrl` for the audio stream. The `timecodes` array (mapping timestamps to verse IDs) is present only when api.bible provides timecode data for that chapter — it is not a request option, so it will be absent for audio Bibles that have no timecodes.
+`AudioChapter` includes a signed `resourceUrl` for the audio stream. The `timecodes` array maps verse IDs to start and end times (seconds, as strings such as `"4.240"`). It is returned only when you request it and api.bible has timecode data for that chapter, so it can still be absent. `verseId` is usually one verse but can be a range such as `GEN.1.6-GEN.1.7` when one recording covers several verses, so don't assume one entry per verse:
+
+```typescript
+const { data } = await client.audioBibles.getChapter(audioBibleId, 'MAT.1', { includeTimecodes: true });
+data.timecodes?.forEach(({ verseId, start, end }) => console.log(verseId, start, end));
+```
+
+The older `getChapter(audioBibleId, chapterId, signal)` form still works.
 
 ---
 
