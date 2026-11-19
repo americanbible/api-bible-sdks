@@ -26,15 +26,20 @@ export function Providers({ children }: { children: ReactNode }) {
 }
 ```
 
-Use the reference proxy in the package README
+Start from the reference proxy in the package README
 (https://github.com/americanbible/api-bible-sdks/tree/main/packages/react#server-side-proxy), a
-Next.js route handler at `app/api/bible/[...path]/route.ts`, rather than writing your own. A
-careless proxy turns your key into an open relay. The reference version:
+Next.js route handler at `app/api/bible/[...path]/route.ts`, and adapt it to the app rather than
+writing one from scratch. A careless proxy turns your key into an open relay. The reference
+version:
 
 - adds `api-key` on the server and forwards none of the browser's headers;
 - allows only `GET` under `/bibles` and `/audio-bibles`, and rejects encoded slashes;
 - refuses redirects;
 - rate-limits each client IP.
+
+The reference is basic. Its in-memory rate limit doesn't hold on serverless or multi-instance
+hosting, and it has no global cap, IPv6 /64 keying, or bot protection. See
+https://github.com/americanbible/api-bible-sdks/tree/main/packages/react#before-you-deploy.
 
 In Next.js App Router:
 

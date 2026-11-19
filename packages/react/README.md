@@ -81,6 +81,13 @@ const client = createBibleClient({ apiKey: process.env.BIBLE_API_KEY! });
 
 ## Server-side proxy
 
+> **A reference, not a drop-in.** The handler below shows one way to build a
+> proxy. It is not production-ready as written. Adapt it to your own
+> application, including security, performance, acceptable cost, and anything
+> else that applies to you. [Before you deploy](#before-you-deploy) lists what
+> it leaves out. Like the rest of this repo, it is provided as-is, without
+> warranty, under the [Apache License 2.0](LICENSE).
+
 The proxy holds the real api-key and forwards the SDK's requests to api.bible. A
 careless proxy becomes an open relay for your key, so this reference version
 (a Next.js route handler — the same shape works in any server using the Fetch
@@ -167,6 +174,28 @@ export async function GET(req: Request): Promise<Response> {
 
 Point the provider at it with `config={{ baseUrl: '/api/bible' }}`. If your app
 sets a Next.js `basePath`, include it in both `PREFIX` and `baseUrl`.
+
+### Before you deploy
+
+The reference leaves these to you:
+
+- **Serverless and multiple instances.** The counter lives in memory, so each
+  instance keeps its own. On AWS Lambda, Vercel functions, or several servers,
+  the limit does little. Use a shared store (e.g., Redis or Upstash) or your
+  platform's rate limiting.
+- **No overall ceiling.** The limit is per IP, so many IPs together can still
+  exhaust your key's quota. Add a ceiling for the whole proxy as well.
+- **Shared addresses.** Visitors behind NAT or carrier-grade NAT, such as a
+  church, school, office, or mobile carrier, share one IP and one allowance.
+  For audiences like these, raise the limit or key on something else, such as
+  a signed-in user or session.
+- **IPv6.** One client is usually assigned a whole block of addresses and can
+  rotate through them. Key IPv6 clients on their /64 prefix. Expand `::`
+  compression before you truncate, because a naive split on `:` gets it wrong.
+- **No bot protection or caller authentication.** Any client can call the
+  proxy directly. Consider a bot challenge (e.g., Cloudflare Turnstile), rate
+  rules at your WAF or edge, or a session check if your app already has
+  sign-in.
 
 ## Next.js (App Router)
 
