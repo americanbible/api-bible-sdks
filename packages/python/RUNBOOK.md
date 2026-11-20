@@ -101,8 +101,10 @@ Publishing uses PyPI Trusted Publishing: PyPI accepts uploads only from
 `americanbible/api-bible-sdks`. No API token is stored anywhere.
 
 **Before the first release.** The PyPI project doesn't exist yet, so register a
-**pending publisher**. On pypi.org: Account settings → Publishing → Add a
-pending publisher, with:
+**pending publisher** on the **`americanbiblesociety` organization**, not under
+a personal account. That way the project is created org-owned on the first
+release. On pypi.org: Your organizations → `americanbiblesociety` → Publishing →
+Add a pending publisher, with:
 
 | Field | Value |
 | --- | --- |
@@ -114,11 +116,10 @@ pending publisher, with:
 
 The first tagged release then creates the project.
 
-**Keep at least two owners.** After the first release, add a second maintainer
-as **Owner** (Manage project → Collaborators). That way losing one account
-doesn't lock the project. Both accounts need 2FA, which PyPI requires. Moving
-the project into a PyPI organization for American Bible Society also makes
-ownership independent of any one person.
+**Keep at least two owners.** Because the project belongs to the
+`americanbiblesociety` organization, ownership doesn't depend on any one person.
+Still keep at least two organization **Owners**, so losing one account doesn't
+lock the project. All accounts need 2FA, which PyPI requires.
 
 **If publishing is compromised**, act on whichever of these applies:
 
