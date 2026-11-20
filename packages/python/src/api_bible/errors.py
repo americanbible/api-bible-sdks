@@ -39,8 +39,23 @@ __all__ = [
 ]
 
 
+def _restore_error(cls: type[BibleError], args: tuple[Any, ...]) -> BibleError:
+    """Unpickle helper: rebuild ``cls`` without calling its ``__init__``.
+
+    The attributes come back through ``BaseException.__setstate__``.
+    """
+    return cls.__new__(cls, *args)
+
+
 class BibleError(Exception):
     """Base class for every error raised by this SDK."""
+
+    def __reduce__(self) -> tuple[Any, ...]:
+        # The default reduce re-calls ``type(self)(*self.args)``, which fails for
+        # subclasses with required keyword-only arguments (``status_code``,
+        # ``errors``). Rebuild without ``__init__`` and restore ``__dict__``
+        # instead, so pickle and copy keep every attribute.
+        return (_restore_error, (type(self), self.args), self.__dict__)
 
 
 class InvalidInputError(BibleError):
