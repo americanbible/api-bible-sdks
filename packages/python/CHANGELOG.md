@@ -11,36 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- `audio_bibles.get_chapter(..., include_timecodes=True)` (sync and async) sends
-  `include-timecodes=true`. api.bible returns a chapter's `timecodes` only when
-  this is requested, so earlier releases never received them. The default
-  (`False`) leaves the request unchanged.
-- `Timecode` model (`start`, `end`, `verse_id`), exported from `api_bible`.
-
-### Changed
-
-- `AudioChapter.timecodes` is now `list[Timecode] | None`. It was mistyped as
-  `list[ContentNode]`, but was never populated because the SDK never requested
-  timecodes.
-
-### Fixed
-
-- A call on a closed client (after `close()` / `aclose()`, or on a caller-supplied
-  `http_client` its owner closed) now raises `InvalidInputError` instead of
-  httpx's bare `RuntimeError`, so `except BibleError` catches it. No request is
-  sent and no `on_request` event fires. A close during a retry backoff ends the
-  call the same way.
-
-### Documentation
-
-- The README "Error handling" example no longer expects `NotFoundError` for an
-  unknown Bible ID. api.bible answers that with 403, which the SDK raises as
-  `AuthError`. The example now uses a missing verse (404) and explains the 403
-  causes.
-
-## [1.5.0] - 2026-11-05
+## [1.5.0] - 2026-11-20
 
 ### Added
 
@@ -51,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `http_client` takes an `httpx.AsyncClient`. Retry, timeout, redirect,
   size-cap and api-key behaviour is shared code with the sync client, so the two
   cannot diverge. `last_meta` is per task. See README, "Async".
+- `audio_bibles.get_chapter(..., include_timecodes=True)` (sync and async) sends
+  `include-timecodes=true`. api.bible returns a chapter's `timecodes` only when
+  this is requested, so earlier versions never received them. The default
+  (`False`) leaves the request unchanged.
+- `Timecode` model (`start`, `end`, `verse_id`), exported from `api_bible`.
 - `anyio` (`>=4,<5`) is now a direct dependency. It was already installed
   through httpx; the async client uses it to sleep between retries.
 - **Python 3.14** is officially supported: it is tested in CI and listed in the
@@ -61,15 +37,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `AudioChapter.timecodes` is now `list[Timecode] | None`. It was mistyped as
+  `list[ContentNode]`, but was never populated because the SDK never requested
+  timecodes.
 - The `dev` extra is no longer published in the package metadata. The dev
   toolchain is now a PEP 735 dependency group locked in `uv.lock`; contributors
   run `uv sync` (see README, "Development").
+- **Client-level `headers` are validated when the client is built.** A header
+  name or value that is not an ASCII string raises `InvalidInputError` from the
+  constructor; previously the first request failed with httpx's
+  `UnicodeEncodeError` or `TypeError`. Per-request `headers` are checked the same
+  way before anything is sent. The message names the header but never shows its
+  value.
 
 ### Removed
 
 - **Python 3.10** support. It reached end of life in October 2026, so
   `requires-python` is now `>=3.11`. No 1.x release supporting 3.10 was ever
   published to PyPI.
+
+### Fixed
+
+- A call on a closed client (after `close()` / `aclose()`, or on a caller-supplied
+  `http_client` its owner closed) now raises `InvalidInputError` instead of
+  httpx's bare `RuntimeError`, so `except BibleError` catches it. No request is
+  sent and no `on_request` event fires. A close during a retry backoff ends the
+  call the same way, and so does a close by another thread or task between that
+  check and the send.
+- **SDK errors can be pickled and copied.** `pickle`, `copy.copy` and
+  `copy.deepcopy` raised `TypeError` for `ApiError` and its subclasses and for
+  `ValidationError`, which broke passing them between processes
+  (`multiprocessing`, Celery, Ray). Every attribute (`status_code`, `body`,
+  `retry_after`, `headers`, `errors`, …) survives the round trip.
+- **More failures now raise a `BibleError` subclass** instead of escaping as a
+  built-in exception:
+  - an id or `api_key` that is not a `str` (e.g. `bibles.get(123)`, a `bytes`
+    key) raises `InvalidInputError` (the key's value is never echoed);
+  - a response body nested too deeply to decode raises `ApiError` for a 2xx
+    (previously `RecursionError`), and a 5xx with such a body is now retried as a
+    `ServerError`;
+  - a redirect whose `Location` has an invalid host (e.g. `http://xn--/`) no
+    longer raises `idna.IDNAError` or `httpx.InvalidURL`. A 300 or 305 raises
+    the usual redirect `ApiError`; a 301, 302, 303, 307 or 308, whose `Location`
+    httpx parses itself, raises `NetworkError` like any other invalid `Location`
+    URL.
+
+### Security
+
+- **The api-key is sent only to the API's own origin.** When a caller-supplied
+  `http_client` has an `auth=` that makes its own requests (e.g. fetching a token
+  from another host), those requests no longer receive the `api-key` header. The
+  key is set only on requests whose scheme, host and port match the API request.
+
+### Documentation
+
+- The README "Error handling" example no longer expects `NotFoundError` for an
+  unknown Bible ID. api.bible answers that with 403, which the SDK raises as
+  `AuthError`. The example now uses a missing verse (404) and explains the 403
+  causes.
 
 ## [1.4.0] - 2026-10-09
 
