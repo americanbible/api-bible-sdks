@@ -63,6 +63,12 @@ def test_expand_route_rejects_empty_and_dot_ids(value: str) -> None:
         expand_route("/bibles/{bible_id}", bible_id=value)
 
 
+@pytest.mark.parametrize("value", [123, None, b"de4e12af7f28f599-02", ["a"]])
+def test_expand_route_rejects_non_str_ids(value: object) -> None:
+    with pytest.raises(InvalidInputError, match=r"invalid bible_id: ids must be str, got "):
+        expand_route("/bibles/{bible_id}", bible_id=value)  # type: ignore[arg-type]
+
+
 def test_expand_route_allows_dots_inside_ids() -> None:
     # Only exact "." / ".." are dot-segments; dotted ids are fine.
     path = expand_route("/x/{a}/{b}", a="GEN.1", b="...")

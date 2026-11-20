@@ -339,6 +339,13 @@ client.chapters.get(
 Per-request headers override client-level `headers` of the same name, but can
 never override the `api-key`. The SDK applies it last, at send time, through an
 `httpx.Auth`, after client-level, per-request and your `http_client`'s own headers.
+It sends the key only to the API's own origin (scheme, host and port), so a
+request your `http_client`'s `auth=` makes elsewhere, such as a token refresh,
+never carries it.
+
+Header names and values must be ASCII strings. Anything else raises
+`InvalidInputError`: from the constructor for client-level `headers`, or before
+the request is sent for per-request ones.
 
 ## Development
 

@@ -32,6 +32,29 @@ def test_api_key_surrounding_whitespace_is_stripped(raw: str) -> None:
         assert client.bibles.list() == []
 
 
+@pytest.mark.parametrize("raw", [b"SECRETKEY", 12345, ["SECRETKEY"]])
+def test_non_str_api_key_rejected_without_echoing_it(raw: object) -> None:
+    with pytest.raises(InvalidInputError, match="api_key must be a str, got ") as exc_info:
+        BibleClient(raw)  # type: ignore[arg-type]
+
+    assert "SECRET" not in str(exc_info.value)
+    assert "12345" not in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [{"X-Note": "café"}, {"X-Café": "note"}, {"X-Note": 1}, {1: "note"}],
+    ids=["non-ascii-value", "non-ascii-name", "non-str-value", "non-str-name"],
+)
+def test_invalid_client_headers_rejected_at_construction(headers: dict[object, object]) -> None:
+    with pytest.raises(InvalidInputError, match="client header") as exc_info:
+        BibleClient("k", headers=headers)  # type: ignore[arg-type]
+
+    assert "café" not in str(exc_info.value)
+    assert exc_info.value.__cause__ is None
+    assert exc_info.value.__context__ is None
+
+
 @pytest.mark.parametrize("raw", ["SECRET KEY", "SECRET\x00KEY", "SECRÉTKEY"])
 def test_api_key_with_illegal_characters_rejected_without_echoing_it(raw: str) -> None:
     with pytest.raises(InvalidInputError, match="api_key contains") as exc_info:

@@ -14,11 +14,12 @@ import inspect
 import logging
 import subprocess
 import sys
-from collections.abc import Generator
+from collections.abc import Callable, Generator
+from typing import Any
 
 import httpx
 import pytest
-from harness import Api, backend_for, patch_sleep
+from harness import BASE_URL, TEST_RETRY, Api, backend_for, patch_sleep
 
 from api_bible import (
     ApiError,
@@ -1223,3 +1224,274 @@ async def test_redirect_to_relative_location_does_not_name_a_host(api: Api) -> N
     message = str(info.value)
     assert "an undisclosed host" in message
     assert "secret" not in message
+
+
+# --- failures that must surface as a BibleError -------------------------------
+
+
+def _recording(calls: list[httpx.Request]) -> Callable[[httpx.Request], httpx.Response]:
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return _ok([])
+
+    return handler
+
+
+@pytest.mark.anyio
+async def test_non_str_id_raises_invalid_input_without_sending(api: Api) -> None:
+    calls: list[httpx.Request] = []
+    async with api.client(_recording(calls)) as client:
+        with pytest.raises(InvalidInputError, match="ids must be str, got int"):
+            await client.bibles.get(123)
+
+    assert calls == []
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "headers",
+    [{"X-Note": "café"}, {"X-Café": "note"}, {"X-Note": 1}, {1: "note"}, {"X-Note": None}],
+    ids=["non-ascii-value", "non-ascii-name", "non-str-value", "non-str-name", "none-value"],
+)
+async def test_invalid_per_request_header_raises_invalid_input_without_sending(
+    api: Api, headers: dict[object, object]
+) -> None:
+    calls: list[httpx.Request] = []
+    async with api.client(_recording(calls)) as client:
+        with pytest.raises(InvalidInputError, match="per-request header") as info:
+            await client.bibles.list(headers=headers)
+
+    assert "café" not in str(info.value)
+    assert info.value.__context__ is None
+    assert calls == []
+
+
+@pytest.mark.anyio
+async def test_bytes_header_values_are_still_accepted(api: Api) -> None:
+    # httpx accepts bytes headers; the ASCII check must not start rejecting them.
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["x-trace"] = request.headers["x-trace"]
+        seen["x-client"] = request.headers["x-client"]
+        return _ok([])
+
+    async with api.client(handler, headers={"X-Client": b"c"}) as client:
+        await client.bibles.list(headers={"X-Trace": b"t"})
+
+    assert seen == {"x-trace": "t", "x-client": "c"}
+
+
+_DEEPLY_NESTED = b"[" * 200_000
+
+
+@pytest.mark.anyio
+async def test_deeply_nested_2xx_body_raises_api_error(api: Api) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200, content=_DEEPLY_NESTED, headers={"Content-Type": "application/json"}
+        )
+
+    async with api.client(handler) as client:
+        with pytest.raises(ApiError, match="expected a JSON response body") as info:
+            await client.bibles.list()
+
+    assert type(info.value) is ApiError
+    assert isinstance(info.value.__cause__, RecursionError)
+    assert info.value.body_truncated
+
+
+@pytest.mark.anyio
+async def test_deeply_nested_5xx_body_is_retried_as_server_error(api: Api) -> None:
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(
+            503, content=_DEEPLY_NESTED, headers={"Content-Type": "application/json"}
+        )
+
+    async with api.client(handler) as client:
+        with pytest.raises(ServerError) as info:
+            await client.bibles.list()
+
+    assert str(info.value) == "HTTP 503"
+    assert len(calls) == TEST_RETRY.max_attempts
+
+
+_MALFORMED_LOCATIONS = pytest.mark.parametrize(
+    "location",
+    ["http://xn--/v1/bibles?token=secret", "http://[::1/v1/bibles?token=secret"],
+    ids=["invalid-idna", "invalid-ipv6"],
+)
+
+
+@pytest.mark.anyio
+@_MALFORMED_LOCATIONS
+@pytest.mark.parametrize("status", [300, 305])
+async def test_unparsed_redirect_to_malformed_location_raises_redirect_error(
+    api: Api, location: str, status: int
+) -> None:
+    # httpx leaves the Location of these statuses alone; the SDK parses it to
+    # name the target host, and must fall back rather than raise.
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(status, headers={"Location": location})
+
+    async with api.client(handler) as client:
+        with pytest.raises(ApiError) as info:
+            await client.bibles.list()
+
+    message = str(info.value)
+    assert type(info.value) is ApiError
+    assert info.value.status_code == status
+    assert "an undisclosed host" in message
+    assert "secret" not in message
+
+
+@pytest.mark.anyio
+@_MALFORMED_LOCATIONS
+async def test_redirect_to_malformed_location_parsed_by_httpx_raises_network_error(
+    api: Api, location: str
+) -> None:
+    # httpx parses a 302's Location even without following it. An invalid IDNA
+    # host escaped as idna.IDNAError; it now fails like any other invalid URL.
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(302, headers={"Location": location})
+
+    async with api.client(handler) as client:
+        with pytest.raises(NetworkError, match="Invalid URL in location header") as info:
+            await client.bibles.list()
+
+    assert "secret" not in str(info.value)
+    assert len(calls) == TEST_RETRY.max_attempts
+
+
+def _racing_http_client(api: Api, handler: Callable[[httpx.Request], httpx.Response]) -> Any:
+    """An httpx client whose ``is_closed`` reports "open" once while it is closed.
+
+    Simulates another thread or task closing the client between the SDK's
+    ``is_closed`` check and the send.
+    """
+    base: type[Any] = httpx.AsyncClient if api.is_async else httpx.Client
+
+    class Racing(base):  # type: ignore[misc, valid-type]
+        lie_once = False
+
+        @property
+        def is_closed(self) -> bool:
+            if self.lie_once:
+                self.lie_once = False
+                return False
+            return bool(super().is_closed)
+
+    return Racing(base_url=BASE_URL, transport=httpx.MockTransport(handler))
+
+
+@pytest.mark.anyio
+async def test_close_racing_the_send_raises_invalid_input(api: Api) -> None:
+    calls: list[httpx.Request] = []
+    events: list[RequestEvent] = []
+    http_client = _racing_http_client(api, _recording(calls))
+
+    async with api.open("k", http_client=http_client, on_request=events.append) as client:
+        if api.is_async:
+            await http_client.aclose()
+        else:
+            http_client.close()
+        http_client.lie_once = True
+        with pytest.raises(InvalidInputError, match="client is closed") as info:
+            await client.bibles.list()
+
+    assert info.value.__context__ is None or info.value.__suppress_context__
+    assert calls == []
+    assert events == []
+
+
+@pytest.mark.anyio
+async def test_unrelated_runtime_error_from_an_open_client_propagates(api: Api) -> None:
+    # Only a RuntimeError from a closed client is mapped; a caller transport's own
+    # bug is not disguised as "client is closed".
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise RuntimeError("bug in a custom transport")
+
+    async with api.client(handler) as client:
+        with pytest.raises(RuntimeError, match="bug in a custom transport"):
+            await client.bibles.list()
+
+
+# --- api-key scoped to the API origin -------------------------------------------
+
+
+class _SideRequestAuth(httpx.Auth):
+    """A caller's auth that also talks to another URL, e.g. to refresh a token.
+
+    Sends the API request, then a side request (optionally copying the API
+    request's headers, api-key included), then the API request again.
+    """
+
+    def __init__(self, side_url: str, side_headers: str) -> None:
+        self.side_url = side_url
+        self.side_headers = side_headers
+
+    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response, None]:
+        yield request
+        if self.side_headers == "copied":
+            headers = dict(request.headers)
+        elif self.side_headers == "own-key":
+            headers = {"api-key": "key-for-the-other-service"}
+        else:
+            headers = {}
+        yield httpx.Request("POST", self.side_url, headers=headers)
+        request.headers["Authorization"] = "Bearer refreshed"
+        yield request
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "side_url",
+    [
+        "https://auth.example.com/token",
+        "http://rest.api.bible/token",
+        "https://rest.api.bible:8443/token",
+    ],
+    ids=["other-host", "other-scheme", "other-port"],
+)
+@pytest.mark.parametrize("side_headers", ["fresh", "copied", "own-key"])
+async def test_api_key_is_not_sent_to_other_origins(
+    api: Api, side_url: str, side_headers: str
+) -> None:
+    sent: list[tuple[str, str | None]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append((str(request.url.copy_with(query=None)), request.headers.get("api-key")))
+        return _ok([])
+
+    auth = _SideRequestAuth(side_url, side_headers)
+    async with api.client(handler, http_client_kwargs={"auth": auth}) as client:
+        await client.bibles.list()
+
+    side_key = "key-for-the-other-service" if side_headers == "own-key" else None
+    assert sent == [
+        (f"{BASE_URL}/bibles", "test-key"),
+        (side_url, side_key),
+        (f"{BASE_URL}/bibles", "test-key"),
+    ]
+
+
+@pytest.mark.anyio
+async def test_api_key_is_sent_when_the_origin_spells_out_the_default_port(api: Api) -> None:
+    # https://rest.api.bible:443 is the same origin as https://rest.api.bible.
+    sent: list[str | None] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(request.headers.get("api-key"))
+        return _ok([])
+
+    auth = _SideRequestAuth("https://rest.api.bible:443/token", "fresh")
+    async with api.client(handler, http_client_kwargs={"auth": auth}) as client:
+        await client.bibles.list()
+
+    assert sent == ["test-key", "test-key", "test-key"]
