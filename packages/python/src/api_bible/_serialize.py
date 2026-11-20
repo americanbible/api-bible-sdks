@@ -27,10 +27,13 @@ def expand_route(route: str, **ids: str) -> str:
     Empty, whitespace-only, ``.`` and ``..`` ids are rejected with
     :class:`InvalidInputError`: percent-encoding leaves them intact, so they
     would collapse into a different endpoint (``/bibles/`` is the list route)
-    or be normalized away by the HTTP client.
+    or be normalized away by the HTTP client. Non-``str`` ids are rejected the
+    same way rather than failing with an ``AttributeError``.
     """
     encoded: dict[str, str] = {}
     for name, value in ids.items():
+        if not isinstance(value, str):
+            raise InvalidInputError(f"invalid {name}: ids must be str, got {type(value).__name__}")
         if not value.strip() or value in (".", ".."):
             raise InvalidInputError(
                 f"invalid {name} {value!r}: ids must be non-empty and must not be '.' or '..'"

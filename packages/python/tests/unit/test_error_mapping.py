@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import copy
+import pickle
+from collections.abc import Callable
+
 import httpx
+import pydantic
 import pytest
 from harness import Api, backend_for
 
@@ -8,13 +13,17 @@ from api_bible import (
     ApiError,
     AuthError,
     BadRequestError,
+    BibleError,
     ConflictError,
+    InvalidInputError,
     NetworkError,
     NotFoundError,
     RateLimitError,
     RetryConfig,
     ServerError,
     UnprocessableEntityError,
+    ValidationError,
+    errors,
 )
 
 
@@ -186,3 +195,83 @@ async def test_redirect_is_not_retried(api: Api) -> None:
 
     # max_attempts is 3 — a redirect is terminal, so only one request goes out.
     assert calls == 1
+
+
+# --- pickling and copying -------------------------------------------------------
+
+
+def _error_samples() -> list[BibleError]:
+    """One instance of every SDK error class, with every attribute populated."""
+    api_kwargs = {
+        "status_code": 503,
+        "body": '{"message": "down"}',
+        "body_truncated": True,
+        "retry_after": 2.5,
+        "headers": {"x-request-id": "abc"},
+    }
+    samples: list[BibleError] = [
+        BibleError("base"),
+        InvalidInputError("bad input"),
+        NetworkError("network error: refused"),
+    ]
+    for cls in (
+        ApiError,
+        AuthError,
+        BadRequestError,
+        NotFoundError,
+        ConflictError,
+        UnprocessableEntityError,
+        RateLimitError,
+        ServerError,
+    ):
+        samples.append(cls(f"{cls.__name__} message", **api_kwargs))  # type: ignore[arg-type]
+    try:
+        pydantic.TypeAdapter(int).validate_python("not an int")
+    except pydantic.ValidationError as exc:
+        samples.append(
+            ValidationError("did not match", errors=[dict(issue) for issue in exc.errors()])
+        )
+    return samples
+
+
+def test_every_error_class_has_a_sample() -> None:
+    sampled = {type(sample).__name__ for sample in _error_samples()}
+    assert sampled == set(errors.__all__)
+
+
+@pytest.mark.parametrize("name", sorted(errors.__all__))
+@pytest.mark.parametrize(
+    "duplicate",
+    [lambda e: pickle.loads(pickle.dumps(e)), copy.copy, copy.deepcopy],
+    ids=["pickle", "copy", "deepcopy"],
+)
+def test_errors_survive_pickle_and_copy(
+    name: str, duplicate: Callable[[BibleError], BibleError]
+) -> None:
+    (error,) = [sample for sample in _error_samples() if type(sample).__name__ == name]
+    error.add_note("context added by the caller")
+
+    clone = duplicate(error)
+
+    assert type(clone) is type(error)
+    assert str(clone) == str(error)
+    assert clone.args == error.args
+    assert clone.__dict__ == error.__dict__
+    assert clone.__notes__ == ["context added by the caller"]
+    if isinstance(error, ValidationError):
+        assert isinstance(clone, ValidationError)
+        assert clone.format() == error.format()
+
+
+def test_caller_subclass_of_an_sdk_error_survives_pickle() -> None:
+    error = _CallerError("wrapped", status_code=404, body="nope")
+    error.extra = "caller attribute"
+
+    clone = pickle.loads(pickle.dumps(error))
+
+    assert type(clone) is _CallerError
+    assert (clone.status_code, clone.body, clone.extra) == (404, "nope", "caller attribute")
+
+
+class _CallerError(NotFoundError):
+    extra: str = ""

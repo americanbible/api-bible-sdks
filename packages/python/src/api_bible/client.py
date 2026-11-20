@@ -52,6 +52,9 @@ def _normalize_api_key(api_key: str) -> str:
     Kubernetes secret. Left in, h11 rejects the header with a message that quotes
     the value — the key itself. These errors must never echo the key.
     """
+    if api_key is not None and not isinstance(api_key, str):
+        # e.g. bytes read from a file. Name the type only, never the value.
+        raise InvalidInputError(f"api_key must be a str, got {type(api_key).__name__}")
     key = (api_key or "").strip()
     if not key:
         raise InvalidInputError("api_key is required")

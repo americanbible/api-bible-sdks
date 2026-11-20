@@ -273,9 +273,16 @@ def _redirect_error(response: httpx.Response, headers: Mapping[str, str]) -> Api
     if location:
         # Origin only. A Location URL can carry credentials in its query string,
         # and this message may well end up in someone's logs.
-        url = httpx.URL(location)
-        if url.host:
-            target = f"{url.scheme}://{url.host}" if url.scheme else url.host
+        try:
+            url = httpx.URL(location)
+            host = url.host  # decodes IDNA lazily, so it can raise too
+        except (httpx.InvalidURL, ValueError):
+            # e.g. an invalid IDNA host (`idna.IDNAError` is a ValueError). Keep
+            # the generic target rather than escape as a non-BibleError.
+            pass
+        else:
+            if host:
+                target = f"{url.scheme}://{host}" if url.scheme else host
     return ApiError(
         f"api.bible responded with a redirect (HTTP {response.status_code}) to {target}. "
         "The SDK does not follow redirects: the api-key header would be resent to the "
@@ -285,6 +292,11 @@ def _redirect_error(response: httpx.Response, headers: Mapping[str, str]) -> Api
     )
 
 
+def _origin(url: httpx.URL) -> tuple[str, str, int | None]:
+    """``(scheme, host, port)``; httpx normalizes a scheme's default port to ``None``."""
+    return (url.scheme, url.host, url.port)
+
+
 class _ApiKeyAuth(httpx.Auth):
     """Sets the ``api-key`` header at send time, after every other header layer.
 
@@ -292,7 +304,10 @@ class _ApiKeyAuth(httpx.Auth):
     ``Transport.request``'s frame locals, which error trackers such as Sentry
     capture and may not scrub under a hyphenated name. ``inner`` is the auth of
     a caller-supplied ``http_client`` (if any); it still runs, and the key is
-    re-applied to every request it yields so the key always wins.
+    re-applied to every request it yields for the API's own origin, so the key
+    always wins there. A request ``inner`` makes elsewhere (e.g. fetching a token
+    from another host) never gets the key, and loses it if ``inner`` copied it
+    over from the API request.
     """
 
     def __init__(self, api_key: str, inner: httpx.Auth | None = None) -> None:
@@ -306,17 +321,26 @@ class _ApiKeyAuth(httpx.Auth):
         request.headers["api-key"] = self._api_key
         yield request
 
+    def _apply(self, outgoing: httpx.Request, origin: tuple[str, str, int | None]) -> None:
+        """Key ``outgoing`` if it targets ``origin``; otherwise make sure it has no key."""
+        if _origin(outgoing.url) == origin:
+            outgoing.headers["api-key"] = self._api_key
+        elif outgoing.headers.get("api-key") == self._api_key:
+            del outgoing.headers["api-key"]
+
     def sync_auth_flow(
         self, request: httpx.Request
     ) -> Generator[httpx.Request, httpx.Response, None]:
         if self._inner is None:
             yield from self.auth_flow(request)
             return
+        # The API request is built from the base URL, so this is its origin.
+        origin = _origin(request.url)
         flow = self._inner.sync_auth_flow(request)
         try:
             outgoing = next(flow)
             while True:
-                outgoing.headers["api-key"] = self._api_key
+                self._apply(outgoing, origin)
                 response = yield outgoing
                 outgoing = flow.send(response)
         except StopIteration:
@@ -329,11 +353,12 @@ class _ApiKeyAuth(httpx.Auth):
             request.headers["api-key"] = self._api_key
             yield request
             return
+        origin = _origin(request.url)
         flow = self._inner.async_auth_flow(request)
         try:
             outgoing = await flow.__anext__()
             while True:
-                outgoing.headers["api-key"] = self._api_key
+                self._apply(outgoing, origin)
                 response = yield outgoing
                 outgoing = await flow.asend(response)
         except StopAsyncIteration:
@@ -414,6 +439,20 @@ class _Retry:
 
     failure: _Failure
     delay: float
+
+
+def _as_http_error(exc: httpx.HTTPError | UnicodeError) -> httpx.HTTPError:
+    """Map a ``UnicodeError`` from ``send`` to the error httpx uses for a bad redirect.
+
+    httpx parses the ``Location`` of a 301/302/303/307/308 even when it won't
+    follow it. An otherwise invalid URL becomes ``RemoteProtocolError``, but an
+    invalid IDNA host (``http://xn--/``) escapes as ``idna.IDNAError``, a
+    ``UnicodeError``. Request headers are validated up front, so that is the
+    only source of one here.
+    """
+    if isinstance(exc, httpx.HTTPError):
+        return exc
+    return httpx.RemoteProtocolError(f"Invalid URL in location header: {exc}.")
 
 
 def _classify_error(
@@ -506,6 +545,25 @@ def _next_step(
     return _Retry(failure, delay)
 
 
+def _check_headers(headers: Mapping[Any, Any], source: str) -> None:
+    """Reject header names and values httpx can't encode, before any I/O.
+
+    httpx encodes ``str`` headers as ASCII and raises ``UnicodeEncodeError``,
+    ``TypeError`` or ``AttributeError`` otherwise, none of which is a
+    :class:`~api_bible.BibleError`. ``bytes`` pass through, as httpx accepts them.
+    The value is never shown: it may be a credential.
+    """
+    for name, value in headers.items():
+        for part in (name, value):
+            if isinstance(part, bytes):
+                continue
+            if not isinstance(part, str) or not part.isascii():
+                raise InvalidInputError(
+                    f"{source} header {name!r}: header names and values must be ASCII "
+                    "strings (value not shown to avoid disclosing credentials)"
+                )
+
+
 def _closed_error() -> InvalidInputError:
     """The error for a call on a closed client.
 
@@ -561,10 +619,18 @@ class _TransportBase:
         self._on_retry = on_retry
         self._max_response_bytes = max_response_bytes
         extra = dict(headers or {})
+        _check_headers(extra, "client")
         # Identify SDK traffic to api.bible, unless the caller set their own UA.
         if not any(name.lower() == "user-agent" for name in extra):
             extra["User-Agent"] = _USER_AGENT
         self._extra_headers = extra
+
+    def _request_headers(self, extra_headers: Mapping[str, str] | None) -> dict[str, str]:
+        """Client headers, then per-request ones. The api-key is not in here:
+        ``_ApiKeyAuth`` sets it at send time, after both layers, so it can never
+        be overridden and never sits in a frame local."""
+        _check_headers(extra_headers or {}, "per-request")
+        return {**self._extra_headers, **(extra_headers or {})}
 
     def _deadline(self) -> float | None:
         """Monotonic time by which a call must stop scheduling retries, if any."""
@@ -814,7 +880,8 @@ class _TransportBase:
             )
         try:
             payload = json.loads(body)
-        except ValueError as exc:
+        except (ValueError, RecursionError) as exc:
+            # RecursionError: nesting too deep for the decoder (e.g. "[" * 200000).
             text = body.decode("utf-8", errors="replace")
             raise ApiError(
                 "expected a JSON response body",
@@ -902,10 +969,7 @@ class Transport(_TransportBase):
         path = expand_route(route, **(path_params or {}))
         call = _Call(method, path, route, uuid.uuid4().hex)
 
-        # Client headers first, then per-request headers. The api-key is not in
-        # here: `_ApiKeyAuth` sets it at send time, after both layers, so it can
-        # never be overridden and never sits in a frame local.
-        headers = {**self._extra_headers, **(extra_headers or {})}
+        headers = self._request_headers(extra_headers)
         extra: dict[str, Any] = {}
         if timeout is not None:
             extra["timeout"] = timeout
@@ -933,9 +997,15 @@ class Transport(_TransportBase):
                     body = self._read_body(response)
                 finally:
                     response.close()
-            except httpx.HTTPError as exc:
+            except RuntimeError:
+                # Closed by another thread/task after the check above: httpx
+                # raises a bare RuntimeError. Anything else is not ours to map.
+                if not self._client.is_closed:
+                    raise
+                raise _closed_error() from None
+            except (httpx.HTTPError, UnicodeError) as exc:
                 elapsed_ms = (time.monotonic() - start) * 1000.0
-                label, failed = _classify_error(exc, self._redact)
+                label, failed = _classify_error(_as_http_error(exc), self._redact)
                 self._emit(call, None, elapsed_ms, attempt, label)
                 if isinstance(failed, _Raise):
                     raise failed.error from failed.cause
@@ -1087,7 +1157,7 @@ class AsyncTransport(_TransportBase):
         path = expand_route(route, **(path_params or {}))
         call = _Call(method, path, route, uuid.uuid4().hex)
 
-        headers = {**self._extra_headers, **(extra_headers or {})}
+        headers = self._request_headers(extra_headers)
         extra: dict[str, Any] = {}
         if timeout is not None:
             extra["timeout"] = timeout
@@ -1109,9 +1179,15 @@ class AsyncTransport(_TransportBase):
                     body = await self._read_body(response)
                 finally:
                     await response.aclose()
-            except httpx.HTTPError as exc:
+            except RuntimeError:
+                # Closed by another thread/task after the check above: httpx
+                # raises a bare RuntimeError. Anything else is not ours to map.
+                if not self._client.is_closed:
+                    raise
+                raise _closed_error() from None
+            except (httpx.HTTPError, UnicodeError) as exc:
                 elapsed_ms = (time.monotonic() - start) * 1000.0
-                label, failed = _classify_error(exc, self._redact)
+                label, failed = _classify_error(_as_http_error(exc), self._redact)
                 self._emit(call, None, elapsed_ms, attempt, label)
                 if isinstance(failed, _Raise):
                     raise failed.error from failed.cause
@@ -1203,7 +1279,9 @@ def _error_for_status(
 def _extract_message(body: bytes) -> str | None:
     try:
         data: Any = json.loads(body)
-    except ValueError:
+    except (ValueError, RecursionError):
+        # Not JSON, or nested too deeply to decode. Falling back to "HTTP <status>"
+        # keeps a 5xx retryable instead of escaping as a RecursionError.
         return None
     if isinstance(data, dict):
         message = data.get("message")
